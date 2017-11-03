@@ -1,0 +1,46 @@
+
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Cyclic drum machine</title>
+        <script src="phaser.min.js"></script>
+    </head>
+    <body>
+
+    <script type="text/javascript">
+
+    window.onload = function() {
+
+        //This initializes Phaser
+        var WINDOW_WIDTH = 800;
+        var WINDOW_HEIGHT = 600;
+        var game = new Phaser.Game(WINDOW_WIDTH, WINDOW_HEIGHT, Phaser.AUTO, '', { preload: preload, create: create, update: GameLoop });
+        var counter = 0;
+        var logo;
+
+        function preload () {
+            //Here is where you would load all your images and assets
+            game.load.image('test_image', 'images/test_image.png');
+
+        }
+
+        function create () {
+            //This function runs on creation of the game window
+
+            image = game.add.sprite(game.world.centerX, game.world.centerY, 'test_image');
+            image.anchor.setTo(0.5, 0.5);
+
+        }
+
+        function GameLoop(){
+            counter += 0.05;
+            image.y = WINDOW_HEIGHT/2 + Math.sin(counter) * 100;
+        }
+
+    };
+
+    </script>
+
+    </body>
+</html>
