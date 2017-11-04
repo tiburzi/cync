@@ -1,0 +1,49 @@
+Drum Machine Project Notes
+
+--- Task List ---
+
+
+
+
+
+
+--- Research ---
+Patterning cyclic drum app - (https://www.olympianoiseco.com/apps/patterning/)
+Patterning review - (http://www.factmag.com/2015/08/23/patterning-drum-machine-app-ipad/)
+Drum machine with natural sounds - (https://experiments.withgoogle.com/ai/drum-machine/view/)
+Standard online linear drum machine - (https://www.pluraldev.com/drumbit/)
+Patternsketch online drum machine - (http://patternsketch.com/)
+Beatmaker online drum machine - (https://splice.com/sounds/beatmaker/capsun)
+Loopseque app - (https://www.flickr.com/photos/loopseque/)
+Euclidean Algorithm in Rhythms (essay) - (http://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf)
+And for when you really want to jump down the rabbithole - (http://cdm.link/2011/03/circles-and-euclidian-rhythms-off-the-grid-a-few-music-makers-that-go-round-and-round/)
+The cyclic works of Hiroshi Matoba - (http://dominofactory.net/works.html)
+
+
+
+--- Brainstorming Ideas ---
+
+1. Loading drum samples
+    a. default samples
+    b. drag and drop interface to add new samples
+    c. sample managament interface
+        - maximum number of samples at one time? (maybe like 8?)
+        - drag unwanted samples to a recycle bin for removal?
+        - 
+    d. sample type detection (if file name contains 'kick', 'snare', etc.)
+2. Drum machine interface
+    a. concentric circles
+        - 
+    b. sample bank
+    c. global controls
+        - play
+        - pause
+        - reset beat
+        - clear beat
+        - master volume
+        - master tempo
+        - randomize?
+    d. placing samples on circles
+        - drag sample to circle, and release in place?
+        - select an instrument and click the circle to place notes?
+        - need some way to change/display individual note volumes
