@@ -1,4 +1,9 @@
-Drum Machine Project Notes
+Terrane Cyclic Drum Machine Project Notes
+
+Project Goals:
+    1. communicate the concept of grooves as cyclic structures
+    2. encourage exploration of non-quantized, cyclic grooves
+
 
 --- Task List ---
 
@@ -23,7 +28,58 @@ The cyclic works of Hiroshi Matoba - (http://dominofactory.net/works.html)
 
 --- Brainstorming Ideas ---
 
-1. Loading drum samples
+Desired functionality:
+- add, remove, and change radius of concentric circles
+- have markers traverse the circles
+- place notes on circles
+- easily adjust/display a note's volume
+- play notes when marker reaches them
+- play, pause, reset circle markers
+- clear all notes from circle
+- clear all notes from all circles
+- move a note around on a circle
+- rotate all notes around on a circle (maintain separation but change location relative to other circles)
+- default samples
+- load custom samples (drag and drop)
+- export groove
+    - save file as multi-channeled MIDI
+    - save file as uncompressed audio (.wav or .aiff) or compressed (.mp3 or .ogg)
+    - save layout / sequence in a custom file for reloading later?
+    - open custom file
+    
+
+Desired aesthetics:
+- minimal text and numbers
+- responsive interactions (smooth transitions, juicy animations)
+- intuitive layout (symbols, layout, and design)
+- emergent musical complexity
+
+
+User Interface Design:
+- web inputs
+    - mouse hover
+    - mouse click
+    - mouse drag
+    - mouse release
+    - keyboard (desktop / laptop)
+    - touch input and gestures (touchscreen / mobile)
+    - webcam, microphone (unlikely, but they are available...)
+- musicians vs non-musicians
+- users who have experience with linear drum sequencers
+- users who have never thought of drums as cyclic
+- users who don't play video games or operate apps often (less understanding of layout and functionality)
+- testers vs composers
+    - testers will play around with the app for only briefly
+    - composers will actually use the app to create music
+
+
+Design issues:
+- what if user wants two circles of same radius?
+- what if the user imports a lot of samples? Should there be a limit? Or a list of all available?
+-
+
+
+Loading drum samples
     a. default samples
     b. drag and drop interface to add new samples
     c. sample managament interface
@@ -31,9 +87,10 @@ The cyclic works of Hiroshi Matoba - (http://dominofactory.net/works.html)
         - drag unwanted samples to a recycle bin for removal?
         - 
     d. sample type detection (if file name contains 'kick', 'snare', etc.)
-2. Drum machine interface
+
+Drum machine interface
     a. concentric circles
-        - 
+        - all maths in polar coordinates?
     b. sample bank
     c. global controls
         - play
