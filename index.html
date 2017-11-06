@@ -3,10 +3,10 @@
 <html>
     <head>
         <meta charset="UTF-8" />
-        <title>Cyclic drum machine</title>
-        <script src="src/phaser.min.js"></script>
-        <script src='src/preload.js'></script>
-        <script src='src/main.js'></script>
+        <title>Cyclic Drum Machine</title>
+        <script src="code/lib/phaser.min.js"></script>
+        <script src='code/preload.js'></script>
+        <script src='code/main.js'></script>
     </head>
     <body>
         
@@ -15,10 +15,10 @@
         window.onload = function() {
             var game = new Phaser.Game(800, 600, Phaser.AUTO, '');
 
-            game.state.add('preloadState', preload);
-            game.state.add('mainState', main);
+            game.state.add('preload', preload);
+            game.state.add('main', main);
             
-            game.state.start('preloadState');
+            game.state.start('preload');
         };
 
     </script>
