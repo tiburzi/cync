@@ -5,6 +5,8 @@
         <meta charset="UTF-8" />
         <title>Cyclic Drum Machine</title>
         <script src="code/lib/phaser.min.js"></script>
+        <script src="code/lib/two.min.js"></script>
+        <script src="code/lib/Tween.js"></script>
         <script src='code/preload.js'></script>
         <script src='code/main.js'></script>
         <style type="text/css">
@@ -18,15 +20,48 @@
     <script type="text/javascript">
 
         window.onload = function() {
+            // Make an instance of two and place it on the page.
+            var elem = document.getElementById('main-container');
+            var params = { width: 400, height: 400 };
+            var two = new Two(params).appendTo(elem);
+
+            var circle = two.makeCircle(100, 100, 50);
+
+            circle.fill = '#FF8000';
+            circle.stroke = 'orangered';
+            
+            //Set tween info
+            var position = { x: 100, y: 100 };
+            var target = { x: 300, y: 300 };
+            var tween = new TWEEN.Tween(position).to(target, 2000);
+            tween.start();
+
+            tween.onUpdate(function(){
+                circle.translation.set(position.x, position.y);
+                //console.log(position);
+            });
+            
+            function update() {
+                TWEEN.update();
+                two.update();
+                requestAnimationFrame( update );
+            }
+            
+            update();
+        }
+        
+        /*window.onload = function() {
             var game = new Phaser.Game(1600, 900, Phaser.AUTO, '');
 
             game.state.add('preload', preload);
             game.state.add('main', main);
             
             game.state.start('preload');
-        };
+        };*/
 
     </script>
+        
+    <div id="main-container"></div>
 
     </body>
 </html>
