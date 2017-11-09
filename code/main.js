@@ -15,6 +15,17 @@ window.onload = function() {
     centerCircle.fill = 'red';
     centerCircle.linewidth = 0;
     
+    var interactiveCircle = two.makeCircle(two.width * .75, two.height * .75, 50);
+    interactiveCircle.fill = 'green';
+    interactiveCircle.linewidth = 0;
+    
+    $(document).ready(function() {
+        addInteractivity(interactiveCircle);
+    });
+    
+    // Update the renderer in order to generate the actual elements.
+    two.update();
+    
     var styles = {
         family: 'proxima-nova, sans-serif',
         size: 50,
@@ -66,5 +77,65 @@ window.onload = function() {
         screenSizeText.value = Math.round(two.width) + ' x ' + Math.round(two.height);
         centerCircle.translation.set( two.width/2, two.height/2 );
     }
+    
+    //interactivity code from https://two.js.org/examples/advanced-anchors.html
+    function addInteractivity(shape) {
+
+        var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
+        var localClickPos = {x: 0, y: 0};
+        
+        var drag = function(e) {
+          e.preventDefault();
+          var x = e.clientX - offset.x - localClickPos.x;
+          var y = e.clientY - offset.y - localClickPos.y;
+          shape.translation.set(x, y);
+        };
+        var touchDrag = function(e) {
+          e.preventDefault();
+          var touch = e.originalEvent.changedTouches[0];
+          drag({
+            preventDefault: _.identity,
+            clientX: touch.pageX,
+            clientY: touch.pageY
+          });
+          return false;
+        };
+        var dragStart = function(e) {
+            e.preventDefault();
+            localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y}
+            $(window)
+              .bind('mousemove', drag)
+              .bind('mouseup', dragEnd);
+        };
+        var touchStart = function(e) {
+            e.preventDefault();
+            var touch = e.originalEvent.changedTouches[0];
+            localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
+            $(window)
+              .bind('touchmove', touchDrag)
+              .bind('touchend', touchEnd);
+            return false;
+        };
+        var dragEnd = function(e) {
+          e.preventDefault();
+          $(window)
+            .unbind('mousemove', drag)
+            .unbind('mouseup', dragEnd);
+        };
+        var touchEnd = function(e) {
+          e.preventDefault();
+          $(window)
+            .unbind('touchmove', touchDrag)
+            .unbind('touchend', touchEnd);
+          return false;
+        };
+
+        $(shape._renderer.elem)
+          .css({
+            cursor: 'move'
+          })
+          .bind('mousedown', dragStart)
+          .bind('touchstart', touchStart);
+      }
 }
 
