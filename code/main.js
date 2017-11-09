@@ -2,6 +2,7 @@
 window.onload = function() {
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
+    var Circles = [];
 
     function Init(){
         // Initialize everything here 
@@ -27,6 +28,11 @@ window.onload = function() {
             addInteractivity(circle);
         });
 
+        Circles.push(circle);
+
+        circle.update = function(){
+            // For updating anything about the circle
+        }
         return circle;
     }
    
@@ -47,7 +53,16 @@ window.onload = function() {
           e.preventDefault();
           var x = e.clientX - offset.x - localClickPos.x;
           var y = e.clientY - offset.y - localClickPos.y;
-          shape.translation.set(x, y);
+          var point = {x:e.clientX,y:e.clientY};
+          var center = {x:two.width / 2,y:two.height / 2};
+          var dist = Math.sqrt(Math.pow(point.x - center.x,2) + Math.pow(point.y - center.y,2));
+
+          var newRadius = dist;
+
+          _.each(shape.vertices, function(v) {
+             v.setLength(newRadius);
+          });
+
         };
         var touchDrag = function(e) {
           e.preventDefault();
@@ -105,6 +120,8 @@ window.onload = function() {
         // Two's own update
         two.update();
         // Our own update goes here
+        for(var i=0;i<Circles.length;i++)
+            Circles[i].update();
 
         // Ask the browser to run this on the next frame please
         requestAnimationFrame( update );
