@@ -21,10 +21,13 @@ window.onload = function() {
             - Can be destroyed by dragging to the center
             - Probably has other properties associated with it later (like dragging a sample onto it)
         */
-        var circle = two.makeCircle(two.width / 2, two.height / 2, radius);
+        var X = two.width / 2;
+        var Y = two.height / 2
+        var circle = two.makeCircle(X,Y, radius);
         circle.fill = 'none';
         circle.stroke = '#6b6b6b';
         circle.linewidth = 6;
+        circle.radius = radius; //Just for keeping track of the radius in our own application
 
         $(document).ready(function() {
             addInteractionDrag(circle);
@@ -34,7 +37,27 @@ window.onload = function() {
 
         circle.update = function(){
             // For updating anything about the circle
+            this.trigger.update();
         }
+
+        // Create a triangle trigger for this circle
+        var size = 15;
+        var triggerX = X;
+        var triggerY = Y-radius-size - circle.linewidth/2;
+        var trigger = two.makePolygon(triggerX,triggerY, size);
+        trigger.fill = 'orangered';
+        trigger.stroke = 'none';
+        trigger.rotation = Math.PI;
+        trigger.circle = circle;
+        circle.trigger = trigger;
+
+        trigger.update = function(){
+            // Move trigger to the top of the circle
+            this.translation.x = X;
+            this.translation.y = Y - this.circle.radius - size - this.circle.linewidth/2;
+        }
+
+
         return circle;
     }
    
@@ -62,6 +85,7 @@ window.onload = function() {
 
           var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
 
+          shape.radius = newRadius;
           _.each(shape.vertices, function(v) {
              v.setLength(newRadius);
           });
