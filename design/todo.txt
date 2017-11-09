@@ -16,7 +16,6 @@ Jon:
 
 Omar:
 
-- Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
 
 --- Done ---
 - Render a small circle on screen (solid color)
@@ -24,3 +23,4 @@ Omar:
 - Click and drag circles around screen
 - Render larger circle outlines (no fill, just outline)
 - Click larger circle and drag to change its radius
+- Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)

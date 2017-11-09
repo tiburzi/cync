@@ -4,6 +4,7 @@ window.onload = function() {
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
     var Circles = [];
+    var RADIUS_SNAP = 5;
 
     function Init(){
         // Initialize everything here 
@@ -59,7 +60,7 @@ window.onload = function() {
           var center = {x:two.width / 2,y:two.height / 2};
           var dist = Math.sqrt(Math.pow(point.x - center.x,2) + Math.pow(point.y - center.y,2));
 
-          var newRadius = dist;
+          var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
 
           _.each(shape.vertices, function(v) {
              v.setLength(newRadius);
