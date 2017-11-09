@@ -52,9 +52,13 @@ window.onload = function() {
         circle.trigger = trigger;
 
         trigger.update = function(){
-            // Move trigger to the top of the circle
-            this.translation.x = X;
-            this.translation.y = Y - this.circle.radius - size - this.circle.linewidth/2;
+            // Move trigger to the edge of the circle based on the rotation 
+            var offset = this.circle.radius + size + this.circle.linewidth/2
+            var angle = this.rotation + Math.PI/2;
+            this.translation.x = X + Math.cos(angle) * offset;
+            this.translation.y = Y + Math.sin(angle) * offset ;
+
+            this.rotation += 0.1 * (1 - (this.circle.radius / 300));
         }
 
 
