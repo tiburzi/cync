@@ -1,5 +1,5 @@
 --- Task List ---
-- Click larger circle and drag to change its radius
+
 - Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
 - Create and drag in center to create new circle
 - Drag circle to the center to destroy
@@ -14,7 +14,7 @@
 - Play sound when triangle hits notch
 
 Jon:
-
+- Click larger circle and drag to change its radius
 
 Omar:
 
