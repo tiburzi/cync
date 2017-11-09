@@ -1,15 +1,25 @@
 --- Task List ---
+- Create and drag in center to create new circle
+- Drag circle to the center to destroy
+- Make triangles work
+	- Fix a triangle to a circle's path
+	- Make it rotate forever based on a given speed
+	- Make sure triangles on bigger circles take longer to rotate 
+- Play a sound 
+- Create a bottom bar for all the buttons 
+- Add buttons for some pre-made samples
+- Drag one of the samples to create a colored notch on a circle
+- Play sound when triangle hits notch
+
 Jon:
-- render a small circle on screen (solid color)
-- render many small circles on screen, of varying radius
-- click and drag circles around screen
-- render larger circle outlines (no fill, just outline)
-- click larger circle and drag to change its radius
-- snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
-- create a polar-to-cartesian function
-- create a cartesian-to-polar function
+
 
 Omar:
-
+- Click larger circle and drag to change its radius
+- Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
 
 --- Done ---
+- Render a small circle on screen (solid color)
+- Render many small circles on screen, of varying radius
+- Click and drag circles around screen
+- Render larger circle outlines (no fill, just outline)
