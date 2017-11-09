@@ -1,0 +1,15 @@
+--- Task List ---
+Jon:
+- render a small circle on screen (solid color)
+- render many small circles on screen, of varying radius
+- click and drag circles around screen
+- render larger circle outlines (no fill, just outline)
+- click larger circle and drag to change its radius
+- snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
+- create a polar-to-cartesian function
+- create a cartesian-to-polar function
+
+Omar:
+
+
+--- Done ---
