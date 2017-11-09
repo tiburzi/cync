@@ -1,6 +1,7 @@
 //All the main js code runs here
 window.onload = function() {
 <<<<<<< HEAD
+<<<<<<< HEAD
     
     // Make an instance of two and place it on the page.
     var elem = document.getElementById('main-container');
@@ -42,6 +43,10 @@ window.onload = function() {
 
     var screenSizeText = two.makeText(Math.round(two.width) + ' x ' + Math.round(two.height), 200, 100, styles);
     screenSizeText.fill = 'black';
+=======
+    // Our 'global' variables defined up here so they're accessible everywhere below
+    var two;
+>>>>>>> ba66f0a914d4173e56700eee97b94e672ea977e0
 =======
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
