@@ -4,6 +4,7 @@ window.onload = function() {
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
     var Circles = [];
+    var Notes = [];
     var RADIUS_SNAP = 5;
 
     function Init(){
@@ -35,7 +36,44 @@ window.onload = function() {
         circle.update = function(){
             // For updating anything about the circle
         }
+        
+        circle.onDrag = function (e, offset, localClickPos) {
+            var x = e.clientX - offset.x - localClickPos.x;
+            var y = e.clientY - offset.y - localClickPos.y;
+            var point = {x:e.clientX,y:e.clientY};
+            var center = {x:two.width / 2,y:two.height / 2};
+            var dist = Math.sqrt(Math.pow(point.x - center.x,2) + Math.pow(point.y - center.y,2));
+
+            var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
+
+            _.each(this.vertices, function(v) {
+                v.setLength(newRadius);
+            });
+        }
+        
         return circle;
+    }
+    
+    function CreateNote(radius){
+        /* This should create a note that: 
+            - Can be moved onto and along an orbit by dragging
+            - Has a radius proportional to its volume
+        */
+        var note = two.makeCircle(two.width / 2, two.height / 2, radius);
+        note.fill = 'red';
+        note.stroke = 'none';
+        note.linewidth = 0;
+
+        $(document).ready(function() {
+            addInteractionDrag(circle);
+        });
+
+        Notes.push(note);
+
+        note.update = function(){
+            // For updating anything about the note
+        }
+        return note;
     }
    
     Init();
@@ -46,15 +84,16 @@ window.onload = function() {
 
     
     //interactivity code from https://two.js.org/examples/advanced-anchors.html
-    function addInteractionDrag(shape, action) {
+    function addInteractionDrag(shape) {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
         var localClickPos = {x: 0, y: 0};
         
         var drag = function(e) {
           e.preventDefault();
+          shape.onDrag(e, offset, localClickPos);
 
-          var x = e.clientX - offset.x - localClickPos.x;
+          /*var x = e.clientX - offset.x - localClickPos.x;
           var y = e.clientY - offset.y - localClickPos.y;
           var point = {x:e.clientX,y:e.clientY};
           var center = {x:two.width / 2,y:two.height / 2};
@@ -64,7 +103,7 @@ window.onload = function() {
 
           _.each(shape.vertices, function(v) {
              v.setLength(newRadius);
-          });
+          });*/
 
 
         };
