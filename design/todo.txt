@@ -1,12 +1,11 @@
 --- Task List ---
 
-- Click larger circle and drag to change its radius
 - Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
 - Fix a triangle to a circle's path
 - Play a sound 
 
 Jon:
-
+- Click larger circle and drag to change its radius
 
 Omar:
 
