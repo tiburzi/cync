@@ -26,7 +26,7 @@ window.onload = function() {
         circle.linewidth = 6;
 
         $(document).ready(function() {
-            addInteractivity(circle);
+            addInteractionDrag(circle);
         });
 
         Circles.push(circle);
