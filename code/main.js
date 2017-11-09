@@ -1,5 +1,6 @@
 //All the main js code runs here
 window.onload = function() {
+
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
     var Circles = [];
@@ -44,13 +45,14 @@ window.onload = function() {
 
     
     //interactivity code from https://two.js.org/examples/advanced-anchors.html
-    function addInteractivity(shape) {
+    function addInteractionDrag(shape, action) {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
         var localClickPos = {x: 0, y: 0};
         
         var drag = function(e) {
           e.preventDefault();
+
           var x = e.clientX - offset.x - localClickPos.x;
           var y = e.clientY - offset.y - localClickPos.y;
           var point = {x:e.clientX,y:e.clientY};
@@ -62,6 +64,7 @@ window.onload = function() {
           _.each(shape.vertices, function(v) {
              v.setLength(newRadius);
           });
+
 
         };
         var touchDrag = function(e) {
@@ -103,6 +106,12 @@ window.onload = function() {
             .unbind('touchend', touchEnd);
           return false;
         };
+        
+        var dragPosition = function(e) {
+            var x = e.clientX - offset.x - localClickPos.x;
+            var y = e.clientY - offset.y - localClickPos.y;
+            shape.translation.set(x, y);
+        }
 
         $(shape._renderer.elem)
           .css({
