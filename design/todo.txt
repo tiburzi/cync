@@ -1,9 +1,17 @@
 --- Task List ---
-
 - Click larger circle and drag to change its radius
 - Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
-- Fix a triangle to a circle's path
+- Create and drag in center to create new circle
+- Drag circle to the center to destroy
+- Make triangles work
+	- Fix a triangle to a circle's path
+	- Make it rotate forever based on a given speed
+	- Make sure triangles on bigger circles take longer to rotate 
 - Play a sound 
+- Create a bottom bar for all the buttons 
+- Add buttons for some pre-made samples
+- Drag one of the samples to create a colored notch on a circle
+- Play sound when triangle hits notch
 
 Jon:
 
