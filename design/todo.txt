@@ -10,10 +10,6 @@ Jon:
 Omar:
 - Create and drag in center to create new circle
 - Drag circle to the center to destroy
-- Make triangles work
-	- Fix a triangle to a circle's path
-	- Make it rotate forever based on a given speed
-	- Make sure triangles on bigger circles take longer to rotate 
 - Play a sound 
 - Play sound when triangle hits notch
 
@@ -24,3 +20,7 @@ Omar:
 - Render larger circle outlines (no fill, just outline)
 - Click larger circle and drag to change its radius
 - Snap larger circle radius to a grid when released (ie integer units of radius; based on some defined unit variable)
+- Make triangles work
+	- Fix a triangle to a circle's path
+	- Make it rotate forever based on a given speed
+	- Make sure triangles on bigger circles take longer to rotate 
