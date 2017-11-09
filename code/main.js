@@ -15,12 +15,21 @@ window.onload = function() {
     centerCircle.fill = 'red';
     centerCircle.linewidth = 0;
     
-    var interactiveCircle = two.makeCircle(two.width * .75, two.height * .75, 50);
-    interactiveCircle.fill = 'green';
-    interactiveCircle.linewidth = 0;
+    var filledCircle = two.makeCircle(two.width * .75, two.height * .75, 50);
+    filledCircle.fill = 'green';
+    filledCircle.linewidth = 0;
+    
+    var strokedCircle = two.makeCircle(two.width * .75-120, two.height * .75, 50);
+    strokedCircle.fill = 'none';
+    strokedCircle.stroke = 'green';
+    strokedCircle.linewidth = 10;
     
     $(document).ready(function() {
-        addInteractivity(interactiveCircle);
+        addInteractivity(strokedCircle);
+    });
+    
+    $(document).ready(function() {
+        addInteractivity(filledCircle);
     });
     
     // Update the renderer in order to generate the actual elements.
