@@ -1,6 +1,8 @@
 # non-quantized-drums
 a drum machine about non-quantized grooves
 
+https://tiburzi.github.io/non-quantized-drums/
+
 ## Project Structure
 
 * `index.html` is the main entry point.
