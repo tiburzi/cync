@@ -1,4 +1,13 @@
 --- Task List ---
+
+
+Jon:
+- Figure out UI?
+- Create a bottom bar for all the buttons 
+- Add buttons for some pre-made samples
+- Drag one of the samples to create a colored notch on a circle
+
+Omar:
 - Create and drag in center to create new circle
 - Drag circle to the center to destroy
 - Make triangles work
@@ -6,16 +15,7 @@
 	- Make it rotate forever based on a given speed
 	- Make sure triangles on bigger circles take longer to rotate 
 - Play a sound 
-- Create a bottom bar for all the buttons 
-- Add buttons for some pre-made samples
-- Drag one of the samples to create a colored notch on a circle
 - Play sound when triangle hits notch
-
-Jon:
-
-
-Omar:
-
 
 --- Done ---
 - Render a small circle on screen (solid color)
