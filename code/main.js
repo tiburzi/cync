@@ -9,6 +9,7 @@ window.onload = function() {
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
+    var CENTER = {};
 
     function Init(){
         // Initialize everything here 
@@ -17,6 +18,7 @@ window.onload = function() {
         var elem = document.getElementById('main-container');
         var params = { fullscreen: true };
         two = new Two(params).appendTo(elem);
+        CENTER = { x:two.width / 2, y:two.height / 2 };
     }
     
     function CreateOrbit(radius){
@@ -26,12 +28,13 @@ window.onload = function() {
             - Probably has other properties associated with it later (like dragging a sample onto it)
         */
         var X = two.width / 2;
-        var Y = two.height / 2
+        var Y = two.height / 2;
         var orbit = two.makeCircle(X,Y, radius);
         orbit.fill = 'none';
         orbit.stroke = '#6b6b6b';
         orbit.linewidth = 6;
         orbit.radius = radius; //Just for keeping track of the radius in our own application
+        orbit.notes = [];
 
         $(document).ready(function() {
             addInteractionDrag(orbit);
@@ -49,11 +52,9 @@ window.onload = function() {
 //<<<<<<< HEAD
         
         orbit.onDrag = function(e, offset, localClickPos) {
-            var x = e.clientX - offset.x - localClickPos.x;
-            var y = e.clientY - offset.y - localClickPos.y;
-            var point = {x:e.clientX, y:e.clientY};
+            var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
             var center = {x:two.width / 2, y:two.height / 2};
-            var dist = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+            var dist = Util.pointDistance(point, center);
 
             //Drag the orbit's radius around
             if (dist <= ORBIT_MAX_RADIUS) {
@@ -66,6 +67,7 @@ window.onload = function() {
             trigger.rotate = false;
             
             setRadius(this, newRadius);
+            orbit.updateNotes();
         }
         
         orbit.onMouseUp = function(e) {
@@ -79,11 +81,21 @@ window.onload = function() {
                 .easing(TWEEN.Easing.Elastic.Out)
                 .onUpdate(function() {
                     setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
+                    this._object.updateNotes();
                 })
                 .onComplete(function() {
                     this._object.trigger.rotate = true;
                 })
             tweenSnap.start();
+        }
+        
+        orbit.updateNotes = function() {
+            this.notes.forEach(function(n) {
+                var angle = Util.pointDirection(CENTER, n.translation);
+                var newX = CENTER.x + Math.cos(angle) * n.orbit.radius;
+                var newY = CENTER.y + Math.sin(angle) * n.orbit.radius;
+                n.translation.set(newX, newY);
+            });
         }
         
 //=======
@@ -110,8 +122,8 @@ window.onload = function() {
             // Move trigger to the edge of the orbit based on the rotation
             var distance = this.orbit.radius + size + this.orbit.linewidth/2
             var angle = this.rotation + Math.PI/2;
-            this.translation.x = X + Math.cos(angle) * distance;
-            this.translation.y = Y + Math.sin(angle) * distance;
+            this.translation.x = CENTER.x + Math.cos(angle) * distance;
+            this.translation.y = CENTER.y + Math.sin(angle) * distance;
         }
 
 
@@ -124,16 +136,57 @@ window.onload = function() {
             - Can be moved onto and along an orbit by dragging
             - Has a radius proportional to its volume
         */
-        var note = two.makeCircle(two.width / 2, two.height / 2, radius);
+        var note = two.makeCircle(two.width / 4, two.height / 4, radius);
         note.fill = 'red';
         note.stroke = 'none';
         note.linewidth = 0;
+        note.orbit = null;
+        note.goalPos = { x:note.translation.x, y:note.translation.y };
 
         $(document).ready(function() {
-            addInteractionDrag(orbit);
+            addInteractionDrag(note);
         });
 
         Notes.push(note);
+        
+        note.onMouseDown = function () {
+            if (this.orbit != null) {
+                // Remove this note from the orbit
+                var index = this.orbit.notes.indexOf(this);
+                if (index > -1) {
+                    this.orbit.notes.splice(index, 1);
+                }
+                this.orbit = null;
+            }
+        }
+        
+        note.onDrag = function(e, offset, localClickPos) {
+            // By default, move to the mouse location
+            this.goalPos.x = e.clientX - offset.x;// - localClickPos.x;
+            this.goalPos.y = e.clientY - offset.y;// - localClickPos.y;
+            
+            // If close enough to an orbit, snap to that orbit
+            for(var i=0;i<Orbits.length;i++) {
+                if (Math.abs(Util.pointDistance(CENTER, this.goalPos) - Orbits[i].radius) < .5*RADIUS_SNAP) {
+                    var dist = Orbits[i].radius;
+                    var dir = Util.pointDirection(CENTER, this.goalPos);
+                    this.goalPos.x = CENTER.x + Math.cos(dir) * dist;
+                    this.goalPos.y = CENTER.y + Math.sin(dir) * dist;
+                    note.orbit = Orbits[i]; // Assign this orbit
+                    break;
+                } else note.orbit = null;
+            }
+            
+            // Actually move to the desired position
+            this.translation.set(this.goalPos.x, this.goalPos.y);
+        }
+        
+        note.onMouseUp = function(e, offset, localClickPos) {
+            if (this.orbit != null) {
+                // Add this note to its orbit
+                this.orbit.notes.push(this);
+            }
+        }
 
         note.update = function(){
             // For updating anything about the note
@@ -158,6 +211,7 @@ window.onload = function() {
     for(var i=0;i<Orbits.length;i++) {
         setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP)
     }
+    CreateNote(15);
 
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
@@ -224,12 +278,6 @@ window.onload = function() {
             
             return false;
         };
-        
-        var dragPosition = function(e) {
-            var x = e.clientX - offset.x - localClickPos.x;
-            var y = e.clientY - offset.y - localClickPos.y;
-            shape.translation.set(x, y);
-        }
 
         $(shape._renderer.elem)
             .css({
