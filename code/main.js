@@ -5,7 +5,9 @@ window.onload = function() {
     var two;
     var Orbits = [];
     var Notes = [];
-    var RADIUS_SNAP = 5;
+    var MAX_ORBITS = 5;
+    var ORBIT_MAX_RADIUS = 300;
+    var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
 
     function Init(){
         // Initialize everything here 
@@ -45,19 +47,35 @@ window.onload = function() {
         
 //<<<<<<< HEAD
         
-        orbit.onDrag = function (e, offset, localClickPos) {
+        orbit.onDrag = function(e, offset, localClickPos) {
             var x = e.clientX - offset.x - localClickPos.x;
             var y = e.clientY - offset.y - localClickPos.y;
-            var point = {x:e.clientX,y:e.clientY};
-            var center = {x:two.width / 2,y:two.height / 2};
-            var dist = Math.sqrt(Math.pow(point.x - center.x,2) + Math.pow(point.y - center.y,2));
+            var point = {x:e.clientX, y:e.clientY};
+            var center = {x:two.width / 2, y:two.height / 2};
+            var dist = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
 
-            var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
-
-            this.radius = newRadius;
-            _.each(this.vertices, function(v) {
-                v.setLength(newRadius);
-            });
+            //var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
+            if (dist <= ORBIT_MAX_RADIUS) {
+                var newRadius = dist;
+            } else {
+                var newRadius = ORBIT_MAX_RADIUS+(Math.sqrt(dist-ORBIT_MAX_RADIUS));
+            }
+            
+            setRadius(this, newRadius);
+        }
+        
+        orbit.onMouseUp = function(e) {
+            //snap the orbit to a grid, tweening to make a smooth animation
+            var snapToRadius = Math.max(1, Math.round(this.radius / RADIUS_SNAP)) * RADIUS_SNAP;
+            
+            //create a tween
+            var tweenSnap = new TWEEN.Tween(this)
+                .to({ radius:snapToRadius }, 500)
+                .easing(TWEEN.Easing.Elastic.Out)
+                .onUpdate(function() {
+                    setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
+                })
+            tweenSnap.start();
         }
         
 //=======
@@ -80,7 +98,7 @@ window.onload = function() {
             this.translation.x = X + Math.cos(angle) * distance;
             this.translation.y = Y + Math.sin(angle) * distance ;
 
-            this.rotation += 0.1 * (1 - (this.orbit.radius / 300));
+            this.rotation += 0.1 * (1 - (this.orbit.radius / ORBIT_MAX_RADIUS));
         }
 
 
@@ -109,6 +127,14 @@ window.onload = function() {
         }
         return note;
     }
+    
+    //reuseable function for setting the radius of the svg circle
+    var setRadius = function(circle, r) {
+        circle.radius = r;
+        _.each(circle.vertices, function(v) {
+            v.setLength(r);
+        });
+    }
    
     Init();
     
@@ -124,9 +150,10 @@ window.onload = function() {
         var localClickPos = {x: 0, y: 0};
         
         var drag = function(e) {
-          e.preventDefault();
-          shape.onDrag(e, offset, localClickPos);
+            e.preventDefault();
             
+            //Call the shape's dragging method, if it has one
+            if (typeof shape.onDrag === 'function') {shape.onDrag(e, offset, localClickPos);}
         };
         var touchDrag = function(e) {
           e.preventDefault();
@@ -142,30 +169,43 @@ window.onload = function() {
             e.preventDefault();
             localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y}
             $(window)
-              .bind('mousemove', drag)
-              .bind('mouseup', dragEnd);
+                .bind('mousemove', drag)
+                .bind('mouseup', dragEnd);
+            
+            //Call the shape's mouse click method, if it has one
+            if (typeof shape.onMouseDown === 'function') {shape.onMouseDown(e, offset, localClickPos);}
         };
         var touchStart = function(e) {
             e.preventDefault();
             var touch = e.originalEvent.changedTouches[0];
             localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
             $(window)
-              .bind('touchmove', touchDrag)
-              .bind('touchend', touchEnd);
+                .bind('touchmove', touchDrag)
+                .bind('touchend', touchEnd);
             return false;
+            
+            //Call the shape's mouse click method, if it has one
+            if (typeof shape.onMouseDown === 'function') {shape.onMouseDown(e, offset, localClickPos);}
         };
         var dragEnd = function(e) {
-          e.preventDefault();
-          $(window)
-            .unbind('mousemove', drag)
-            .unbind('mouseup', dragEnd);
+            e.preventDefault();
+            $(window)
+                .unbind('mousemove', drag)
+                .unbind('mouseup', dragEnd);
+            
+            //Call the shape's click release method, if it has one
+            if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
         };
         var touchEnd = function(e) {
-          e.preventDefault();
-          $(window)
-            .unbind('touchmove', touchDrag)
-            .unbind('touchend', touchEnd);
-          return false;
+            e.preventDefault();
+            $(window)
+                .unbind('touchmove', touchDrag)
+                .unbind('touchend', touchEnd);
+            
+            //Call the shape's click release method, if it has one
+            if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
+            
+            return false;
         };
         
         var dragPosition = function(e) {
@@ -175,11 +215,11 @@ window.onload = function() {
         }
 
         $(shape._renderer.elem)
-          .css({
-            cursor: 'move'
-          })
-          .bind('mousedown', dragStart)
-          .bind('touchstart', touchStart);
+            .css({
+                cursor: 'move'
+            })
+            .bind('mousedown', dragStart)
+            .bind('touchstart', touchStart);
       }
 
 
