@@ -1,5 +1,5 @@
 --- Task List ---
-
+- make accurate maths for triangle rotation, based on a global tempo
 
 Jon:
 - Figure out UI?
