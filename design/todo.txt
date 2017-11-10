@@ -26,6 +26,6 @@ Omar:
 	- Make sure triangles on bigger circles take longer to rotate
 - make accurate maths for triangle rotation, based on a global tempo
 - make note circles draggable
-- snap notes to orbits when close enough
+- snap notes to orbits when close enough (with smooth tweening animation)
 - update note's positions when orbit changes
 - manage an orbit's notes with a list

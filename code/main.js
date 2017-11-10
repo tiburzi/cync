@@ -22,10 +22,8 @@ window.onload = function() {
     }
     
     function CreateOrbit(radius){
-        /* This should create a orbit that: 
-            - Can be resized by dragging
+        /* This should create a orbit that:
             - Can be destroyed by dragging to the center
-            - Probably has other properties associated with it later (like dragging a sample onto it)
         */
         var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
@@ -130,16 +128,14 @@ window.onload = function() {
     }
     
     function CreateNote(radius){
-        /* This should create a note that: 
-            - Can be moved onto and along an orbit by dragging
+        /* This should create a note that:
             - Has a radius proportional to its volume
         */
-        var note = two.makeCircle(two.width / 4, two.height / 4, radius);
+        var note = two.makeCircle(100, 100, radius);
         note.fill = 'red';
         note.stroke = 'none';
         note.linewidth = 0;
         note.orbit = null;
-        //note.goalPos = { x:note.translation.x, y:note.translation.y };
 
         $(document).ready(function() {
             addInteractionDrag(note);
@@ -159,13 +155,14 @@ window.onload = function() {
             
             //create an elastic tween for moving to desired position
             note.tweenMove = new TWEEN.Tween(this.translation)
-                .easing(TWEEN.Easing.Elastic.Out)
+                .easing(TWEEN.Easing.Cubic.Out);
         }
         
         note.onDrag = function(e, offset, localClickPos) {
+            var notOnOrbit = true;
+            var tweenTime = 150;
+            
             // By default, move to the mouse location
-            //this.goalPos.x = e.clientX - offset.x;// - localClickPos.x;
-            //this.goalPos.y = e.clientY - offset.y;// - localClickPos.y;
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
             
             // If close enough to an orbit, snap to that orbit
@@ -175,17 +172,31 @@ window.onload = function() {
                     var angle = Util.pointDirection(CENTER, goalPos);
                     goalPos.x = CENTER.x + Math.cos(angle) * dist;
                     goalPos.y = CENTER.y + Math.sin(angle) * dist;
-                    note.orbit = Orbits[i]; // Assign this orbit
                     
-                    //begin tweening
-                    note.tweenMove.to(goalPos, 1000);
-                    note.tweenMove.start();
+                    // Begin a tween to smooth the transition moving onto the orbit
+                    if ((note.orbit != Orbits[i])) {
+                        startTween = true;
+                        note.tweenMove.to(goalPos, tweenTime);
+                        note.tweenMove.start();
+                    }
                     
+                    note.orbit = Orbits[i]; // Assign this orbit to the note
+                    notOnOrbit = false;
                     break;
-                } else note.orbit = null;
+                    
+                } else {
+                    
+                    // Begin a tween to smooth the transition moving off of the orbit
+                    if ((note.orbit == Orbits[i])) {
+                        startTween = true;
+                        note.tweenMove.to(goalPos, tweenTime);
+                        note.tweenMove.start();
+                    }
+                }
             }
+            if (notOnOrbit) {note.orbit = null;} //we don't want the for loop to overwrite this unless the note isn't by ANY of the orbits
             
-            // Actually move to the desired position
+            // Finally, actually move to the desired position
             if (note.tweenMove._isPlaying == true) {
                 note.tweenMove._valuesEnd = goalPos;
             } else {
