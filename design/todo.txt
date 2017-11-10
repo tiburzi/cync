@@ -1,11 +1,11 @@
 --- Task List ---
-- make accurate maths for triangle rotation, based on a global tempo
+
 
 Jon:
 - Figure out UI?
 - Create a bottom bar for all the buttons 
-- Add buttons for some pre-made samples
-- Drag one of the samples to create a colored notch on a circle
+- Add buttons ('samplers') for some pre-made samples
+- Click and drag a sampler to create a note
 
 Omar:
 - Create and drag in center to create new circle
@@ -23,4 +23,9 @@ Omar:
 - Make triangles work
 	- Fix a triangle to a circle's path
 	- Make it rotate forever based on a given speed
-	- Make sure triangles on bigger circles take longer to rotate 
+	- Make sure triangles on bigger circles take longer to rotate
+- make accurate maths for triangle rotation, based on a global tempo
+- make note circles draggable
+- snap notes to orbits when close enough
+- update note's positions when orbit changes
+- manage an orbit's notes with a list
