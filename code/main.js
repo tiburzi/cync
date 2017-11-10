@@ -27,9 +27,7 @@ window.onload = function() {
             - Can be destroyed by dragging to the center
             - Probably has other properties associated with it later (like dragging a sample onto it)
         */
-        var X = two.width / 2;
-        var Y = two.height / 2;
-        var orbit = two.makeCircle(X,Y, radius);
+        var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
         orbit.stroke = '#6b6b6b';
         orbit.linewidth = 6;
@@ -102,8 +100,8 @@ window.onload = function() {
 
         // Create a triangle trigger for this orbit
         var size = 15;
-        var triggerX = X;
-        var triggerY = Y-radius-size - orbit.linewidth/2;
+        var triggerX = CENTER.x;
+        var triggerY = CENTER.y-radius-size - orbit.linewidth/2;
         var trigger = two.makePolygon(triggerX,triggerY, size);
         trigger.fill = 'orangered';
         trigger.stroke = 'none';
@@ -120,10 +118,10 @@ window.onload = function() {
             }
             
             // Move trigger to the edge of the orbit based on the rotation
-            var distance = this.orbit.radius + size + this.orbit.linewidth/2
+            var dist = this.orbit.radius + size + this.orbit.linewidth/2
             var angle = this.rotation + Math.PI/2;
-            this.translation.x = CENTER.x + Math.cos(angle) * distance;
-            this.translation.y = CENTER.y + Math.sin(angle) * distance;
+            this.translation.x = CENTER.x + Math.cos(angle) * dist;
+            this.translation.y = CENTER.y + Math.sin(angle) * dist;
         }
 
 
@@ -141,7 +139,7 @@ window.onload = function() {
         note.stroke = 'none';
         note.linewidth = 0;
         note.orbit = null;
-        note.goalPos = { x:note.translation.x, y:note.translation.y };
+        //note.goalPos = { x:note.translation.x, y:note.translation.y };
 
         $(document).ready(function() {
             addInteractionDrag(note);
@@ -158,27 +156,41 @@ window.onload = function() {
                 }
                 this.orbit = null;
             }
+            
+            //create an elastic tween for moving to desired position
+            note.tweenMove = new TWEEN.Tween(this.translation)
+                .easing(TWEEN.Easing.Elastic.Out)
         }
         
         note.onDrag = function(e, offset, localClickPos) {
             // By default, move to the mouse location
-            this.goalPos.x = e.clientX - offset.x;// - localClickPos.x;
-            this.goalPos.y = e.clientY - offset.y;// - localClickPos.y;
+            //this.goalPos.x = e.clientX - offset.x;// - localClickPos.x;
+            //this.goalPos.y = e.clientY - offset.y;// - localClickPos.y;
+            var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
             
             // If close enough to an orbit, snap to that orbit
             for(var i=0;i<Orbits.length;i++) {
-                if (Math.abs(Util.pointDistance(CENTER, this.goalPos) - Orbits[i].radius) < .5*RADIUS_SNAP) {
+                if (Math.abs(Util.pointDistance(CENTER, goalPos) - Orbits[i].radius) < .5*RADIUS_SNAP) {
                     var dist = Orbits[i].radius;
-                    var dir = Util.pointDirection(CENTER, this.goalPos);
-                    this.goalPos.x = CENTER.x + Math.cos(dir) * dist;
-                    this.goalPos.y = CENTER.y + Math.sin(dir) * dist;
+                    var angle = Util.pointDirection(CENTER, goalPos);
+                    goalPos.x = CENTER.x + Math.cos(angle) * dist;
+                    goalPos.y = CENTER.y + Math.sin(angle) * dist;
                     note.orbit = Orbits[i]; // Assign this orbit
+                    
+                    //begin tweening
+                    note.tweenMove.to(goalPos, 1000);
+                    note.tweenMove.start();
+                    
                     break;
                 } else note.orbit = null;
             }
             
             // Actually move to the desired position
-            this.translation.set(this.goalPos.x, this.goalPos.y);
+            if (note.tweenMove._isPlaying == true) {
+                note.tweenMove._valuesEnd = goalPos;
+            } else {
+                note.translation.set(goalPos.x, goalPos.y);
+            }
         }
         
         note.onMouseUp = function(e, offset, localClickPos) {
