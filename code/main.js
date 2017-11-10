@@ -8,6 +8,7 @@ window.onload = function() {
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
+    var TEMPO = 60; //in beats per minute
 
     function Init(){
         // Initialize everything here 
@@ -43,7 +44,7 @@ window.onload = function() {
             this.trigger.update();
         }
         
-//What is this ' <<<<<<< HEAD ============ >>>>>>> 574389758463450348756435708963456 ' thing?
+//Omar, what is this ' <<<<<<< HEAD ============ >>>>>>> 574389758463450348756435708963456 ' thing?
         
 //<<<<<<< HEAD
         
@@ -54,12 +55,15 @@ window.onload = function() {
             var center = {x:two.width / 2, y:two.height / 2};
             var dist = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
 
-            //var newRadius = Math.round(dist / RADIUS_SNAP) * RADIUS_SNAP;
+            //Drag the orbit's radius around
             if (dist <= ORBIT_MAX_RADIUS) {
                 var newRadius = dist;
             } else {
                 var newRadius = ORBIT_MAX_RADIUS+(Math.sqrt(dist-ORBIT_MAX_RADIUS));
             }
+            
+            //Make the orbit's trigger invisible
+            trigger.rotate = false;
             
             setRadius(this, newRadius);
         }
@@ -68,12 +72,16 @@ window.onload = function() {
             //snap the orbit to a grid, tweening to make a smooth animation
             var snapToRadius = Math.max(1, Math.round(this.radius / RADIUS_SNAP)) * RADIUS_SNAP;
             
-            //create a tween
+            //create an elastic tween
+            var tweenTime = 500;
             var tweenSnap = new TWEEN.Tween(this)
-                .to({ radius:snapToRadius }, 500)
+                .to({ radius:snapToRadius }, tweenTime)
                 .easing(TWEEN.Easing.Elastic.Out)
                 .onUpdate(function() {
                     setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
+                })
+                .onComplete(function() {
+                    this._object.trigger.rotate = true;
                 })
             tweenSnap.start();
         }
@@ -89,16 +97,21 @@ window.onload = function() {
         trigger.stroke = 'none';
         trigger.rotation = Math.PI;
         trigger.orbit = orbit;
+        trigger.rotate = true;
         orbit.trigger = trigger;
 
-        trigger.update = function(){
-            // Move trigger to the edge of the orbit based on the rotation 
+        trigger.update = function() {
+            // Rotate the trigger
+            if (this.rotate == true) {
+                var theta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * time) - Math.PI;
+                this.rotation = theta;
+            }
+            
+            // Move trigger to the edge of the orbit based on the rotation
             var distance = this.orbit.radius + size + this.orbit.linewidth/2
             var angle = this.rotation + Math.PI/2;
             this.translation.x = X + Math.cos(angle) * distance;
-            this.translation.y = Y + Math.sin(angle) * distance ;
-
-            this.rotation += 0.1 * (1 - (this.orbit.radius / ORBIT_MAX_RADIUS));
+            this.translation.y = Y + Math.sin(angle) * distance;
         }
 
 
@@ -128,7 +141,7 @@ window.onload = function() {
         return note;
     }
     
-    //reuseable function for setting the radius of the svg circle
+    // Reuseable function for setting the radius of the svg circle
     var setRadius = function(circle, r) {
         circle.radius = r;
         _.each(circle.vertices, function(v) {
@@ -138,12 +151,16 @@ window.onload = function() {
    
     Init();
     
-    
+    // Create orbits, snapping their radii upon creation
     CreateOrbit(50);
     CreateOrbit(100);
+    CreateOrbit(300);
+    for(var i=0;i<Orbits.length;i++) {
+        setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP)
+    }
 
     
-    //interactivity code from https://two.js.org/examples/advanced-anchors.html
+    // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteractionDrag(shape) {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
@@ -222,17 +239,25 @@ window.onload = function() {
             .bind('touchstart', touchStart);
       }
 
+    var startTime = new Date();
+    var time = 0; //how long the app has been running, in seconds
+    function updateTime() {
+        time = (new Date() - startTime) / 1000;
+    }
 
     // Our main update loop!
     function update() {
+        // Keep track of time for time-synced animations and music
+        updateTime();
         // Tween's own update
         TWEEN.update();
         // Two's own update
         two.update();
         // Our own update goes here
-        for(var i=0;i<Orbits.length;i++)
+        for(var i=0;i<Orbits.length;i++) {
             Orbits[i].update();
-
+        }
+        
         // Ask the browser to run this on the next frame please
         requestAnimationFrame( update );
     }
