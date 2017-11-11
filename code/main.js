@@ -35,9 +35,7 @@ window.onload = function() {
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
 
-        $(document).ready(function() {
-            addInteraction(orbit);
-        });
+        addInteraction(orbit);
 
         Orbits.push(orbit);
 
@@ -138,9 +136,7 @@ window.onload = function() {
         note.sampler = null; //set by the sampler when it creates the note
         note.prevPos = {x:x, y:y};
 
-        $(document).ready(function() {
-            addInteraction(note);
-        });
+        addInteraction(note);
 
         Notes.push(note);
         
@@ -355,6 +351,8 @@ window.onload = function() {
             
             return false;
         };
+
+        two.update(); // Need to call this before attempting to touch the SVG so that Twojs will actually create it
 
         $(shape._renderer.elem)
             .css({
