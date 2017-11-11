@@ -46,9 +46,6 @@ window.onload = function() {
             this.trigger.update();
         }
         
-//Omar, what is this ' <<<<<<< HEAD ============ >>>>>>> 574389758463450348756435708963456 ' thing?
-        
-//<<<<<<< HEAD
         
         orbit.onDrag = function(e, offset, localClickPos) {
             var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
@@ -96,8 +93,7 @@ window.onload = function() {
                 n.translation.set(newX, newY);
             });
         }
-        
-//=======
+    
 
         // Create a triangle trigger for this orbit
         var size = 15;
@@ -126,7 +122,6 @@ window.onload = function() {
         }
 
 
-//>>>>>>> 79f3fda5ca421faf1a374cee9d2107854a1cb054
         return orbit;
     }
     
