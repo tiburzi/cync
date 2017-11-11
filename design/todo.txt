@@ -2,7 +2,7 @@
 
 
 Jon:
-- Figure out UI?
+- Figure out UI? HFDFhgdjlgsfdlkjghsjdlfhgsdksome radnoom thing
 - Create a bottom bar for all the buttons 
 - Add buttons ('samplers') for some pre-made samples
 - Click and drag a sampler to create a note
