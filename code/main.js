@@ -6,6 +6,7 @@ window.onload = function() {
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
+    var Trashes = [];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -13,6 +14,7 @@ window.onload = function() {
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = 20;
+    var TRASH_RADIUS = 0.4*RADIUS_SNAP;
 
     function Init(){
         // Initialize everything here 
@@ -22,6 +24,11 @@ window.onload = function() {
         var params = { fullscreen: true };
         two = new Two(params).appendTo(elem);
         CENTER = { x:two.width / 2, y:two.height / 2 };
+        
+        PALETTE = [];
+        PALETTE.push('#F7A055');
+        PALETTE.push('#F76055');
+        PALETTE.push('#9B3655');
     }
     
     function CreateOrbit(radius){
@@ -214,21 +221,34 @@ window.onload = function() {
         }
         
         note.onMouseUp = function(e, offset, localClickPos) {
-            if (this.orbit != null) {
-                // Add this note to its orbit
-                this.orbit.notes.push(this);
-                this.prevPos = {x:this.translation.x, y:this.translation.y};
-                
-                // If dragged directly from a sampler, tell the sampler its note has been removed
-                if (this.sampler != null) {
-                    this.sampler.hasNote = false;
-                    this.sampler = null;
+            // Check if note is over trashcan, to destroy it
+            if (isOverTrash(e.clientX, e.clientY)) {
+                if (this.sampler != null) {this.sampler.hasNote = false;} //if dragged directly from the sampler, spawn a new note
+                var index = Notes.indexOf(this);
+                if (index > -1) {
+                    Notes.splice(index, 1);
+                    two.remove(this);
                 }
             } else {
-                // Note is not placed on an orbit, so return to previous position
-                var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
-                note.tweenMove.to(this.prevPos, time);
-                note.tweenMove.start();
+                if (this.orbit != null) {
+
+                    // Add this note to its orbit
+                    this.orbit.notes.push(this);
+                    this.prevPos = {x:this.translation.x, y:this.translation.y};
+
+                    // If dragged directly from a sampler, tell the sampler its note has been removed
+                    if (this.sampler != null) {
+                        this.sampler.hasNote = false;
+                        this.sampler = null;
+                    }
+
+                } else {
+                    
+                    // Note is over blank space, so return to previous position
+                    var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
+                    note.tweenMove.to(this.prevPos, time);
+                    note.tweenMove.start();
+                }
             }
         }
 
@@ -240,14 +260,15 @@ window.onload = function() {
         return note;
     }
     
-    function CreateSampler() {
+    function CreateSampler(x, y) {
         /* This should create a sampler that:
             - holds a note that can be dragged away
             - creates a new note when the previous one is placed
             - contains a reference to an audio sample which it gives to its note children
             - load in an external sample
         */
-        var sampler = two.makeCircle(two.width-100, 100, SAMPLER_RADIUS);
+        var sampler = two.makeCircle(x, y, SAMPLER_RADIUS);
+        sampler.color = PALETTE[Samplers.length];
         sampler.fill = 'none';
         sampler.stroke = '#6b6b6b';
         sampler.linewidth = 4;
@@ -261,10 +282,67 @@ window.onload = function() {
             if (!this.hasNote) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
+                note.fill = this.color;
                 this.hasNote = true;
             }
         }
         return sampler;
+    }
+    
+    function CreateTrash(x, y) {
+        
+        var dist = .3*TRASH_RADIUS;
+        var line1 = two.makeLine(-dist, -dist, +dist, +dist);
+        var line2 = two.makeLine(-dist, +dist, +dist, -dist);
+        var X = two.makeGroup(line1, line2);
+        X.stroke = 'white';
+        X.linewidth = 8;
+        X.cap = 'round';
+        
+        var circle = two.makeCircle(0, 0, TRASH_RADIUS);
+        circle.fill = 'red';
+        circle.linewidth = 0;
+        
+        var trash = two.makeGroup(circle, X);
+        trash.center();
+        trash.translation.set(x,y);
+        trash.opacity = .5;
+        
+        Trashes.push(trash);
+        
+        addInteraction(trash);
+        $(trash._renderer.elem).css({
+                cursor: 'default'
+            })
+        
+        
+        trash.enter = function() {
+            // Make the trash pop a little
+            var tweenPop = new TWEEN.Tween(this)
+                .to({ scale:1.2 }, 200)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start();
+        }
+        
+        trash.leave = function() {
+            // Revert to normal scale
+            var tweenRevert = new TWEEN.Tween(this)
+                .to({ scale:1 }, 200)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start();
+        }
+        
+        return trash;
+    }
+    
+    var isOverTrash = function(x, y) {
+        if (Trashes.length > 0) {
+            // A trashcan does exist
+            var trash = Trashes[0]; // NOTE: we could expand this to include multiple trash cans objects
+            if (Util.pointDistance({x:x, y:y}, {x:trash.translation.x, y:trash.translation.y}) < TRASH_RADIUS) {
+                return true;
+            } else return false;
+        } else return false;
     }
     
     // Reuseable function for setting the radius of the svg circle
@@ -277,6 +355,9 @@ window.onload = function() {
    
     Init();
     
+    
+    CreateTrash(CENTER.x, CENTER.y);
+    
     // Create orbits, snapping their radii upon creation
     CreateOrbit(50);
     CreateOrbit(100);
@@ -284,8 +365,11 @@ window.onload = function() {
     for(var i=0;i<Orbits.length;i++) {
         setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP)
     }
-    CreateSampler();
-
+    
+    CreateSampler(two.width-100, 100);
+    CreateSampler(two.width-100, 200);
+    CreateSampler(two.width-100, 300);
+    
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
@@ -351,6 +435,18 @@ window.onload = function() {
             
             return false;
         };
+        var enter = function(e) {
+            e.preventDefault();
+            
+            //Call the shape's mouse enter method, if it has one
+            if (typeof shape.onMouseEnter === 'function') {shape.onMouseEnter(e, offset, localClickPos);}
+        };
+        var leave = function(e) {
+            e.preventDefault();
+            
+            //Call the shape's mouse leave method, if it has one
+            if (typeof shape.onMouseLeave === 'function') {shape.onMouseLeave(e, offset, localClickPos);}
+        };
 
         two.update(); // Need to call this before attempting to touch the SVG so that Twojs will actually create it
 
@@ -359,8 +455,9 @@ window.onload = function() {
                 cursor: 'move'
             })
             .bind('mousedown', dragStart)
-            .bind('touchstart', touchStart);
-        
+            .bind('touchstart', touchStart)
+            .bind('mouseenter', enter)
+            .bind('mouseleave', leave);
       }
 
     var startTime = new Date();

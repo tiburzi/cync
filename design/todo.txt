@@ -4,8 +4,6 @@
 Jon:
 - Figure out UI?
 - Create a bottom bar for all the buttons 
-- Add buttons ('samplers') for some pre-made samples
-- Click and drag a sampler to create a note
 
 Omar:
 - Create and drag in center to create new circle
@@ -29,3 +27,5 @@ Omar:
 - snap notes to orbits when close enough (with smooth tweening animation)
 - update note's positions when orbit changes
 - manage an orbit's notes with a list
+- Add buttons ('samplers') for some pre-made samples
+- Click and drag a sampler to create a note
