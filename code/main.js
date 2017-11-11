@@ -5,11 +5,14 @@ window.onload = function() {
     var two;
     var Orbits = [];
     var Notes = [];
+    var Samplers = [];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var CENTER = {};
+    var NOTE_RADIUS = 15;
+    var SAMPLER_RADIUS = 20;
 
     function Init(){
         // Initialize everything here 
@@ -33,7 +36,7 @@ window.onload = function() {
         orbit.notes = [];
 
         $(document).ready(function() {
-            addInteractionDrag(orbit);
+            addInteraction(orbit);
         });
 
         Orbits.push(orbit);
@@ -127,21 +130,36 @@ window.onload = function() {
         return orbit;
     }
     
-    function CreateNote(radius){
+    function CreateNote(x, y){
         /* This should create a note that:
             - Has a radius proportional to its volume
         */
-        var note = two.makeCircle(100, 100, radius);
+        var note = two.makeCircle(x, y, NOTE_RADIUS);
         note.fill = 'red';
         note.stroke = 'none';
         note.linewidth = 0;
+        note.radius = NOTE_RADIUS;
         note.orbit = null;
+        note.sampler = null; //set by the sampler when it creates the note
+        note.prevPos = {x:x, y:y};
 
         $(document).ready(function() {
-            addInteractionDrag(note);
+            addInteraction(note);
         });
 
         Notes.push(note);
+        
+        note.onCreate = function() {
+            //make the note tween to appear
+            note.radius = 0; //for some reason, setRadius() won't work here
+            var tweenCreate = new TWEEN.Tween(this)
+                .to({ radius:NOTE_RADIUS }, 200)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .onUpdate(function() {
+                    setRadius(this._object, this._object.radius);
+                })
+            tweenCreate.start();
+        }
         
         note.onMouseDown = function () {
             if (this.orbit != null) {
@@ -208,13 +226,54 @@ window.onload = function() {
             if (this.orbit != null) {
                 // Add this note to its orbit
                 this.orbit.notes.push(this);
+                this.prevPos = {x:this.translation.x, y:this.translation.y};
+                
+                // If dragged directly from a sampler, tell the sampler its note has been removed
+                if (this.sampler != null) {
+                    this.sampler.hasNote = false;
+                    this.sampler = null;
+                }
+            } else {
+                // Note is not placed on an orbit, so return to previous position
+                var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
+                note.tweenMove.to(this.prevPos, time);
+                note.tweenMove.start();
             }
         }
 
         note.update = function(){
             // For updating anything about the note
         }
+        
+        note.onCreate();
         return note;
+    }
+    
+    function CreateSampler() {
+        /* This should create a sampler that:
+            - holds a note that can be dragged away
+            - creates a new note when the previous one is placed
+            - contains a reference to an audio sample which it gives to its note children
+            - load in an external sample
+        */
+        var sampler = two.makeCircle(two.width-100, 100, SAMPLER_RADIUS);
+        sampler.fill = 'none';
+        sampler.stroke = '#6b6b6b';
+        sampler.linewidth = 4;
+        sampler.radius = SAMPLER_RADIUS;
+        sampler.hasNote = false;
+
+        Samplers.push(sampler);
+
+        sampler.update = function() {
+            // Check if the sampler needs another note
+            if (!this.hasNote) {
+                var note = CreateNote(this.translation.x, this.translation.y);
+                note.sampler = this;
+                this.hasNote = true;
+            }
+        }
+        return sampler;
     }
     
     // Reuseable function for setting the radius of the svg circle
@@ -234,11 +293,11 @@ window.onload = function() {
     for(var i=0;i<Orbits.length;i++) {
         setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP)
     }
-    CreateNote(15);
+    CreateSampler();
 
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
-    function addInteractionDrag(shape) {
+    function addInteraction(shape) {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
         var localClickPos = {x: 0, y: 0};
@@ -308,6 +367,7 @@ window.onload = function() {
             })
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart);
+        
       }
 
     var startTime = new Date();
@@ -328,8 +388,14 @@ window.onload = function() {
         for(var i=0;i<Orbits.length;i++) {
             Orbits[i].update();
         }
+        for(var i=0;i<Notes.length;i++) {
+            Notes[i].update();
+        }
+        for(var i=0;i<Samplers.length;i++) {
+            Samplers[i].update();
+        }
         
-        // Ask the browser to run this on the next frame please
+        // Ask the browser to run this on the next frame please   「 次のフラムをください。」
         requestAnimationFrame( update );
     }
 
