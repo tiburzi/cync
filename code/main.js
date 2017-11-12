@@ -352,6 +352,66 @@ window.onload = function() {
         return trash;
     }
     
+    function CreatePlus(x, y) {
+        
+        var dist = .4*TRASH_RADIUS;
+        var line1 = two.makeLine(0, -dist, 0, +dist);
+        var line2 = two.makeLine(-dist, 0, +dist, 0);
+        var X = two.makeGroup(line1, line2);
+        X.stroke = 'white';
+        X.linewidth = 8;
+        X.cap = 'round';
+        
+        var circle = two.makeCircle(0, 0, TRASH_RADIUS);
+        circle.fill = 'gray';
+        circle.linewidth = 0;
+        
+        var plus = two.makeGroup(circle, X);
+        plus.center();
+        plus.translation.set(x,y);
+        plus.opacity = .5;
+        plus.clicked = false;
+        
+        addInteraction(plus);
+        $(plus._renderer.elem).css({
+                cursor: 'default'
+            })
+        
+        plus.tweenToScale = function(s) {
+            var tween = new TWEEN.Tween(this)
+                .to({ scale:s }, 200)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start();
+        }
+        
+        plus.onMouseEnter = function() {
+            this.tweenToScale(1.2); // Make the trash pop a little
+        }
+        
+        plus.onMouseLeave = function() {
+            if (!this.clicked) {this.tweenToScale(1);} // Revert to normal scale if left unclicked
+        }
+        
+        plus.onMouseDown = function(e, offset, localClickPos) {
+            // Create a new orbit
+            this.clicked = true;
+            this.tweenToScale(0);
+            var orbit = CreateOrbit(10);
+            orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
+            $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+        }
+        
+        document.addEventListener('mouseup', function() { // Global mouse release
+            // Revert to normal scale if we can make more orbits
+            if (Orbits.length < MAX_ORBITS) {
+                plus.clicked = false;
+                plus.tweenToScale(1);
+            }
+        })
+        
+        return plus;
+    }
+    
     var isOverTrash = function(x, y) {
         if (Trashes.length > 0) {
             // A trashcan does exist
@@ -373,10 +433,10 @@ window.onload = function() {
     Init();
     
     
-    CreateTrash(CENTER.x, CENTER.y);
+    //CreateTrash(CENTER.x, CENTER.y);
+    CreatePlus(CENTER.x, CENTER.y);
     
     // Create orbits, snapping their radii upon creation
-    CreateOrbit(50);
     CreateOrbit(100);
     CreateOrbit(300);
     for(var i=0;i<Orbits.length;i++) {
