@@ -1,5 +1,6 @@
 --- Task List ---
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
+- figure out a way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
 
 
 Jon:
