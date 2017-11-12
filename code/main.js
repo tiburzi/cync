@@ -332,6 +332,16 @@ window.onload = function() {
                 .start();
         }
         
+        
+        /*document.getElementById(trash.id).addEventListener("dragenter", function(event) {
+            event.preventDefault();
+            console.log('drag enter triggered');
+        });
+        document.getElementById(trash.id).addEventListener("dragover", function(event) {
+            event.preventDefault();
+            console.log('drag over triggered');
+        });*/
+        
         return trash;
     }
     
@@ -457,7 +467,9 @@ window.onload = function() {
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
-            .bind('mouseleave', leave);
+            .bind('mouseleave', leave)
+            .bind('mouseover', function() {console.log('over')})
+            .bind('dragover', function() {console.log('drag over')});
       }
 
     var startTime = new Date();
