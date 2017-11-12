@@ -2,14 +2,19 @@
 
 
 Jon:
-- Figure out UI?
-- Create a bottom bar for all the buttons 
+- Figure out UI
+    - design sampler menu
+    - design music controls (tempo, play/pause, reset)
+    - design note volume control
+    - design orbit polygon and interactivity
+- Create a bottom bar for all the samplers
+- create toggeable polar grid option, with note snapping
 
 Omar:
-- Create and drag in center to create new circle
 - Drag circle to the center to destroy
+- Drag note to center to destroy it
 - Play a sound 
-- Play sound when triangle hits notch
+- Play sound when triangle hits note
 
 --- Done ---
 - Render a small circle on screen (solid color)
@@ -29,3 +34,4 @@ Omar:
 - manage an orbit's notes with a list
 - Add buttons ('samplers') for some pre-made samples
 - Click and drag a sampler to create a note
+- Create and drag in center to create new circle
