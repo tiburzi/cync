@@ -6,7 +6,6 @@ window.onload = function() {
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
-    var Trashes = [];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -14,7 +13,8 @@ window.onload = function() {
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = 20;
-    var TRASH_RADIUS = 0.4*RADIUS_SNAP;
+    var CENTER_RADIUS = 0.5*RADIUS_SNAP;
+    var DRAGGING_DESTROYABLE = false;
 
     function Init(){
         // Initialize everything here 
@@ -69,25 +69,40 @@ window.onload = function() {
             
             setRadius(this, newRadius);
             orbit.updateNotes();
+            
+            DRAGGING_DESTROYABLE = true;
         }
         
         orbit.onMouseUp = function(e) {
-            //snap the orbit to a grid, tweening to make a smooth animation
-            var snapToRadius = Math.max(1, Math.round(this.radius / RADIUS_SNAP)) * RADIUS_SNAP;
-            
-            //create an elastic tween
-            var tweenTime = 500;
-            var tweenSnap = new TWEEN.Tween(this)
-                .to({ radius:snapToRadius }, tweenTime)
-                .easing(TWEEN.Easing.Elastic.Out)
-                .onUpdate(function() {
-                    setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
-                    this._object.updateNotes();
-                })
-                .onComplete(function() {
-                    this._object.trigger.rotate = true;
-                })
-            tweenSnap.start();
+            // Check if note is over trash, to destroy it
+            if (isOverCenter(e.clientX, e.clientY)) {
+                var index = Orbits.indexOf(this);
+                if (index > -1) {
+                    Orbits.splice(index, 1);
+                    _.each(this.notes, function(n) {
+                       two.remove(n); 
+                    });
+                    two.remove(this.trigger);
+                    two.remove(this);
+                }
+            } else {
+                // Orbit is not over trash, so don't destroy it; snap it to a grid
+                var snapToRadius = Math.max(1, Math.round(this.radius / RADIUS_SNAP)) * RADIUS_SNAP;
+
+                // Create an elastic tween to make a smooth animation
+                var tweenTime = 500;
+                var tweenSnap = new TWEEN.Tween(this)
+                    .to({ radius:snapToRadius }, tweenTime)
+                    .easing(TWEEN.Easing.Elastic.Out)
+                    .onUpdate(function() {
+                        setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
+                        this._object.updateNotes();
+                    })
+                    .onComplete(function() {
+                        this._object.trigger.rotate = true;
+                    })
+                tweenSnap.start();
+            }
         }
         
         orbit.updateNotes = function() {
@@ -218,11 +233,13 @@ window.onload = function() {
             } else {
                 note.translation.set(goalPos.x, goalPos.y);
             }
+            
+            DRAGGING_DESTROYABLE = true;
         }
         
         note.onMouseUp = function(e, offset, localClickPos) {
-            // Check if note is over trashcan, to destroy it
-            if (isOverTrash(e.clientX, e.clientY)) {
+            // Check if note is over center trash, to destroy it
+            if (isOverCenter(e.clientX, e.clientY)) {
                 if (this.sampler != null) {this.sampler.hasNote = false;} //if dragged directly from the sampler, spawn a new note
                 var index = Notes.indexOf(this);
                 if (index > -1) {
@@ -289,72 +306,38 @@ window.onload = function() {
         return sampler;
     }
     
-    function CreateTrash(x, y) {
-        
-        var dist = .3*TRASH_RADIUS;
-        var line1 = two.makeLine(-dist, -dist, +dist, +dist);
-        var line2 = two.makeLine(-dist, +dist, +dist, -dist);
-        var X = two.makeGroup(line1, line2);
-        X.stroke = 'white';
-        X.linewidth = 8;
-        X.cap = 'round';
-        
-        var circle = two.makeCircle(0, 0, TRASH_RADIUS);
-        circle.fill = 'red';
-        circle.linewidth = 0;
-        
-        var trash = two.makeGroup(circle, X);
-        trash.center();
-        trash.translation.set(x,y);
-        trash.opacity = .5;
-        trash.hoverOver = false;
-        
-        Trashes.push(trash);
-        
-        addInteraction(trash);
-        $(trash._renderer.elem).css({
-                cursor: 'default'
-            })
-        
-        
-        trash.enter = function() {
-            // Make the trash pop a little
-            var tweenPop = new TWEEN.Tween(this)
-                .to({ scale:1.2 }, 200)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start();
-        }
-        
-        trash.leave = function() {
-            // Revert to normal scale
-            var tweenRevert = new TWEEN.Tween(this)
-                .to({ scale:1 }, 200)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start();
-        }
-        
-        trash.onMouseMove = function(e, offset, localClickPos) {
+    function CreateCenter(x, y) {
+        var CreateTrash = function(x, y) {
+
+            var dist = .3*CENTER_RADIUS;
+            var line1 = two.makeLine(-dist, -dist, +dist, +dist);
+            var line2 = two.makeLine(-dist, +dist, +dist, -dist);
+            var X = two.makeGroup(line1, line2);
+            X.stroke = 'white';
+            X.linewidth = 8;
+            X.cap = 'round';
+
+            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
+            circle.fill = 'red';
+            circle.linewidth = 0;
+
+            var trash = two.makeGroup(circle, X);
+            trash.center();
+            trash.translation.set(x,y);
+            trash.opacity = .5;
             
-            //this should be called whenever the mouse moves over the object,
-            //but it doesn't trigger if the mouse is dragging something
-            console.log('move');
-        }
+            trash.clicked = false;
+            trash.visible = true;
+            trash.hoverOver = false;
+
+            addInteraction(trash);
+            $(trash._renderer.elem).css({cursor: 'default'});
+
+            return trash;
+}
+        var CreatePlus = function(x, y) {
         
-        /*document.getElementById(trash.id).addEventListener("dragenter", function(event) {
-            event.preventDefault();
-            console.log('drag enter triggered');
-        });
-        document.getElementById(trash.id).addEventListener("dragover", function(event) {
-            event.preventDefault();
-            console.log('drag over triggered');
-        });*/
-        
-        return trash;
-    }
-    
-    function CreatePlus(x, y) {
-        
-        var dist = .4*TRASH_RADIUS;
+        var dist = .4*CENTER_RADIUS;
         var line1 = two.makeLine(0, -dist, 0, +dist);
         var line2 = two.makeLine(-dist, 0, +dist, 0);
         var X = two.makeGroup(line1, line2);
@@ -362,7 +345,7 @@ window.onload = function() {
         X.linewidth = 8;
         X.cap = 'round';
         
-        var circle = two.makeCircle(0, 0, TRASH_RADIUS);
+        var circle = two.makeCircle(0, 0, CENTER_RADIUS);
         circle.fill = 'gray';
         circle.linewidth = 0;
         
@@ -370,55 +353,110 @@ window.onload = function() {
         plus.center();
         plus.translation.set(x,y);
         plus.opacity = .5;
+        
         plus.clicked = false;
+        plus.visible = true;
+        plus.hoverOver = false;
         
         addInteraction(plus);
-        $(plus._renderer.elem).css({
-                cursor: 'default'
-            })
+        $(plus._renderer.elem).css({cursor: 'default'});
         
-        plus.tweenToScale = function(s) {
-            var tween = new TWEEN.Tween(this)
+        plus.onMouseDown = function(e, offset, localClickPos) {
+            if (this.visible) {
+                // Create a new orbit
+                this.clicked = true;
+                tweenToScale(this, 0);
+                var orbit = CreateOrbit(10);
+                orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
+                $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+            }
+        }
+        
+        return plus;
+    }
+        
+        var p = CreatePlus(x, y);
+        var t = CreateTrash(x, y);
+        var c = two.makeGroup(p, t);
+        c.state = 'plus';
+        
+        var tweenToScale = function(obj, s) {
+            // Define and start a tween to scale the object
+            var tweenScale = new TWEEN.Tween(obj)
                 .to({ scale:s }, 200)
                 .easing(TWEEN.Easing.Cubic.Out)
                 .start();
         }
-        
-        plus.onMouseEnter = function() {
-            this.tweenToScale(1.2); // Make the trash pop a little
-        }
-        
-        plus.onMouseLeave = function() {
-            if (!this.clicked) {this.tweenToScale(1);} // Revert to normal scale if left unclicked
-        }
-        
-        plus.onMouseDown = function(e, offset, localClickPos) {
-            // Create a new orbit
-            this.clicked = true;
-            this.tweenToScale(0);
-            var orbit = CreateOrbit(10);
-            orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
-            $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
-        }
-        
-        document.addEventListener('mouseup', function() { // Global mouse release
-            // Revert to normal scale if we can make more orbits
-            if (Orbits.length < MAX_ORBITS) {
-                plus.clicked = false;
-                plus.tweenToScale(1);
+
+        document.addEventListener('mousemove', function(e) { // Global mouse move
+            // Check if dragging destroyable
+            if (DRAGGING_DESTROYABLE) {
+                if ((c.getState() != 'trash') && (!p.clicked)) {
+                    c.setState('trash');
+                }
             }
-        })
+            
+            // Check if mouse is over the center
+            if (isOverCenter(e.clientX, e.clientY)) {
+                _.each(c.children, function(child) {
+                    if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
+                        tweenToScale(child, 1.2);
+                        child.hoverOver = true;
+                    }
+                });
+            } else {
+                _.each(c.children, function(child) {
+                    if ((child.visible) && (child.hoverOver) && (!child.clicked)) {
+                        tweenToScale(child, 1);
+                        child.hoverOver = false;
+                    }
+                });
+            }
+        });
+        document.addEventListener('mouseup', function(e) { // Global mouse move
+            /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
+            this ensures the dragged object's mouseUp event triggers before the trash state is updated,
+            properly destroying the object. */
+            setTimeout( function() {
+                c.setState('plus');
+                DRAGGING_DESTROYABLE = false;
+            }, 1);
+        });
         
-        return plus;
+        c.setState = function(s) {
+            c.state = s;
+            switch(s) {
+                case('plus'): {
+                    if (Orbits.length < MAX_ORBITS) {
+                        tweenToScale(p, 1);
+                        p.visible = true;
+                    } else p.visible = false;
+                    p.clicked = false;
+                    tweenToScale(t, 0);
+                    t.visible = false;
+                    break;
+                }
+                case('trash'): {
+                    tweenToScale(p, 0);
+                    p.visible = false;
+                    tweenToScale(t, 1);
+                    t.visible = true;
+                    break;
+                }
+            }
+        }
+        c.getState = function() {
+            return c.state;
+        }
+        
+        c.setState('plus');
+        return c;
     }
     
-    var isOverTrash = function(x, y) {
-        if (Trashes.length > 0) {
-            // A trashcan does exist
-            var trash = Trashes[0]; // NOTE: we could expand this to include multiple trash cans objects
-            if (Util.pointDistance({x:x, y:y}, {x:trash.translation.x, y:trash.translation.y}) < TRASH_RADIUS) {
-                return true;
-            } else return false;
+    // Reusable function for checking if position (probably mouse) is over the center add/delete area
+    var isOverCenter = function(x, y) {
+        if (Util.pointDistance(CENTER, {x:x, y:y}) < CENTER_RADIUS) {
+            return true;
         } else return false;
     }
     
@@ -432,9 +470,7 @@ window.onload = function() {
    
     Init();
     
-    
-    //CreateTrash(CENTER.x, CENTER.y);
-    CreatePlus(CENTER.x, CENTER.y);
+    var C = CreateCenter(CENTER.x, CENTER.y);
     
     // Create orbits, snapping their radii upon creation
     CreateOrbit(100);
