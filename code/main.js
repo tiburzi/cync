@@ -307,6 +307,7 @@ window.onload = function() {
         trash.center();
         trash.translation.set(x,y);
         trash.opacity = .5;
+        trash.hoverOver = false;
         
         Trashes.push(trash);
         
@@ -316,7 +317,7 @@ window.onload = function() {
             })
         
         
-        trash.onMouseEnter = function() {
+        trash.enter = function() {
             // Make the trash pop a little
             var tweenPop = new TWEEN.Tween(this)
                 .to({ scale:1.2 }, 200)
@@ -324,7 +325,7 @@ window.onload = function() {
                 .start();
         }
         
-        trash.onMouseLeave = function() {
+        trash.leave = function() {
             // Revert to normal scale
             var tweenRevert = new TWEEN.Tween(this)
                 .to({ scale:1 }, 200)
@@ -332,6 +333,12 @@ window.onload = function() {
                 .start();
         }
         
+        trash.onMouseMove = function(e, offset, localClickPos) {
+            
+            //this should be called whenever the mouse moves over the object,
+            //but it doesn't trigger if the mouse is dragging something
+            console.log('move');
+        }
         
         /*document.getElementById(trash.id).addEventListener("dragenter", function(event) {
             event.preventDefault();
@@ -457,19 +464,27 @@ window.onload = function() {
             //Call the shape's mouse leave method, if it has one
             if (typeof shape.onMouseLeave === 'function') {shape.onMouseLeave(e, offset, localClickPos);}
         };
+        var move = function(e) {
+            e.preventDefault();
+            
+            //Call the shape's mouse move method, if it has one
+            if (typeof shape.onMouseMove === 'function') {shape.onMouseMove(e, offset, localClickPos);}
+        };
 
         two.update(); // Need to call this before attempting to touch the SVG so that Twojs will actually create it
 
         $(shape._renderer.elem)
             .css({
-                cursor: 'move'
+                'cursor': 'move',
+                //'pointer-events': 'none'
             })
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
             .bind('mouseleave', leave)
-            .bind('mouseover', function() {console.log('over')})
-            .bind('dragover', function() {console.log('drag over')});
+            .bind('mousemove', move);
+            //.bind('mouseover', function() {console.log('over')})
+            //.bind('dragover', function() {console.log('drag over')});
       }
 
     var startTime = new Date();
