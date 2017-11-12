@@ -316,7 +316,7 @@ window.onload = function() {
             })
         
         
-        trash.enter = function() {
+        trash.onMouseEnter = function() {
             // Make the trash pop a little
             var tweenPop = new TWEEN.Tween(this)
                 .to({ scale:1.2 }, 200)
@@ -324,7 +324,7 @@ window.onload = function() {
                 .start();
         }
         
-        trash.leave = function() {
+        trash.onMouseLeave = function() {
             // Revert to normal scale
             var tweenRevert = new TWEEN.Tween(this)
                 .to({ scale:1 }, 200)
