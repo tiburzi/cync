@@ -116,6 +116,14 @@ window.onload = function() {
             this.polygon.update();
         }
         
+        orbit.removeNote = function(n) {
+            var index = this.notes.indexOf(n);
+            if (index > -1) {
+                this.notes.splice(index, 1);
+            }
+            this.polygon.update();
+        }
+        
         orbit.sortNotes = function() {
             this.notes.sort(function(a,b) {
                 return a.theta-b.theta; //order the notes by their theta values
@@ -152,7 +160,7 @@ window.onload = function() {
         // Create a polygon for this orbit
         var polygon = new Two.Path();
         two.add(polygon);
-        polygon.fill = 'gray';
+        polygon.fill = polygon.stroke = 'gray';
         polygon.opacity = .5;
         polygon.linewidth = 0;
         polygon.join = 'round';
@@ -169,7 +177,11 @@ window.onload = function() {
                 var v = new Two.Vector(this.orbit.translation.x + pt.x, this.orbit.translation.y + pt.y);
                 this.vertices.push(v);
             }
-            this.closed = (this.vertices.length > 2);
+            if (this.vertices.length > 2) {
+                this.linewidth = 0;
+            } else {
+                this.linewidth = 10;
+            }
         }
 
         return orbit;
@@ -185,6 +197,7 @@ window.onload = function() {
         note.linewidth = 0;
         note.radius = NOTE_RADIUS;
         note.orbit = null;
+        note.prevOrbit = null;
         note.sampler = null; //set by the sampler when it creates the note
         note.prevPos = {x:x, y:y};
         note.theta = 0; //direction (in radians) of the note relative to its orbit's center
@@ -203,13 +216,6 @@ window.onload = function() {
                     setRadius(this._object, this._object.radius);
                 })
             tweenCreate.start();
-        }
-        
-        note.updateTheta = function() {
-            if (this.orbit != null) {
-                this.theta = Util.pointDirection(this.orbit.translation, this.translation);
-                this.orbit.sortNotes();
-            }
         }
         
         note.onMouseDown = function () {
@@ -250,6 +256,7 @@ window.onload = function() {
                     
                     // If moved onto a new orbit
                     if ((note.orbit != Orbits[i])) {
+                        
                         // Add the note to the orbit
                         note.orbit = Orbits[i];
                         note.orbit.notes.push(note);
@@ -272,13 +279,9 @@ window.onload = function() {
             }
             
             if (notOnOrbit) {
-                // Remove this note from the orbit
                 if (note.orbit != null) {
-                    var index = note.orbit.notes.indexOf(note);
-                    if (index > -1) {
-                        note.orbit.notes.splice(index, 1);
-                    }
-                    note.orbit.polygon.update();
+                    // Just removed this note from an orbit
+                    note.orbit.removeNote(note);
                 }
                 note.orbit = null; //we don't want the for loop to overwrite this unless the note isn't by ANY of the orbits
             }
@@ -309,12 +312,30 @@ window.onload = function() {
                         this.sampler.hasNote = false;
                         this.sampler = null;
                     }
+                    
+                    // If the note was previously on a different orbit, update the one it was taken from
+                    if ((note.prevOrbit != null) && (note.prevOrbit != note.orbit)) {
+                        note.prevOrbit.removeNote(note);
+                    }
+                    note.prevOrbit = note.orbit;
                 } else {
                     // Note is over blank space, so return to previous position
                     var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
                     note.tweenMove.to(this.prevPos, time);
                     note.tweenMove.start();
+                    if (note.prevOrbit != null) { // If the note used to be on an orbit (as opposed to being dragged directly from a sampler)
+                        note.orbit = note.prevOrbit;
+                        note.orbit.notes.push(note);
+                        note.orbit.sortNotes();
+                    }
                 }
+            }
+        }
+        
+        note.updateTheta = function() {
+            if (this.orbit != null) {
+                this.theta = Util.pointDirection(this.orbit.translation, this.translation);
+                this.orbit.sortNotes();
             }
         }
 
