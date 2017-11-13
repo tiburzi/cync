@@ -106,12 +106,14 @@ window.onload = function() {
         }
         
         orbit.updateNotes = function() {
+            // Update the positions of the notes when the orbit resizes
             this.notes.forEach(function(n) {
                 var angle = Util.pointDirection(CENTER, n.translation);
                 var newX = CENTER.x + Math.cos(angle) * n.orbit.radius;
                 var newY = CENTER.y + Math.sin(angle) * n.orbit.radius;
                 n.translation.set(newX, newY);
             });
+            this.polygon.update();
         }
         
         orbit.sortNotes = function() {
@@ -148,10 +150,11 @@ window.onload = function() {
         }
         
         // Create a polygon for this orbit
-        var polygon = two.makePath(null, null, true);
-        polygon.fill = 'none';
-        polygon.stroke = "red";
-        polygon.linewidth = 10;
+        var polygon = new Two.Path();
+        two.add(polygon);
+        polygon.fill = 'gray';
+        polygon.opacity = .5;
+        polygon.linewidth = 0;
         polygon.join = 'round';
         polygon.cap = 'round';
         polygon.orbit = orbit;
@@ -210,15 +213,7 @@ window.onload = function() {
         }
         
         note.onMouseDown = function () {
-            /*if (this.orbit != null) {
-                // Remove this note from the orbit
-                var index = this.orbit.notes.indexOf(this);
-                if (index > -1) {
-                    this.orbit.notes.splice(index, 1);
-                }
-                this.orbit.polygon.update();
-                this.orbit = null;
-            }*/
+            note.prevPos = {x:note.translation.x, y:note.translation.y};
             
             //create an elastic tween for moving to desired position
             note.tweenMove = new TWEEN.Tween(this.translation)
@@ -240,6 +235,7 @@ window.onload = function() {
         note.onDrag = function(e, offset, localClickPos) {
             var notOnOrbit = true;
             var tweenTime = 150;
+            note.updateTheta();
             
             // By default, move to the mouse location
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
@@ -260,19 +256,15 @@ window.onload = function() {
                         note.orbit.sortNotes();
                         
                         // Begin a tween to smooth the transition moving onto the orbit
-                        startTween = true;
-                        note.tweenMove.to(goalPos, tweenTime)
-                            .start();
+                        note.tweenMove.to(goalPos, tweenTime).start();
                     }
                     note.orbit.polygon.update();
                     notOnOrbit = false;
                     break;
                     
                 } else {
-                    
                     // Begin a tween to smooth the transition moving off of the orbit
                     if ((note.orbit == Orbits[i])) {
-                        startTween = true;
                         note.tweenMove.to(goalPos, tweenTime);
                         note.tweenMove.start();
                     }
@@ -280,21 +272,16 @@ window.onload = function() {
             }
             
             if (notOnOrbit) {
-                // Remove this note from the orbit, if it's on one
+                // Remove this note from the orbit
                 if (note.orbit != null) {
                     var index = note.orbit.notes.indexOf(note);
                     if (index > -1) {
                         note.orbit.notes.splice(index, 1);
                     }
                     note.orbit.polygon.update();
-                    note.orbit = null;
                 }
-                
                 note.orbit = null; //we don't want the for loop to overwrite this unless the note isn't by ANY of the orbits
             }
-            
-            // Update the note's theta and sort the orbit
-            note.updateTheta();
             
             // Finally, actually move to the desired position
             if (note.tweenMove._isPlaying == true) {
@@ -302,7 +289,6 @@ window.onload = function() {
             } else {
                 note.translation.set(goalPos.x, goalPos.y);
             }
-            note.prevPos = {x:note.translation.x, y:note.translation.y};
             
             DRAGGING_DESTROYABLE = true;
         }
@@ -318,15 +304,12 @@ window.onload = function() {
                 }
             } else {
                 if (this.orbit != null) {
-                    
                     // If dragged directly from a sampler, tell the sampler its note has been removed
                     if (this.sampler != null) {
                         this.sampler.hasNote = false;
                         this.sampler = null;
                     }
-
                 } else {
-                    
                     // Note is over blank space, so return to previous position
                     var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
                     note.tweenMove.to(this.prevPos, time);
@@ -337,7 +320,6 @@ window.onload = function() {
 
         note.update = function(){
             // For updating anything about the note
-            
         }
         
         note.onCreate();
