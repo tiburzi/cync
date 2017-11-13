@@ -83,6 +83,7 @@ window.onload = function() {
                        two.remove(n); 
                     });
                     two.remove(this.trigger);
+                    two.remove(this.polygon);
                     two.remove(this);
                 }
             } else {
