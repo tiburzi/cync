@@ -13,6 +13,8 @@
 
 Jon:
 - create a basic way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
+- add subtle pulse animation to notes when played
+- play sample when sampler is clicked?
 
 
 Omar:
