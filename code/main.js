@@ -7,7 +7,7 @@ window.onload = function() {
     var Notes = [];
     var Samplers = [];
     var PALETTE = [];
-    var SOUND_FILES = ["bass","clap","cymbal"];
+    var SOUND_FILES = ["bass", "snare", "hihat_closed"];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -323,7 +323,7 @@ window.onload = function() {
         note.linewidth = 0;
         note.radius = NOTE_RADIUS;
         note.orbit = null;
-        note.prevOrbit = null;
+        note.prevOrbit = null; //used when returning to the note's previous location
         note.sampler = null; //set by the sampler when it creates the note
         note.fromSampler = false; //whether or not the note was just dragged from a sampler
         note.prevPos = {x:x, y:y};
@@ -370,13 +370,13 @@ window.onload = function() {
         }
         
         note.onDrag = function(e, offset, localClickPos) {
-            var notOnOrbit = true;
-            var tweenTime = 150;
-            
             // By default, move to the mouse location
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
             
             // If close enough to an orbit, snap to that orbit
+            var notOnOrbit = true;
+            var oldOrbit = this.orbit; //save in case orbit changes
+            var tweenTime = 150;
             for(var i=0;i<Orbits.length;i++) {
                 if (Math.abs(Util.pointDistance(CENTER, goalPos) - Orbits[i].radius) < .5*RADIUS_SNAP) {
                     var dist = Orbits[i].radius;
@@ -406,13 +406,11 @@ window.onload = function() {
                     }
                 }
             }
+            if (notOnOrbit) {note.orbit = null;}
             
-            if (notOnOrbit) {
-                if (note.orbit != null) {
-                    // Just removed this note from an orbit
-                    note.orbit.removeNote(note);
-                }
-                note.orbit = null; //we don't want the for loop to overwrite this unless the note isn't by ANY of the orbits
+            // If orbit has changed, removed the note from the orbit it was just on
+            if (note.orbit != oldOrbit && oldOrbit != null) {
+                oldOrbit.removeNote(note);
             }
             
             // Finally, actually move to the desired position
@@ -432,11 +430,6 @@ window.onload = function() {
         }
         
         note.onMouseUp = function(e, offset, localClickPos) {
-            // If the note was previously on a different orbit, update the one it was taken from
-            if ((note.prevOrbit != null) && (note.prevOrbit != note.orbit)) {
-                note.prevOrbit.removeNote(note);
-            }
-            
             // Check if note is over center trash, to destroy it
             if (isOverCenter(e.clientX, e.clientY)) {
                // If dragged directly from a sampler, tell the sampler its note has been removed
@@ -459,6 +452,7 @@ window.onload = function() {
                         this.fromSampler = false;
                     }
                     
+                    // Record the note's new orbit
                     note.prevOrbit = note.orbit;
                 } else {
                     // Note is over blank space, so return to previous position
