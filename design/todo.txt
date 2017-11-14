@@ -19,7 +19,7 @@ Jon:
 
 
 Omar:
-- Play a sound 
+
 - Play sound when triangle hits note
 
 
@@ -44,3 +44,4 @@ Omar:
 - Create and drag in center to create new circle
 - Drag note to center to destroy it
 - Drag circle to the center to destroy
+- Play a sound 

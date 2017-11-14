@@ -6,6 +6,8 @@ window.onload = function() {
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
+    var PALETTE = [];
+    var SOUND_FILES = ["bass","clap","cymbal"];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -21,8 +23,13 @@ window.onload = function() {
 
          // Make an instance of two and place it on the page.
         var elem = document.getElementById('main-container');
-        var params = { fullscreen: true };
+        var params = { fullscreen: true, width:'100%',height:'100%' };
         two = new Two(params).appendTo(elem);
+        // Make the SVG always maintain this aspect ratio
+        var w = 1080;
+        var h = 700;
+        two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
+        
         CENTER = { x:two.width / 2, y:two.height / 2 };
         
         PALETTE = [];
@@ -465,6 +472,8 @@ window.onload = function() {
         sampler.linewidth = 4;
         sampler.radius = SAMPLER_RADIUS;
         sampler.hasNote = false;
+        var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
+        sampler.audio = new Howl({src: fileName});
 
         Samplers.push(sampler);
 
@@ -473,6 +482,7 @@ window.onload = function() {
             if (!this.hasNote) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
+                note.sampler.audio.play();
                 note.fill = this.color;
                 this.hasNote = true;
             }
