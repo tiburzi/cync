@@ -6,6 +6,8 @@ window.onload = function() {
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
+    var PALETTE = [];
+    var SOUND_FILES = ["bass","clap","cymbal"];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -367,6 +369,8 @@ window.onload = function() {
         sampler.linewidth = 4;
         sampler.radius = SAMPLER_RADIUS;
         sampler.hasNote = false;
+        var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
+        sampler.audio = new Howl({src: fileName});
 
         Samplers.push(sampler);
 
@@ -375,6 +379,7 @@ window.onload = function() {
             if (!this.hasNote) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
+                note.sampler.audio.play();
                 note.fill = this.color;
                 this.hasNote = true;
             }
