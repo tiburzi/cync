@@ -21,8 +21,13 @@ window.onload = function() {
 
          // Make an instance of two and place it on the page.
         var elem = document.getElementById('main-container');
-        var params = { fullscreen: true };
+        var params = { fullscreen: true, width:'100%',height:'100%' };
         two = new Two(params).appendTo(elem);
+        // Make the SVG always maintain this aspect ratio
+        var w = 1080;
+        var h = 700;
+        two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
+        
         CENTER = { x:two.width / 2, y:two.height / 2 };
         
         PALETTE = [];
