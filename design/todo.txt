@@ -8,7 +8,7 @@
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - button for toggling polygons
-- drag-n-drop samples
+
 
 
 Jon:
@@ -19,7 +19,12 @@ Jon:
 
 Omar:
 - dynamic resizing window and content
-
+- mute orbit by double click
+- custom audio files
+	- importing new audio files via drag-n-drop anywhere on screen
+	- assign new audio files to samplers (either new or preexisting)
+	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
+	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 
 
 --- Done ---
