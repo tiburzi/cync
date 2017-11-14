@@ -170,8 +170,10 @@ window.onload = function() {
         orbit.polygon = polygon;
         
         polygon.prevMousePos = new Two.Vector(0, 0);
-        
-        addInteraction(polygon);
+        polygon.hover = false;
+        polygon.dragging = false;
+        polygon.maxOpacity = 0.2; //this is what we tween to
+        polygon.op = 0; //custom variable for opacity (see method setOpacity())
         
         polygon.setOpacity = function(op) {
             /*
@@ -186,29 +188,58 @@ window.onload = function() {
             DOMelem.removeAttribute('fill-opacity');
             DOMelem.removeAttribute('stroke-opacity');
             DOMelem.setAttribute('opacity', op.toString());
+            this.op = op;
             //console.log(document.getElementById(polygon.id));
         }
-        polygon.setOpacity(0.2);
+        
+        polygon.tweenFade = new TWEEN.Tween(polygon)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .onUpdate(function() {
+                this._object.setOpacity(this._object.op);
+            });
+        polygon.appear = function() {
+            this.tweenFade.to({ op:this.maxOpacity }, 500)
+                .onComplete(function() {
+                    //do nothing: we need an placeholder function to cancel the function set in polygon.disappear()
+                })
+                .start();
+            $(this._renderer.elem).css({'cursor': 'move'});
+            this.fill = this.stroke = 'gray';
+        }
+        polygon.disappear = function() {
+            this.tweenFade.to({ op:0 }, 500)
+                .onComplete(function() {
+                    $(this._object._renderer.elem).css({'cursor': 'default'});
+                    this._object.fill = this._object.stroke = 'none';
+                })
+                .start();
+        }
+        
+        addInteraction(polygon);
         
         polygon.onMouseDown = function(e, offset, localClickPos) {
-            this.prevMousePos = {x:e.clientX, y:e.clientY};
+            if (this.op > 0) {
+                this.prevMousePos = {x:e.clientX, y:e.clientY};
+                this.dragging = true;
+            }
         }
-        
         polygon.onDrag = function(e, offset, localClickPos) {
-            //this.fill = "red";
-            var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
-            var dist = this.orbit.radius;
-            _.each(this.orbit.notes, function(n) {
-                n.theta += dtheta;
-                n.translation.x = CENTER.x + Math.cos(n.theta) * dist;
-                n.translation.y = CENTER.y + Math.sin(n.theta) * dist;
-            });
-            this.update();
-            this.prevMousePos = {x:e.clientX, y:e.clientY};
+            if (this.dragging) {
+                polygon.fill = polygon.stroke = 'red';
+                var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
+                var dist = this.orbit.radius;
+                _.each(this.orbit.notes, function(n) {
+                    n.theta += dtheta;
+                    n.translation.x = CENTER.x + Math.cos(n.theta) * dist;
+                    n.translation.y = CENTER.y + Math.sin(n.theta) * dist;
+                });
+                this.update();
+                this.prevMousePos = {x:e.clientX, y:e.clientY};
+            }
         }
-        
         polygon.onMouseUp = function(e, offset, localClickPos) {
-            //this.fill = "gray";
+            polygon.fill = polygon.stroke = 'gray';
+            this.dragging = false;
             
             // Update the orbit's notes' theta values and sort them
             _.each(this.orbit.notes, function(n) {
@@ -216,6 +247,19 @@ window.onload = function() {
             });
             polygon.orbit.sortNotes();
         }
+        polygon.onMouseHover = function() {
+            this.hover = true;
+        }
+        polygon.onMouseOut = function(e, offset, localClickPos) {
+            polygon.hover = false;
+            if (!this.dragging) {this.disappear();}
+        }
+        document.addEventListener('mouseup', function(e) { // Global mouse up
+            if (polygon.dragging && !polygon.hover) {
+                polygon.dragging = false;
+                polygon.disappear();
+            }
+        });
         
         polygon.update = function() {
             // Update the vertices based on the note array of the orbit
@@ -229,6 +273,7 @@ window.onload = function() {
             this.closed = true;
         }
 
+        polygon.setOpacity(0);
         return orbit;
     }
     
@@ -263,7 +308,11 @@ window.onload = function() {
             tweenCreate.start();
         }
         
-        note.onMouseDown = function () {
+        note.onMouseHover = function(e, offset, localClickPos) {
+            if (this.orbit != null) {this.orbit.polygon.appear();}
+        }
+        
+        note.onMouseDown = function (e, offset, localClickPos) {
             note.prevPos = {x:note.translation.x, y:note.translation.y};
             
             //create an elastic tween for moving to desired position
@@ -684,6 +733,18 @@ window.onload = function() {
             //Call the shape's mouse move method, if it has one
             if (typeof shape.onMouseMove === 'function') {shape.onMouseMove(e, offset, localClickPos);}
         };
+        var hover = function(e) {
+            e.preventDefault();
+            
+            //Call the shape's mouse move method, if it has one
+            if (typeof shape.onMouseHover === 'function') {shape.onMouseHover(e, offset, localClickPos);}
+        };
+        var out = function(e) {
+            e.preventDefault();
+            
+            //Call the shape's mouse move method, if it has one
+            if (typeof shape.onMouseOut === 'function') {shape.onMouseOut(e, offset, localClickPos);}
+        };
 
         two.update(); // Need to call this before attempting to touch the SVG so that Twojs will actually create it
 
@@ -695,8 +756,10 @@ window.onload = function() {
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
-            .bind('mouseleave', leave)
-            .bind('mousemove', move);
+            .bind('mouseleave', leave) //fires when mouse leaves object entirely
+            .bind('mousemove', move)
+            .bind('mouseover', hover)
+            .bind('mouseout', out); //fires when mouse leaves object, or enters one of its children
             //.bind('mouseover', function() {console.log('over')})
             //.bind('dragover', function() {console.log('drag over')});
       }
