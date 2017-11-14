@@ -151,13 +151,31 @@ window.onload = function() {
         trigger.rotation = Math.PI;
         trigger.orbit = orbit;
         trigger.rotate = true;
+        trigger.theta = 0;
         orbit.trigger = trigger;
 
         trigger.update = function() {
+            // Record angle theta before updating
+            var oldTheta = this.theta;
+            
             // Rotate the trigger
             if (this.rotate == true) {
-                var theta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * time) - Math.PI;
-                this.rotation = theta;
+                // Set a new angle theta
+                var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * time) - Math.PI;
+                this.rotation = newTheta;
+                this.theta = ((newTheta-(Math.PI/2)) % (2*Math.PI)) - Math.PI; //lots of maths because two.rotation, note.theta, and the visual rotation all have different spots for 0°
+                
+                // Play notes that the trigger just passed
+                for (var i=0; i<this.orbit.notes.length; i++) {
+                    var n = this.orbit.notes[i];
+                    var nt = n.theta;
+                    if (nt != null) { //just in case
+                        if (nt > oldTheta && nt <= this.theta) {
+                            // Trigger a note!
+                            n.sampler.audio.play();
+                        }
+                    } else {console.log("error: note on orbit "+this.orbit+" has theta = 'null'.")}
+                }
             }
             
             // Move trigger to the edge of the orbit based on the rotation
@@ -194,11 +212,13 @@ window.onload = function() {
             So, to get the desired effect, we have to go in manually and override Two.js's presets.
             */
             var DOMelem = document.getElementById(polygon.id)
-            DOMelem.removeAttribute('fill-opacity');
-            DOMelem.removeAttribute('stroke-opacity');
-            DOMelem.setAttribute('opacity', op.toString());
-            this.op = op;
-            //console.log(document.getElementById(polygon.id));
+            if (DOMelem != null) { //it's possible the polygon doesn't exist anymore; for instance, it was destroyed during a tween
+                DOMelem.removeAttribute('fill-opacity');
+                DOMelem.removeAttribute('stroke-opacity');
+                DOMelem.setAttribute('opacity', op.toString());
+                this.op = op;
+                //console.log(document.getElementById(polygon.id));
+            }
         }
         
         polygon.tweenFade = new TWEEN.Tween(polygon)
@@ -305,6 +325,7 @@ window.onload = function() {
         note.orbit = null;
         note.prevOrbit = null;
         note.sampler = null; //set by the sampler when it creates the note
+        note.fromSampler = false; //whether or not the note was just dragged from a sampler
         note.prevPos = {x:x, y:y};
         note.theta = 0; //direction (in radians) of the note relative to its orbit's center
 
@@ -411,9 +432,20 @@ window.onload = function() {
         }
         
         note.onMouseUp = function(e, offset, localClickPos) {
+            // If the note was previously on a different orbit, update the one it was taken from
+            if ((note.prevOrbit != null) && (note.prevOrbit != note.orbit)) {
+                note.prevOrbit.removeNote(note);
+            }
+            
             // Check if note is over center trash, to destroy it
             if (isOverCenter(e.clientX, e.clientY)) {
-                if (this.sampler != null) {this.sampler.hasNote = false;} //if dragged directly from the sampler, spawn a new note
+               // If dragged directly from a sampler, tell the sampler its note has been removed
+                if (this.fromSampler == true) {
+                    this.sampler.hasNote = false;
+                    this.fromSampler = false;
+                }
+                
+                // Delete this note
                 var index = Notes.indexOf(this);
                 if (index > -1) {
                     Notes.splice(index, 1);
@@ -422,15 +454,11 @@ window.onload = function() {
             } else {
                 if (this.orbit != null) {
                     // If dragged directly from a sampler, tell the sampler its note has been removed
-                    if (this.sampler != null) {
+                    if (this.fromSampler == true) {
                         this.sampler.hasNote = false;
-                        this.sampler = null;
+                        this.fromSampler = false;
                     }
                     
-                    // If the note was previously on a different orbit, update the one it was taken from
-                    if ((note.prevOrbit != null) && (note.prevOrbit != note.orbit)) {
-                        note.prevOrbit.removeNote(note);
-                    }
                     note.prevOrbit = note.orbit;
                 } else {
                     // Note is over blank space, so return to previous position
@@ -484,7 +512,7 @@ window.onload = function() {
             if (!this.hasNote) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
-                note.sampler.audio.play();
+                note.fromSampler = true;
                 note.fill = this.color;
                 this.hasNote = true;
             }
