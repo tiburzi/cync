@@ -163,8 +163,7 @@ window.onload = function() {
         var polygon = new Two.Path();
         two.add(polygon);
         polygon.fill = polygon.stroke = 'gray';
-        polygon.opacity = .2;
-        polygon.linewidth = 0;
+        polygon.linewidth = 2*NOTE_RADIUS+10;
         polygon.join = 'round';
         polygon.cap = 'round';
         polygon.orbit = orbit;
@@ -174,12 +173,29 @@ window.onload = function() {
         
         addInteraction(polygon);
         
+        polygon.setOpacity = function(op) {
+            /*
+            This custom function manually sets the opacity of the polygon.
+            
+            Two.js's has a built-in method for setting an object's opacity ( "path.opacity()" ),
+            which sets the paramaters 'stroke-opacity' and 'fill-opacity' of the DOM element.
+            This is not the same as 'opacity', a different parameter that produces a different result!
+            So, to get the desired effect, we have to go in manually and override Two.js's presets.
+            */
+            var DOMelem = document.getElementById(polygon.id)
+            DOMelem.removeAttribute('fill-opacity');
+            DOMelem.removeAttribute('stroke-opacity');
+            DOMelem.setAttribute('opacity', op.toString());
+            console.log(document.getElementById(polygon.id));
+        }
+        polygon.setOpacity(0.2);
+        
         polygon.onMouseDown = function(e, offset, localClickPos) {
             this.prevMousePos = {x:e.clientX, y:e.clientY};
         }
         
         polygon.onDrag = function(e, offset, localClickPos) {
-            this.fill = "red";
+            //this.fill = "red";
             var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
             var dist = this.orbit.radius;
             _.each(this.orbit.notes, function(n) {
@@ -192,7 +208,13 @@ window.onload = function() {
         }
         
         polygon.onMouseUp = function(e, offset, localClickPos) {
-            this.fill = "gray";
+            //this.fill = "gray";
+            
+            // Update the orbit's notes' theta values and sort them
+            _.each(this.orbit.notes, function(n) {
+                n.theta = Util.pointDirection(CENTER, n.translation); //easiest way to get theta in range [-pi, pi)
+            });
+            polygon.orbit.sortNotes();
         }
         
         polygon.update = function() {
@@ -204,13 +226,14 @@ window.onload = function() {
                 var v = new Two.Vector(this.orbit.translation.x + pt.x, this.orbit.translation.y + pt.y);
                 this.vertices.push(v);
             }
+            this.closed = true;
             
             // Toggle line or polygon depending on number of vertices
-            if (this.vertices.length > 2) {
+            /*if (this.vertices.length > 2) {
                 this.linewidth = 0;
             } else {
                 this.linewidth = 10;
-            }
+            }*/
         }
 
         return orbit;
