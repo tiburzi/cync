@@ -186,7 +186,7 @@ window.onload = function() {
             DOMelem.removeAttribute('fill-opacity');
             DOMelem.removeAttribute('stroke-opacity');
             DOMelem.setAttribute('opacity', op.toString());
-            console.log(document.getElementById(polygon.id));
+            //console.log(document.getElementById(polygon.id));
         }
         polygon.setOpacity(0.2);
         
@@ -227,13 +227,6 @@ window.onload = function() {
                 this.vertices.push(v);
             }
             this.closed = true;
-            
-            // Toggle line or polygon depending on number of vertices
-            /*if (this.vertices.length > 2) {
-                this.linewidth = 0;
-            } else {
-                this.linewidth = 10;
-            }*/
         }
 
         return orbit;
@@ -293,7 +286,6 @@ window.onload = function() {
         note.onDrag = function(e, offset, localClickPos) {
             var notOnOrbit = true;
             var tweenTime = 150;
-            note.updateTheta();
             
             // By default, move to the mouse location
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
@@ -317,7 +309,6 @@ window.onload = function() {
                         // Begin a tween to smooth the transition moving onto the orbit
                         note.tweenMove.to(goalPos, tweenTime).start();
                     }
-                    note.orbit.polygon.update();
                     notOnOrbit = false;
                     break;
                     
@@ -343,6 +334,12 @@ window.onload = function() {
                 note.tweenMove._valuesEnd = goalPos;
             } else {
                 note.translation.set(goalPos.x, goalPos.y);
+            }
+            
+            // After moving, update the notes and polygon of the orbit
+            if (note.orbit != null) {
+                note.updateTheta();
+                note.orbit.polygon.update();
             }
             
             DRAGGING_DESTROYABLE = true;
@@ -401,7 +398,6 @@ window.onload = function() {
     
     function CreateSampler(x, y) {
         /* This should create a sampler that:
-            - holds a note that can be dragged away
             - creates a new note when the previous one is placed
             - contains a reference to an audio sample which it gives to its note children
             - load in an external sample
