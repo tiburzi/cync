@@ -250,6 +250,13 @@ window.onload = function() {
         polygon.onMouseHover = function() {
             this.hover = true;
         }
+        polygon.onMouseEnter = function() {
+            if (this.op > 0) {
+                /* If opacity>0 when the mouse enters, that means the mouse *just* left the polygon, and it is fading away.
+                   So, make it appear again. */
+                this.appear();
+            }
+        }
         polygon.onMouseOut = function(e, offset, localClickPos) {
             polygon.hover = false;
             if (!this.dragging) {this.disappear();}
