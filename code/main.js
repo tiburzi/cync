@@ -158,19 +158,45 @@ window.onload = function() {
             this.translation.y = CENTER.y + Math.sin(angle) * dist;
         }
         
+        
         // Create a polygon for this orbit
         var polygon = new Two.Path();
         two.add(polygon);
         polygon.fill = polygon.stroke = 'gray';
-        polygon.opacity = .5;
+        polygon.opacity = .2;
         polygon.linewidth = 0;
         polygon.join = 'round';
         polygon.cap = 'round';
         polygon.orbit = orbit;
         orbit.polygon = polygon;
         
+        polygon.prevMousePos = new Two.Vector(0, 0);
+        
+        addInteraction(polygon);
+        
+        polygon.onMouseDown = function(e, offset, localClickPos) {
+            this.prevMousePos = {x:e.clientX, y:e.clientY};
+        }
+        
+        polygon.onDrag = function(e, offset, localClickPos) {
+            this.fill = "red";
+            var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
+            var dist = this.orbit.radius;
+            _.each(this.orbit.notes, function(n) {
+                n.theta += dtheta;
+                n.translation.x = CENTER.x + Math.cos(n.theta) * dist;
+                n.translation.y = CENTER.y + Math.sin(n.theta) * dist;
+            });
+            this.update();
+            this.prevMousePos = {x:e.clientX, y:e.clientY};
+        }
+        
+        polygon.onMouseUp = function(e, offset, localClickPos) {
+            this.fill = "gray";
+        }
+        
         polygon.update = function() {
-            // Update the vertices
+            // Update the vertices based on the note array of the orbit
             this.vertices.length = 0; //reset the array
             for (var i=0; i<this.orbit.notes.length; i++) {
                 var n = this.orbit.notes[i];
@@ -178,6 +204,8 @@ window.onload = function() {
                 var v = new Two.Vector(this.orbit.translation.x + pt.x, this.orbit.translation.y + pt.y);
                 this.vertices.push(v);
             }
+            
+            // Toggle line or polygon depending on number of vertices
             if (this.vertices.length > 2) {
                 this.linewidth = 0;
             } else {
