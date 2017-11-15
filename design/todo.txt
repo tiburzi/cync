@@ -19,7 +19,6 @@ Jon:
 
 Omar:
 - dynamic resizing window and content
-- mute orbit by double click
 - custom audio files
 	- importing new audio files via drag-n-drop anywhere on screen
 	- assign new audio files to samplers (either new or preexisting)
@@ -55,3 +54,4 @@ Omar:
     - grab the polygon to rotate it
     - make the polygon look good aesthetically
 - Play sound when triangle hits note
+- mute orbit by double click
