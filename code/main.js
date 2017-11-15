@@ -604,7 +604,7 @@ window.onload = function() {
             trash.hoverOver = false;
 
             addInteraction(trash);
-            $(trash._renderer.elem).css({cursor: 'default'});
+            setCursor(trash, 'default');
 
             return trash;
 }
@@ -631,7 +631,7 @@ window.onload = function() {
             plus.hoverOver = false;
 
             addInteraction(plus);
-            $(plus._renderer.elem).css({cursor: 'default'});
+            setCursor(plus, 'pointer');
 
             plus.onMouseDown = function(e, offset, localClickPos) {
                 if (this.visible) {
@@ -740,6 +740,7 @@ window.onload = function() {
         dial.stroke = '#333333';
         
         addInteraction(dial);
+        setCursor(dial, 'pointer');
         
         dial.onDrag = function(e, offset, localClickPos) {
             this.slider.value = (y - Math.min( y, Math.max( y-length, e.clientY ) )) / length;
@@ -764,6 +765,7 @@ window.onload = function() {
         btn.hoverOver = false;
         
         addInteraction(btn);
+        setCursor(btn, 'pointer');
         
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
@@ -802,6 +804,9 @@ window.onload = function() {
             .to({ scale:s }, time)
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
+    }
+    var setCursor = function(obj, type) {
+        $(obj._renderer.elem).css({cursor: String(type)});
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
