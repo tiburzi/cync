@@ -354,12 +354,12 @@ window.onload = function() {
             polygon.hover = false;
             if (!this.dragging) {this.disappear();}
         }
-        document.addEventListener('mouseup', function(e) { // Global mouse up
+        polygon.onGlobalMouseUp = function(e) {
             if (polygon.dragging && !polygon.hover) {
                 polygon.dragging = false;
                 polygon.disappear();
             }
-        });
+        };
         
         polygon.update = function() {
             // Update the vertices based on the note array of the orbit
@@ -584,7 +584,6 @@ window.onload = function() {
             A button that either which adds orbits (+), or destroys notes and orbits dragged onto it (-).
         */
         var CreateTrash = function(x, y) {
-
             var dist = .4*CENTER_RADIUS;
             var line = two.makeLine(-dist, 0, +dist, 0);
             line.stroke = 'white';
@@ -610,60 +609,53 @@ window.onload = function() {
             return trash;
 }
         var CreatePlus = function(x, y) {
-        
-        var dist = .4*CENTER_RADIUS;
-        var line1 = two.makeLine(0, -dist, 0, +dist);
-        var line2 = two.makeLine(-dist, 0, +dist, 0);
-        var X = two.makeGroup(line1, line2);
-        X.stroke = 'white';
-        X.linewidth = LINE_W;
-        X.cap = 'round';
-        
-        var circle = two.makeCircle(0, 0, CENTER_RADIUS);
-        circle.fill = 'gray';
-        circle.linewidth = 0;
-        
-        var plus = two.makeGroup(circle, X);
-        plus.center();
-        plus.translation.set(x,y);
-        plus.opacity = .5;
-        
-        plus.clicked = false;
-        plus.visible = true;
-        plus.hoverOver = false;
-        
-        addInteraction(plus);
-        $(plus._renderer.elem).css({cursor: 'default'});
-        
-        plus.onMouseDown = function(e, offset, localClickPos) {
-            if (this.visible) {
-                // Create a new orbit
-                this.clicked = true;
-                tweenToScale(this, 0);
-                var orbit = CreateOrbit(10);
-                orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
-                $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+            var dist = .4*CENTER_RADIUS;
+            var line1 = two.makeLine(0, -dist, 0, +dist);
+            var line2 = two.makeLine(-dist, 0, +dist, 0);
+            var X = two.makeGroup(line1, line2);
+            X.stroke = 'white';
+            X.linewidth = LINE_W;
+            X.cap = 'round';
+
+            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
+            circle.fill = 'gray';
+            circle.linewidth = 0;
+
+            var plus = two.makeGroup(circle, X);
+            plus.center();
+            plus.translation.set(x,y);
+            plus.opacity = .5;
+
+            plus.clicked = false;
+            plus.visible = true;
+            plus.hoverOver = false;
+
+            addInteraction(plus);
+            $(plus._renderer.elem).css({cursor: 'default'});
+
+            plus.onMouseDown = function(e, offset, localClickPos) {
+                if (this.visible) {
+                    // Create a new orbit
+                    this.clicked = true;
+                    tweenToScale(this, 0, 200);
+                    var orbit = CreateOrbit(10);
+                    orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
+                    $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+                }
             }
+
+            return plus;
         }
-        
-        return plus;
-    }
         
         var p = CreatePlus(x, y);
         var t = CreateTrash(x, y);
         var c = two.makeGroup(p, t);
         c.state = 'plus';
         LAYERS['center'].add(c);
-        
-        var tweenToScale = function(obj, s) {
-            // Define and start a tween to scale the object
-            var tweenScale = new TWEEN.Tween(obj)
-                .to({ scale:s }, 200)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start();
-        }
 
-        document.addEventListener('mousemove', function(e) { // Global mouse move
+        addInteraction(c);
+        
+        c.onGlobalMouseMove = function(e) {
             // Check if dragging destroyable
             if (DRAGGING_DESTROYABLE) {
                 if ((c.getState() != 'trash') && (!p.clicked)) {
@@ -675,20 +667,20 @@ window.onload = function() {
             if (isOverCenter(e.clientX, e.clientY)) {
                 _.each(c.children, function(child) {
                     if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1.2);
+                        tweenToScale(child, 1.2, 200);
                         child.hoverOver = true;
                     }
                 });
             } else {
                 _.each(c.children, function(child) {
                     if ((child.visible) && (child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1);
+                        tweenToScale(child, 1, 200);
                         child.hoverOver = false;
                     }
                 });
             }
-        });
-        document.addEventListener('mouseup', function(e) { // Global mouse move
+        };
+        c.onGlobalMouseUp = function(e) {
             /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
             this ensures the dragged object's mouseUp event triggers before the trash state is updated,
             properly destroying the object. */
@@ -696,25 +688,25 @@ window.onload = function() {
                 c.setState('plus');
                 DRAGGING_DESTROYABLE = false;
             }, 1);
-        });
+        };
         
         c.setState = function(s) {
             c.state = s;
             switch(s) {
                 case('plus'): {
                     if (Orbits.length < MAX_ORBITS) {
-                        tweenToScale(p, 1);
+                        tweenToScale(p, 1, 200);
                         p.visible = true;
                     } else p.visible = false;
                     p.clicked = false;
-                    tweenToScale(t, 0);
+                    tweenToScale(t, 0, 200);
                     t.visible = false;
                     break;
                 }
                 case('trash'): {
-                    tweenToScale(p, 0);
+                    tweenToScale(p, 0, 200);
                     p.visible = false;
-                    tweenToScale(t, 1);
+                    tweenToScale(t, 1, 200);
                     t.visible = true;
                     break;
                 }
@@ -732,13 +724,20 @@ window.onload = function() {
         /*
             A template for interactive sliders that vary a parameter (such as volume).
         */
+        /*var back = two.makeLine(x, y, x, y-length);
+        back.linewidth = 6*LINE_W;
+        back.cap = 'round';
+        back.stroke = '#dddddd';*/
+        
         var line = two.makeLine(x, y, x, y-length);
         line.linewidth = LINE_W;
         line.cap = 'round';
+        line.stroke = '#333333';
         
         var dial = two.makeCircle(x, y, PHI*LINE_W);
         dial.fill = 'white';
         dial.linewidth = LINE_W;
+        dial.stroke = '#333333';
         
         addInteraction(dial);
         
@@ -751,25 +750,58 @@ window.onload = function() {
         }
         
         var slider = two.makeGroup(line, dial);
-        slider.stroke = '#333333';
         slider.value = .9;
         dial.slider = slider;
         dial.update();
     }
     
-    // Reusable function for checking if position (probably mouse) is over the center add/delete area
-    var isOverCenter = function(x, y) {
-        if (Util.pointDistance(CENTER, {x:x, y:y}) < CENTER_RADIUS) {
+    function CreateButton(x, y, r) {
+        var btn = two.makeCircle(x, y, r);
+        btn.fill = '#cccccc';
+        btn.stroke = 'none';
+        btn.linewidth = 0;
+        btn.radius = r;
+        btn.hoverOver = false;
+        
+        addInteraction(btn);
+        
+        btn.onGlobalMouseMove = function(e) {
+            // Check if mouse is over the button
+            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.radius)) {
+                if (!this.hoverOver) {
+                    tweenToScale(this, 1.2, 200);
+                    this.hoverOver = true;
+                }
+            } else {
+                if (this.hoverOver) {
+                    tweenToScale(this, 1, 200);
+                    this.hoverOver = false;
+                }
+            }
+        }
+    }
+    
+    // Reusable global functions
+    var isOverCircle = function(x, y, cx, cy, r) {
+        if (Util.pointDistance({x:cx, y:cy}, {x:x, y:y}) < r) {
             return true;
         } else return false;
     }
-    
-    // Reuseable function for setting the radius of the svg circle
+    var isOverCenter = function(x, y) {
+        return isOverCircle(CENTER.x, CENTER.y, x, y, CENTER_RADIUS)
+    }
     var setRadius = function(circle, r) {
         circle.radius = r;
         _.each(circle.vertices, function(v) {
             v.setLength(r);
         });
+    }
+    var tweenToScale = function(obj, s, time) {
+        // Define and start a tween to scale the object
+        var tweenScale = new TWEEN.Tween(obj)
+            .to({ scale:s }, time)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
@@ -885,7 +917,22 @@ window.onload = function() {
             //.bind('dragover', function() {console.log('drag over')});
 
         $(shape._renderer.elem).dblclick(function(e){
-            shape.onDoubleClick(e,shape);
+            e.preventDefault();
+            if (typeof shape.onDoubleClick === 'function') {shape.onDoubleClick(e,shape);}
+        });
+        
+        // Define global mouse events
+        document.addEventListener('mousemove', function(e) {
+            e.preventDefault();
+            if (typeof shape.onGlobalMouseMove === 'function') {shape.onGlobalMouseMove(e);}
+        });
+        document.addEventListener('mouseup', function(e) {
+            e.preventDefault();
+            if (typeof shape.onGlobalMouseUp === 'function') {shape.onGlobalMouseUp(e);}
+        });
+        document.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            if (typeof shape.onGlobalMouseDown === 'function') {shape.onGlobalMouseDown(e);}
         });
       }
 
@@ -902,7 +949,7 @@ window.onload = function() {
     var C = CreateCenter(CENTER.x, CENTER.y);
     
     CreateOrbit(100);
-    CreateOrbit(300);
+    CreateOrbit(200);
     for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
         setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
     }
@@ -912,6 +959,7 @@ window.onload = function() {
     CreateSampler(two.width-100, 300);
     
     CreateSlider(two.width-50, two.height-100, 100);
+    CreateButton(two.width-50, two.height-50, 30);
     
 
     // Our main update loop!

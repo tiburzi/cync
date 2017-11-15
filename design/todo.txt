@@ -12,6 +12,7 @@
 
 Jon:
 - play sample when sampler is clicked?
+- create button prototype
 
 
 Omar:
