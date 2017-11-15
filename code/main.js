@@ -17,6 +17,7 @@ window.onload = function() {
     var SAMPLER_RADIUS = 20;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
+    var GLOBAL_MUTE = true;
 
     function Init(){
         // Initialize everything here 
@@ -172,7 +173,12 @@ window.onload = function() {
                     if (nt != null) { //just in case
                         if (nt > oldTheta && nt <= this.theta) {
                             // Trigger a note!
-                            n.sampler.audio.play();
+                            if (!GLOBAL_MUTE) {
+                                n.sampler.audio.play();
+                            }
+                            // Animate the note
+                            n.radius *= 1.5;
+                            n.tweenToRadius(NOTE_RADIUS);
                         }
                     } else {console.log("error: note on orbit "+this.orbit+" has theta = 'null'.")}
                 }
@@ -333,16 +339,14 @@ window.onload = function() {
 
         Notes.push(note);
         
-        note.onCreate = function() {
-            //make the note tween to appear
-            note.radius = 0; //for some reason, setRadius() won't work here
-            var tweenCreate = new TWEEN.Tween(this)
-                .to({ radius:NOTE_RADIUS }, 200)
+        note.tweenToRadius = function(r) {
+            var tweenRadius = new TWEEN.Tween(this)
+                .to({ radius:r }, 200)
                 .easing(TWEEN.Easing.Cubic.Out)
                 .onUpdate(function() {
                     setRadius(this._object, this._object.radius);
                 })
-            tweenCreate.start();
+                .start();
         }
         
         note.onMouseHover = function(e, offset, localClickPos) {
@@ -479,7 +483,9 @@ window.onload = function() {
             // For updating anything about the note
         }
         
-        note.onCreate();
+        // Make the note tween to appear when created
+        note.radius = 0;
+        note.tweenToRadius(NOTE_RADIUS);
         return note;
     }
     
