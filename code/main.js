@@ -56,12 +56,17 @@ window.onload = function() {
         */
         var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
+<<<<<<< HEAD
         orbit.stroke = '#6b6b6b';
         orbit.linewidth = LINE_W;
+=======
+        orbit.stroke = 'rgba(107,107,107,1)';
+        orbit.linewidth = 6;
+>>>>>>> f1856a045b4af4b9c39bdfd9530ab52955f1b44b
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
-
-        addInteraction(orbit);
+        orbit.frozen = false;
+        
 
         Orbits.push(orbit);
         LAYERS['orbits'].add(orbit);
@@ -71,6 +76,7 @@ window.onload = function() {
             this.trigger.update();
         }
         
+<<<<<<< HEAD
         orbit.destroy = function() {
             var index = Orbits.indexOf(this);
             if (index > -1) {
@@ -89,6 +95,23 @@ window.onload = function() {
             
             LAYERS['orbits'].remove(this);
             two.remove(this);
+=======
+        orbit.setFreeze = function(bool){
+            if(!this.originalStroke) {
+                this.originalStroke = this.stroke;
+                this.trigger.originalFill = this.trigger.fill;
+            }
+
+            if(bool){
+                this.stroke = 'rgba(107,107,107,0.1)';
+                this.trigger.fill = 'rgba(255,69,0,0.1)';
+            } else {
+                this.stroke = this.originalStroke;
+                this.trigger.fill = this.trigger.originalFill;
+            }
+
+            this.frozen = bool;
+>>>>>>> f1856a045b4af4b9c39bdfd9530ab52955f1b44b
         }
         
         orbit.onDrag = function(e, offset, localClickPos) {
@@ -112,6 +135,11 @@ window.onload = function() {
             DRAGGING_DESTROYABLE = true;
         }
         
+        orbit.onDoubleClick = function(e,self){
+            // Must use self because the event is bound to the dom element, whereas self is the actual Two element
+            self.setFreeze(!self.frozen);
+        }
+
         orbit.onMouseUp = function(e) {
             // Check if orbit is over trash, to destroy it
             if (isOverCenter(e.clientX, e.clientY)) {
@@ -161,13 +189,14 @@ window.onload = function() {
             });
         }
     
+        addInteraction(orbit);
 
         // Create a triangle trigger for this orbit
         var size = 15;
         var triggerX = CENTER.x;
         var triggerY = CENTER.y-radius-size - orbit.linewidth/2;
         var trigger = two.makePolygon(triggerX, triggerY, size);
-        trigger.fill = 'orangered';
+        trigger.fill = 'rgba(255,69,0,1)';
         trigger.stroke = 'none';
         trigger.rotation = Math.PI;
         trigger.orbit = orbit;
@@ -178,6 +207,11 @@ window.onload = function() {
         LAYERS['orbits'].add(trigger);
         
         trigger.update = function() {
+            if(this.orbit.frozen){
+                // Stop all update if this thing is frozen
+                return;
+            }
+
             // Record angle theta before updating
             var oldTheta = this.theta;
             
@@ -861,6 +895,10 @@ window.onload = function() {
             .bind('mouseout', out); //fires when mouse leaves object, or enters one of its children
             //.bind('mouseover', function() {console.log('over')})
             //.bind('dragover', function() {console.log('drag over')});
+
+        $(shape._renderer.elem).dblclick(function(e){
+            shape.onDoubleClick(e,shape);
+        });
       }
 
     // Global time

@@ -8,16 +8,22 @@
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - button for toggling polygons
-- drag-n-drop samples
+
 
 
 Jon:
 - create a basic way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
+- add subtle pulse animation to notes when played
+- play sample when sampler is clicked?
 
 
 Omar:
 - dynamic resizing window and content
-
+- custom audio files
+	- importing new audio files via drag-n-drop anywhere on screen
+	- assign new audio files to samplers (either new or preexisting)
+	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
+	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 
 
 --- Done ---
@@ -48,3 +54,4 @@ Omar:
     - grab the polygon to rotate it
     - make the polygon look good aesthetically
 - Play sound when triangle hits note
+- mute orbit by double click
