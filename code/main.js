@@ -199,7 +199,7 @@ window.onload = function() {
                                 n.sampler.audio.play();
                             }
                             // Animate the note
-                            n.radius *= 1.5;
+                            n.radius = 1.5*NOTE_RADIUS;
                             n.tweenToRadius(NOTE_RADIUS);
                         }
                     } else {console.log("error: note on orbit "+this.orbit+" has theta = 'null'.")}
