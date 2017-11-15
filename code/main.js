@@ -64,12 +64,17 @@ window.onload = function() {
 
         Orbits.push(orbit);
         LAYERS['orbits'].add(orbit);
+        
+        // Create a triangle trigger for this orbit
+        orbit.trigger = CreateTrigger(orbit);
+        
+        // Create a polygon for this orbit
+        orbit.polygon = CreatePolygon(orbit);
 
         orbit.update = function() {
             // For updating anything about the orbit
             this.trigger.update();
         }
-        
         orbit.destroy = function() {
             var index = Orbits.indexOf(this);
             if (index > -1) {
@@ -89,14 +94,13 @@ window.onload = function() {
             LAYERS['orbits'].remove(this);
             two.remove(this);
         }
-        
         orbit.setFreeze = function(bool){
-            if(!this.originalStroke) {
+            if (!this.originalStroke) {
                 this.originalStroke = this.stroke;
                 this.trigger.originalFill = this.trigger.fill;
             }
 
-            if(bool){
+            if (bool) {
                 this.stroke = 'rgba(107,107,107,0.1)';
                 this.trigger.fill = 'rgba(255,69,0,0.1)';
             } else {
@@ -106,7 +110,6 @@ window.onload = function() {
 
             this.frozen = bool;
         }
-        
         orbit.onDrag = function(e, offset, localClickPos) {
             var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
             var center = {x:two.width / 2, y:two.height / 2};
@@ -120,19 +123,17 @@ window.onload = function() {
             }
             
             //Make the orbit's trigger invisible
-            trigger.rotate = false;
+            this.trigger.rotate = false;
             
             setRadius(this, newRadius);
             orbit.updateNotes();
             
             DRAGGING_DESTROYABLE = true;
         }
-        
-        orbit.onDoubleClick = function(e,self){
+        orbit.onDoubleClick = function(e, self){
             // Must use self because the event is bound to the dom element, whereas self is the actual Two element
             self.setFreeze(!self.frozen);
         }
-
         orbit.onMouseUp = function(e) {
             // Check if orbit is over trash, to destroy it
             if (isOverCenter(e.clientX, e.clientY)) {
@@ -156,7 +157,6 @@ window.onload = function() {
                 tweenSnap.start();
             }
         }
-        
         orbit.updateNotes = function() {
             // Update the positions of the notes when the orbit resizes
             this.notes.forEach(function(n) {
@@ -167,7 +167,6 @@ window.onload = function() {
             });
             this.polygon.update();
         }
-        
         orbit.removeNote = function(n) {
             var index = this.notes.indexOf(n);
             if (index > -1) {
@@ -175,7 +174,6 @@ window.onload = function() {
             }
             this.polygon.update();
         }
-        
         orbit.sortNotes = function() {
             this.notes.sort(function(a,b) {
                 return a.theta-b.theta; //order the notes by their theta values
@@ -183,17 +181,14 @@ window.onload = function() {
         }
     
         addInteraction(orbit);
-
-        // Create a triangle trigger for this orbit
-        orbit.trigger = CreateTrigger(orbit);
-        
-        // Create a polygon for this orbit
-        orbit.polygon = CreatePolygon(orbit);
         
         return orbit;
     }
     
     function CreateTrigger(orbit) {
+        /*
+            A marker that triggers notes as it rotates around its orbit.
+        */
         var size = 15;
         var triggerX = CENTER.x;
         var triggerY = CENTER.y-orbit.radius-size - orbit.linewidth/2;
@@ -252,6 +247,9 @@ window.onload = function() {
     }
     
     function CreatePolygon(orbit) {
+        /*
+            A representation of the layout of notes on an orbit. Can be dragged to move all notes simultaneously.
+        */
         var polygon = new Two.Path();
         two.add(polygon);
         polygon.fill = polygon.stroke = 'gray';
@@ -381,8 +379,8 @@ window.onload = function() {
     }
     
     function CreateNote(x, y){
-        /* This should create a note that:
-            - Has a radius proportional to its volume
+        /*
+            Drag notes onto and around orbits to create the groove structure.
         */
         var note = two.makeCircle(x, y, NOTE_RADIUS);
         note.fill = 'red';
@@ -553,10 +551,8 @@ window.onload = function() {
     }
     
     function CreateSampler(x, y) {
-        /* This should create a sampler that:
-            - creates a new note when the previous one is placed
-            - contains a reference to an audio sample which it gives to its note children
-            - load in an external sample
+        /*
+            Samplers create notes and stores references to their audio files.
         */
         var sampler = two.makeCircle(x, y, SAMPLER_RADIUS);
         sampler.color = PALETTE[Samplers.length];
@@ -584,6 +580,9 @@ window.onload = function() {
     }
     
     function CreateCenter(x, y) {
+        /*
+            A button that either which adds orbits (+), or destroys notes and orbits dragged onto it (-).
+        */
         var CreateTrash = function(x, y) {
 
             var dist = .4*CENTER_RADIUS;
@@ -730,6 +729,9 @@ window.onload = function() {
     }
     
     function CreateSlider(x, y, length) {
+        /*
+            A template for interactive sliders that vary a parameter (such as volume).
+        */
         var line = two.makeLine(x, y, x, y-length);
         line.linewidth = LINE_W;
         line.cap = 'round';
@@ -769,23 +771,6 @@ window.onload = function() {
             v.setLength(r);
         });
     }
-   
-    Init();
-    
-    var C = CreateCenter(CENTER.x, CENTER.y);
-    
-    // Create orbits, snapping their radii upon creation
-    CreateOrbit(100);
-    CreateOrbit(300);
-    for(var i=0;i<Orbits.length;i++) {
-        setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP)
-    }
-    
-    CreateSampler(two.width-100, 100);
-    CreateSampler(two.width-100, 200);
-    CreateSampler(two.width-100, 300);
-    
-    CreateSlider(two.width-50, two.height-100, 100);
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
@@ -910,6 +895,24 @@ window.onload = function() {
     function updateTime() {
         TIME = (new Date() - START_TIME) / 1000;
     }
+   
+    
+    Init();
+    
+    var C = CreateCenter(CENTER.x, CENTER.y);
+    
+    CreateOrbit(100);
+    CreateOrbit(300);
+    for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
+        setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
+    }
+    
+    CreateSampler(two.width-100, 100);
+    CreateSampler(two.width-100, 200);
+    CreateSampler(two.width-100, 300);
+    
+    CreateSlider(two.width-50, two.height-100, 100);
+    
 
     // Our main update loop!
     function update() {

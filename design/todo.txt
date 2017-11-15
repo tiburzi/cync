@@ -3,7 +3,6 @@
 - Figure out UI
     - design sampler menu
     - design music controls (tempo, play/pause, reset, master volume)
-    - design volume slider
 - Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
@@ -12,8 +11,6 @@
 
 
 Jon:
-- create a basic way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
-- add subtle pulse animation to notes when played
 - play sample when sampler is clicked?
 
 
@@ -55,3 +52,6 @@ Omar:
     - make the polygon look good aesthetically
 - Play sound when triangle hits note
 - mute orbit by double click
+- create a basic way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
+- add subtle pulse animation to notes when played
+- design volume slider
