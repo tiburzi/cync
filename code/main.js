@@ -7,6 +7,7 @@ window.onload = function() {
     var Notes = [];
     var Samplers = [];
     var PALETTE = [];
+    var LAYERS = [];
     var SOUND_FILES = ["bass", "snare", "hihat_closed"];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
@@ -17,7 +18,7 @@ window.onload = function() {
     var SAMPLER_RADIUS = 20;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
-    var GLOBAL_MUTE = true;
+    var GLOBAL_MUTE = true; //so we can mute everything while working
 
     function Init(){
         // Initialize everything here 
@@ -35,10 +36,16 @@ window.onload = function() {
         */
         CENTER = { x:two.width / 2, y:two.height / 2 };
         
-        PALETTE = [];
         PALETTE.push('#F7A055');
         PALETTE.push('#F76055');
         PALETTE.push('#9B3655');
+        
+        LAYERS['bg'] = two.makeGroup();
+        LAYERS['center'] = two.makeGroup();
+        LAYERS['orbits'] = two.makeGroup();
+        LAYERS['polygons'] = two.makeGroup();
+        LAYERS['notes'] = two.makeGroup();
+        LAYERS['fg'] = two.makeGroup();
     }
     
     function CreateOrbit(radius){
@@ -55,12 +62,32 @@ window.onload = function() {
         addInteraction(orbit);
 
         Orbits.push(orbit);
+        LAYERS['orbits'].add(orbit);
 
         orbit.update = function() {
             // For updating anything about the orbit
             this.trigger.update();
         }
         
+        orbit.destroy = function() {
+            var index = Orbits.indexOf(this);
+            if (index > -1) {
+                Orbits.splice(index, 1);
+            }
+            
+            _.each(this.notes, function(n) {
+               LAYERS['notes'].remove(n);
+                two.remove(n); 
+            });
+            LAYERS['orbits'].remove(this.trigger);
+            two.remove(this.trigger);
+            
+            LAYERS['polygons'].remove(this.polygon);
+            two.remove(this.polygon);
+            
+            LAYERS['orbits'].remove(this);
+            two.remove(this);
+        }
         
         orbit.onDrag = function(e, offset, localClickPos) {
             var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
@@ -84,18 +111,9 @@ window.onload = function() {
         }
         
         orbit.onMouseUp = function(e) {
-            // Check if note is over trash, to destroy it
+            // Check if orbit is over trash, to destroy it
             if (isOverCenter(e.clientX, e.clientY)) {
-                var index = Orbits.indexOf(this);
-                if (index > -1) {
-                    Orbits.splice(index, 1);
-                    _.each(this.notes, function(n) {
-                       two.remove(n); 
-                    });
-                    two.remove(this.trigger);
-                    two.remove(this.polygon);
-                    two.remove(this);
-                }
+                this.destroy();
             } else {
                 // Orbit is not over trash, so don't destroy it; snap it to a grid
                 var snapToRadius = Math.max(1, Math.round(this.radius / RADIUS_SNAP)) * RADIUS_SNAP;
@@ -155,6 +173,8 @@ window.onload = function() {
         trigger.theta = 0;
         orbit.trigger = trigger;
 
+        LAYERS['orbits'].add(trigger);
+        
         trigger.update = function() {
             // Record angle theta before updating
             var oldTheta = this.theta;
@@ -162,7 +182,7 @@ window.onload = function() {
             // Rotate the trigger
             if (this.rotate == true) {
                 // Set a new angle theta
-                var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * time) - Math.PI;
+                var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI;
                 this.rotation = newTheta;
                 this.theta = ((newTheta-(Math.PI/2)) % (2*Math.PI)) - Math.PI; //lots of maths because two.rotation, note.theta, and the visual rotation all have different spots for 0°
                 
@@ -201,6 +221,8 @@ window.onload = function() {
         polygon.cap = 'round';
         polygon.orbit = orbit;
         orbit.polygon = polygon;
+        
+        LAYERS['polygons'].add(polygon);
         
         polygon.prevMousePos = new Two.Vector(0, 0);
         polygon.hover = false;
@@ -338,6 +360,7 @@ window.onload = function() {
         addInteraction(note);
 
         Notes.push(note);
+        LAYERS['notes'].add(note);
         
         note.tweenToRadius = function(r) {
             var tweenRadius = new TWEEN.Tween(this)
@@ -593,6 +616,7 @@ window.onload = function() {
         var t = CreateTrash(x, y);
         var c = two.makeGroup(p, t);
         c.state = 'plus';
+        LAYERS['center'].add(c);
         
         var tweenToScale = function(obj, s) {
             // Define and start a tween to scale the object
@@ -696,7 +720,6 @@ window.onload = function() {
     CreateSampler(two.width-100, 100);
     CreateSampler(two.width-100, 200);
     CreateSampler(two.width-100, 300);
-    
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
@@ -811,10 +834,11 @@ window.onload = function() {
             //.bind('dragover', function() {console.log('drag over')});
       }
 
-    var startTime = new Date();
-    var time = 0; //how long the app has been running, in seconds
+    // Global time
+    var START_TIME = new Date();
+    var TIME = 0; //how long the app has been running, in seconds
     function updateTime() {
-        time = (new Date() - startTime) / 1000;
+        TIME = (new Date() - START_TIME) / 1000;
     }
 
     // Our main update loop!
