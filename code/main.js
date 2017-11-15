@@ -41,14 +41,14 @@ window.onload = function() {
         PALETTE.push('#9B3655');
         
         LAYERS['bg'] = two.makeGroup();
-        LAYERS['center'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
         LAYERS['polygons'] = two.makeGroup();
+        LAYERS['center'] = two.makeGroup();
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
     }
     
-    function CreateOrbit(radius){
+    function CreateOrbit(radius) {
         /*
             Orbits are the large circlar tracks which notes can be dragged onto.
         */
@@ -691,6 +691,33 @@ window.onload = function() {
         return c;
     }
     
+    function CreateSlider(x, y, length) {
+        var line = two.makeLine(x, y, x, y-length);
+        line.stroke = 'black';
+        line.linewidth = 10;
+        line.cap = 'round';
+        
+        var dial = two.makeCircle(x, y, 20);
+        dial.fill = 'red';
+        dial.linewidth = 0;
+        dial.stroke = 0;
+        
+        addInteraction(dial);
+        
+        dial.onDrag = function(e, offset, localClickPos) {
+            this.slider.value = (y - Math.min( y, Math.max( y-length, e.clientY ) )) / length;
+            this.update();
+        }
+        dial.update = function() {
+            this.translation.y = y - length * this.slider.value;
+        }
+        
+        var slider = two.makeGroup(line, dial);
+        slider.value = .9;
+        dial.slider = slider;
+        dial.update();
+    }
+    
     // Reusable function for checking if position (probably mouse) is over the center add/delete area
     var isOverCenter = function(x, y) {
         if (Util.pointDistance(CENTER, {x:x, y:y}) < CENTER_RADIUS) {
@@ -720,6 +747,8 @@ window.onload = function() {
     CreateSampler(two.width-100, 100);
     CreateSampler(two.width-100, 200);
     CreateSampler(two.width-100, 300);
+    
+    CreateSlider(two.width-50, two.height-100, 200);
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
