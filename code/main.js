@@ -56,13 +56,8 @@ window.onload = function() {
         */
         var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
-<<<<<<< HEAD
-        orbit.stroke = '#6b6b6b';
-        orbit.linewidth = LINE_W;
-=======
         orbit.stroke = 'rgba(107,107,107,1)';
-        orbit.linewidth = 6;
->>>>>>> f1856a045b4af4b9c39bdfd9530ab52955f1b44b
+        orbit.linewidth = LINE_W;
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
         orbit.frozen = false;
@@ -76,7 +71,6 @@ window.onload = function() {
             this.trigger.update();
         }
         
-<<<<<<< HEAD
         orbit.destroy = function() {
             var index = Orbits.indexOf(this);
             if (index > -1) {
@@ -95,7 +89,8 @@ window.onload = function() {
             
             LAYERS['orbits'].remove(this);
             two.remove(this);
-=======
+        }
+        
         orbit.setFreeze = function(bool){
             if(!this.originalStroke) {
                 this.originalStroke = this.stroke;
@@ -111,7 +106,6 @@ window.onload = function() {
             }
 
             this.frozen = bool;
->>>>>>> f1856a045b4af4b9c39bdfd9530ab52955f1b44b
         }
         
         orbit.onDrag = function(e, offset, localClickPos) {
