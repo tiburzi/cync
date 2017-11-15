@@ -3,6 +3,9 @@ window.onload = function() {
 
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
+    var GLOBAL_MUTE = true; //so we can mute everything while working
+    var LINE_W = 8; //global line width unit
+    var PHI = 1.618;
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
@@ -15,10 +18,9 @@ window.onload = function() {
     var TEMPO = 60; //in beats per minute
     var CENTER = {};
     var NOTE_RADIUS = 15;
-    var SAMPLER_RADIUS = 20;
+    var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
-    var GLOBAL_MUTE = true; //so we can mute everything while working
 
     function Init(){
         // Initialize everything here 
@@ -55,7 +57,7 @@ window.onload = function() {
         var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
         orbit.stroke = '#6b6b6b';
-        orbit.linewidth = 6;
+        orbit.linewidth = LINE_W;
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
 
@@ -469,6 +471,7 @@ window.onload = function() {
                 var index = Notes.indexOf(this);
                 if (index > -1) {
                     Notes.splice(index, 1);
+                    LAYERS['notes'].remove(this);
                     two.remove(this);
                 }
             } else {
@@ -522,7 +525,7 @@ window.onload = function() {
         sampler.color = PALETTE[Samplers.length];
         sampler.fill = 'none';
         sampler.stroke = '#6b6b6b';
-        sampler.linewidth = 4;
+        sampler.linewidth = LINE_W/2;
         sampler.radius = SAMPLER_RADIUS;
         sampler.hasNote = false;
         var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
@@ -546,19 +549,17 @@ window.onload = function() {
     function CreateCenter(x, y) {
         var CreateTrash = function(x, y) {
 
-            var dist = .3*CENTER_RADIUS;
-            var line1 = two.makeLine(-dist, -dist, +dist, +dist);
-            var line2 = two.makeLine(-dist, +dist, +dist, -dist);
-            var X = two.makeGroup(line1, line2);
-            X.stroke = 'white';
-            X.linewidth = 8;
-            X.cap = 'round';
+            var dist = .4*CENTER_RADIUS;
+            var line = two.makeLine(-dist, 0, +dist, 0);
+            line.stroke = 'white';
+            line.linewidth = LINE_W;
+            line.cap = 'round';
 
             var circle = two.makeCircle(0, 0, CENTER_RADIUS);
             circle.fill = 'red';
             circle.linewidth = 0;
 
-            var trash = two.makeGroup(circle, X);
+            var trash = two.makeGroup(circle, line);
             trash.center();
             trash.translation.set(x,y);
             trash.opacity = .5;
@@ -579,7 +580,7 @@ window.onload = function() {
         var line2 = two.makeLine(-dist, 0, +dist, 0);
         var X = two.makeGroup(line1, line2);
         X.stroke = 'white';
-        X.linewidth = 8;
+        X.linewidth = LINE_W;
         X.cap = 'round';
         
         var circle = two.makeCircle(0, 0, CENTER_RADIUS);
@@ -693,14 +694,12 @@ window.onload = function() {
     
     function CreateSlider(x, y, length) {
         var line = two.makeLine(x, y, x, y-length);
-        line.stroke = 'black';
-        line.linewidth = 10;
+        line.linewidth = LINE_W;
         line.cap = 'round';
         
-        var dial = two.makeCircle(x, y, 20);
-        dial.fill = 'red';
-        dial.linewidth = 0;
-        dial.stroke = 0;
+        var dial = two.makeCircle(x, y, PHI*LINE_W);
+        dial.fill = 'white';
+        dial.linewidth = LINE_W;
         
         addInteraction(dial);
         
@@ -713,6 +712,7 @@ window.onload = function() {
         }
         
         var slider = two.makeGroup(line, dial);
+        slider.stroke = '#333333';
         slider.value = .9;
         dial.slider = slider;
         dial.update();
@@ -748,7 +748,7 @@ window.onload = function() {
     CreateSampler(two.width-100, 200);
     CreateSampler(two.width-100, 300);
     
-    CreateSlider(two.width-50, two.height-100, 200);
+    CreateSlider(two.width-50, two.height-100, 100);
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
