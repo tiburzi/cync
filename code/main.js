@@ -61,7 +61,6 @@ window.onload = function() {
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
         orbit.frozen = false;
-        
 
         Orbits.push(orbit);
         LAYERS['orbits'].add(orbit);
@@ -186,9 +185,18 @@ window.onload = function() {
         addInteraction(orbit);
 
         // Create a triangle trigger for this orbit
+        orbit.trigger = CreateTrigger(orbit);
+        
+        // Create a polygon for this orbit
+        orbit.polygon = CreatePolygon(orbit);
+        
+        return orbit;
+    }
+    
+    function CreateTrigger(orbit) {
         var size = 15;
         var triggerX = CENTER.x;
-        var triggerY = CENTER.y-radius-size - orbit.linewidth/2;
+        var triggerY = CENTER.y-orbit.radius-size - orbit.linewidth/2;
         var trigger = two.makePolygon(triggerX, triggerY, size);
         trigger.fill = 'rgba(255,69,0,1)';
         trigger.stroke = 'none';
@@ -196,7 +204,6 @@ window.onload = function() {
         trigger.orbit = orbit;
         trigger.rotate = true;
         trigger.theta = 0;
-        orbit.trigger = trigger;
 
         LAYERS['orbits'].add(trigger);
         
@@ -241,8 +248,10 @@ window.onload = function() {
             this.translation.y = CENTER.y + Math.sin(angle) * dist;
         }
         
-        
-        // Create a polygon for this orbit
+        return trigger;
+    }
+    
+    function CreatePolygon(orbit) {
         var polygon = new Two.Path();
         two.add(polygon);
         polygon.fill = polygon.stroke = 'gray';
@@ -250,7 +259,6 @@ window.onload = function() {
         polygon.join = 'round';
         polygon.cap = 'round';
         polygon.orbit = orbit;
-        orbit.polygon = polygon;
         
         LAYERS['polygons'].add(polygon);
         
@@ -368,7 +376,8 @@ window.onload = function() {
         }
 
         polygon.setOpacity(0);
-        return orbit;
+        
+        return polygon;
     }
     
     function CreateNote(x, y){
