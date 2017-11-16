@@ -3,7 +3,7 @@ window.onload = function() {
 
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
-    var GLOBAL_MUTE = true; //so we can mute everything while working
+    var GLOBAL_MUTE = false; //so we can mute everything while working
     var LINE_W = 8; //global line width unit
     var PHI = 1.618;
     var Orbits = [];
@@ -780,6 +780,10 @@ window.onload = function() {
                     this.hoverOver = false;
                 }
             }
+        }
+        
+        btn.onMouseDown = function() {
+            alert("I don't do anything yet.");
         }
     }
     
