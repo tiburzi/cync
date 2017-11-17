@@ -757,7 +757,6 @@ window.onload = function() {
     }
     
     function CreateButton(x, y, r, imageURL) {
-        imageURL = "assets/images/metronome.svg";
         var makeBtn = function(imageData) {
             if (imageData != undefined) {
                 var svgAsset = imageData;
@@ -812,8 +811,6 @@ window.onload = function() {
                 makeBtn(data);
             });
         } else {makeBtn();}
-        
-        
     }
     
     // Reusable global functions
@@ -997,7 +994,7 @@ window.onload = function() {
     CreateSampler(two.width-100, 300);
     
     CreateSlider(two.width-50, two.height-100, 100);
-    CreateButton(two.width-50, two.height-50, 30);
+    CreateButton(two.width-50, two.height-50, 30, "assets/images/metronome.svg");
     
 
     // Our main update loop!
