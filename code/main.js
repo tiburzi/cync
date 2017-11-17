@@ -756,35 +756,64 @@ window.onload = function() {
         dial.update();
     }
     
-    function CreateButton(x, y, r) {
-        var btn = two.makeCircle(x, y, r);
-        btn.fill = '#cccccc';
-        btn.stroke = 'none';
-        btn.linewidth = 0;
-        btn.radius = r;
-        btn.hoverOver = false;
-        
-        addInteraction(btn);
-        setCursor(btn, 'pointer');
-        
-        btn.onGlobalMouseMove = function(e) {
-            // Check if mouse is over the button
-            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.radius)) {
-                if (!this.hoverOver) {
-                    tweenToScale(this, 1.2, 200);
-                    this.hoverOver = true;
+    function CreateButton(x, y, r, imageURL) {
+        imageURL = "assets/images/metronome.svg";
+        var makeBtn = function(imageData) {
+            if (imageData != undefined) {
+                var svgAsset = imageData;
+                var mySvg = svgAsset.getElementsByTagName('svg')[0];
+                var preimage = two.interpret(mySvg).center();
+                preimage.scale = .35;
+                preimage.fill = 'white';
+                var image = two.makeGroup(preimage);
+                image.translation.set(x, y);
+            } else var image = null;
+            
+            var circle = two.makeCircle(x, y, r);
+            circle.fill = '#333333';
+            circle.stroke = 'none';
+            circle.linewidth = 0;
+            circle.radius = r;
+
+            var btn = two.makeGroup(circle, image);
+            btn.circle = circle;
+            btn.image = image;
+            btn.hoverOver = false;
+
+            addInteraction(btn);
+            setCursor(btn, 'pointer');
+
+            btn.onGlobalMouseMove = function(e) {
+                // Check if mouse is over the button
+                if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
+                    if (!this.hoverOver) {
+                        _.each(btn.children, function(child) {
+                            tweenToScale(child, 1.2, 200);
+                        });
+                        this.hoverOver = true;
+                    }
+                } else {
+                    if (this.hoverOver) {
+                        _.each(btn.children, function(child) {
+                            tweenToScale(child, 1, 200);
+                        });
+                        this.hoverOver = false;
+                    }
                 }
-            } else {
-                if (this.hoverOver) {
-                    tweenToScale(this, 1, 200);
-                    this.hoverOver = false;
-                }
+            }
+
+            btn.onMouseDown = function() {
+                alert("I don't do anything yet.");
             }
         }
         
-        btn.onMouseDown = function() {
-            alert("I don't do anything yet.");
-        }
+        if (imageURL != undefined) {
+            $.get(imageURL, function(data) {
+                makeBtn(data);
+            });
+        } else {makeBtn();}
+        
+        
     }
     
     // Reusable global functions
