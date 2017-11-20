@@ -67,8 +67,9 @@ window.onload = function() {
     function SetupInitialState(){
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
+        var stateData = null; //uncomment this line to prevent state loading while working
         
-        for (var i=0; i<8; i++) {
+        for (var i=0; i<5; i++) {
             CreateSampler(two.width-50, 50+i*50);
         }
 
@@ -100,8 +101,8 @@ window.onload = function() {
 
              })
         } else {
-            CreateOrbit(50);
-            CreateOrbit(250);
+            CreateOrbit(RADIUS_SNAP);
+            CreateOrbit(4*RADIUS_SNAP);
         }
 
         for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
@@ -467,6 +468,8 @@ window.onload = function() {
         Notes.push(note);
         LAYERS['notes'].add(note);
         
+        note.parameter = CreateNoteParameter(note);
+        
         note.tweenToRadius = function(r) {
             var tweenRadius = new TWEEN.Tween(this)
                 .to({ radius:r }, 200)
@@ -621,6 +624,17 @@ window.onload = function() {
         UpdateState();
 
         return note;
+    }
+    
+    function CreateNoteParameter(note) {
+        var parameter = CreateSlider(
+            note.translation.x + (note.translation.x>two.width/2 ? 20 : -50),
+            note.translation.y,
+            100);
+        parameter.center();
+        parameter.scale = .5;
+        
+        return parameter;
     }
     
     function CreateSampler(x, y) {
@@ -829,6 +843,8 @@ window.onload = function() {
         slider.value = .9;
         dial.slider = slider;
         dial.update();
+        
+        return slider;
     }
     
     
