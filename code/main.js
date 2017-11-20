@@ -22,6 +22,13 @@ window.onload = function() {
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
 
+    var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
+
+    function UpdateState(){
+        // Just a helper function to make it easy to update parameters of state without changing lots of lines of code 
+        state.update(Orbits,Notes);
+    } 
+
     function Init(){
         // Initialize everything here 
 
@@ -49,6 +56,52 @@ window.onload = function() {
         LAYERS['center'] = two.makeGroup();
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
+    }
+
+    function SetupInitialState(){
+        //This will either load from URL or just create the default orbits 
+        var stateData = state.load();
+        
+        CreateSampler(two.width-100, 100);
+        CreateSampler(two.width-100, 200);
+        CreateSampler(two.width-100, 300);
+
+        if(stateData != null){
+            stateData.orbits.forEach(function(radius) {
+                CreateOrbit(radius);
+             })
+
+            stateData.notes.forEach(function(n) {
+                var sampler = Samplers[n.sIndex];
+                var orbit = Orbits[n.oIndex];
+
+                var dist = orbit.radius;
+                var angle = n.theta;
+                var X = CENTER.x + Math.cos(angle) * dist;
+                var Y = CENTER.y + Math.sin(angle) * dist;
+
+
+                var note = CreateNote(X,Y);
+                note.sampler = sampler;
+                sampler.hasNote = false;
+                note.fill = sampler.color;
+                note.theta = n.theta;
+                note.orbit = orbit;
+                note.prevOrbit = orbit;
+                note.orbit.notes.push(note);
+                note.orbit.sortNotes();
+
+
+             })
+        } else {
+            CreateOrbit(100);
+            CreateOrbit(200);
+        }
+
+        for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
+            setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
+        }
+        
     }
     
     function CreateOrbit(radius) {
@@ -94,6 +147,8 @@ window.onload = function() {
             
             LAYERS['orbits'].remove(this);
             two.remove(this);
+
+            UpdateState();
         }
         orbit.setFreeze = function(bool){
             if (!this.originalStroke) {
@@ -154,9 +209,11 @@ window.onload = function() {
                     })
                     .onComplete(function() {
                         this._object.trigger.rotate = true;
+                        UpdateState();
                     })
                 tweenSnap.start();
             }
+
         }
         orbit.updateNotes = function() {
             // Update the positions of the notes when the orbit resizes
@@ -183,6 +240,8 @@ window.onload = function() {
     
         addInteraction(orbit);
         
+        UpdateState();
+
         return orbit;
     }
     
@@ -340,6 +399,8 @@ window.onload = function() {
                 n.theta = Util.pointDirection(CENTER, n.translation); //easiest way to get theta in range [-pi, pi)
             });
             polygon.orbit.sortNotes();
+
+            UpdateState();
         }
         polygon.onMouseHover = function() {
             this.hover = true;
@@ -532,6 +593,8 @@ window.onload = function() {
                     }
                 }
             }
+
+            UpdateState();
         }
         
         note.updateTheta = function() {
@@ -548,6 +611,9 @@ window.onload = function() {
         // Make the note tween to appear when created
         note.radius = 0;
         note.tweenToRadius(NOTE_RADIUS);
+
+        UpdateState();
+
         return note;
     }
     
@@ -562,6 +628,7 @@ window.onload = function() {
         sampler.linewidth = LINE_W/2;
         sampler.radius = SAMPLER_RADIUS;
         sampler.hasNote = false;
+        sampler.index = Samplers.length;
         var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
         sampler.audio = new Howl({src: fileName});
 
@@ -1050,16 +1117,8 @@ window.onload = function() {
     
     var C = CreateCenter(CENTER.x, CENTER.y);
     
-    CreateOrbit(100);
-    CreateOrbit(200);
-    for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
-        setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
-    }
-    
-    CreateSampler(two.width-100, 100);
-    CreateSampler(two.width-100, 200);
-    CreateSampler(two.width-100, 300);
-    
+    SetupInitialState();
+
     CreateSlider(two.width-50, two.height-100, 100);
     var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
     btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
