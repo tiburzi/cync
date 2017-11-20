@@ -67,7 +67,7 @@ window.onload = function() {
     function SetupInitialState(){
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
-        var stateData = null; //uncomment this line to prevent state loading while working
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         for (var i=0; i<5; i++) {
             CreateSampler(two.width-50, 50+i*50);
