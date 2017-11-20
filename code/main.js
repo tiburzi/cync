@@ -143,8 +143,7 @@ window.onload = function() {
             }
             
             _.each(this.notes, function(n) {
-               LAYERS['notes'].remove(n);
-                two.remove(n); 
+                n.destroy();
             });
             LAYERS['orbits'].remove(this.trigger);
             two.remove(this.trigger);
@@ -293,11 +292,12 @@ window.onload = function() {
                         if (nt > oldTheta && nt <= this.theta) {
                             // Trigger a note!
                             if (!GLOBAL_MUTE) {
-                                n.sampler.audio.play();
+                                var snd = n.sampler.audio.play();
+                                n.sampler.audio.volume(n.volume, snd);
                             }
                             // Animate the note
-                            n.radius = 1.5*NOTE_RADIUS;
-                            n.tweenToRadius(NOTE_RADIUS);
+                            n.scale = 1.5;
+                            tweenToScale(n, 1, 200);
                         }
                     } else {console.log("error: note on orbit "+this.orbit+" has theta = 'null'.")}
                 }
@@ -462,6 +462,7 @@ window.onload = function() {
         note.fromSampler = false; //whether or not the note was just dragged from a sampler
         note.prevPos = {x:x, y:y};
         note.theta = 0; //direction (in radians) of the note relative to its orbit's center
+        note.volume = 1;
 
         addInteraction(note);
 
@@ -481,7 +482,9 @@ window.onload = function() {
         }
         
         note.onMouseHover = function(e, offset, localClickPos) {
-            if (this.orbit != null) {this.orbit.polygon.appear();}
+            if (this.orbit != null) {
+                this.orbit.polygon.appear();
+            }
         }
         
         note.onMouseDown = function (e, offset, localClickPos) {
@@ -574,12 +577,8 @@ window.onload = function() {
                 }
                 
                 // Delete this note
-                var index = Notes.indexOf(this);
-                if (index > -1) {
-                    Notes.splice(index, 1);
-                    LAYERS['notes'].remove(this);
-                    two.remove(this);
-                }
+                this.destroy();
+                
             } else {
                 if (this.orbit != null) {
                     // If dragged directly from a sampler, tell the sampler its note has been removed
@@ -606,6 +605,13 @@ window.onload = function() {
             UpdateState();
         }
         
+        note.setVolume = function(v) {
+            var vol = Util.clamp(v, 0, 1);
+            this.volume = vol;
+            console.log(vol);
+            setRadius(this, (.5+.5*vol)*NOTE_RADIUS);
+        }
+        
         note.updateTheta = function() {
             if (this.orbit != null) {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
@@ -613,8 +619,19 @@ window.onload = function() {
             }
         }
 
-        note.update = function(){
+        note.update = function() {
             // For updating anything about the note
+            var X = this.translation.x + 2.5*NOTE_RADIUS*Math.cos(this.theta);
+            var Y = this.translation.y + 2.5*NOTE_RADIUS*Math.sin(this.theta);
+            note.parameter.translation.set(X, Y);
+        }
+        
+        note.destroy = function() {
+            var index = Notes.indexOf(this);
+            if (index > -1) {Notes.splice(index, 1);}
+            LAYERS['notes'].remove(this);
+            two.remove(this.parameter);
+            two.remove(this);
         }
         
         // Make the note tween to appear when created
@@ -627,14 +644,37 @@ window.onload = function() {
     }
     
     function CreateNoteParameter(note) {
-        /*var parameter = CreateSlider(
-            note.translation.x + (note.translation.x>two.width/2 ? 20 : -50),
-            note.translation.y,
-            100);
-        parameter.center();
-        parameter.scale = .5;
+        var par = two.makeRectangle(-LINE_W, -LINE_W, 2*LINE_W, 2*LINE_W);
+        par.stroke = "gray";
+        par.linewidth = .5*LINE_W;
         
-        return parameter;*/
+        par.note = note;
+        par.volValue = note.volume;
+        
+        addInteraction(par);
+        setCursor(par, 'ns-resize');
+        
+        par.onDrag = function(e) {
+            var vol = Util.clamp( par.volValue + (this.translation.y - e.clientY)/100, .25, 1);
+            this.note.setVolume( vol );
+        }
+        
+        /*par.tweenFade = new TWEEN.Tween(par)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .onUpdate(function() {
+                this._object.opacity = this._object.op;
+            });
+        
+        par.appear = function() {
+            this.tweenFade.to({ op:1 }, 500)
+                .start();
+        }
+        par.disappear = function() {
+            this.tweenFade.to({ op:.5 }, 500)
+                .start();
+        }*/
+        
+        return par;
     }
     
     function CreateSampler(x, y) {
@@ -842,15 +882,14 @@ window.onload = function() {
         
         var slider = two.makeGroup(line, dial);
         slider.value = .5;
+        slider.length = length;
         dial.slider = slider;
         dial.update();
         
         slider.translation.set(x, y);
-        slider.scale = 1;
         
         return slider;
     }
-    
     
     var Button = (function(scope) {
         

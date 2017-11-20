@@ -17,6 +17,9 @@ Util.pointDistance = function(start, end) {
 Util.pointDirection = function(start, end) {
     return Math.atan2(end.y - start.y, end.x - start.x); //returns radians, in range (PI, PI]
 }
+Util.clamp = function(value, minimum, maximum) {
+    return Math.max( Math.min(value, maximum), minimum);
+}
 
 Util.getParameterByName = function(name, url) {
 	// Courtesy of https://stackoverflow.com/a/901144/1278023
