@@ -11,7 +11,7 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = ["bass", "snare", "hihat_closed"];
+    var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -45,9 +45,15 @@ window.onload = function() {
         */
         CENTER = { x:two.width / 2, y:two.height / 2 };
         
-        PALETTE.push('#F7A055');
-        PALETTE.push('#F76055');
-        PALETTE.push('#9B3655');
+        PALETTE.push('#E53D75');
+        PALETTE.push('#EF9B40');
+        PALETTE.push('#5FBEAC');
+        PALETTE.push('#726DAF');
+        PALETTE.push('#1B9CD3');
+        PALETTE.push('#B8B8D1');
+        PALETTE.push('#A2D3E5');
+        PALETTE.push('#E58083');
+        //PALETTE.push('#303633');
         
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
@@ -62,9 +68,9 @@ window.onload = function() {
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
         
-        CreateSampler(two.width-100, 100);
-        CreateSampler(two.width-100, 200);
-        CreateSampler(two.width-100, 300);
+        for (var i=0; i<8; i++) {
+            CreateSampler(two.width-50, 50+i*50);
+        }
 
         if(stateData != null){
             stateData.orbits.forEach(function(radius) {
