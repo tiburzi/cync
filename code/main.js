@@ -627,14 +627,14 @@ window.onload = function() {
     }
     
     function CreateNoteParameter(note) {
-        var parameter = CreateSlider(
+        /*var parameter = CreateSlider(
             note.translation.x + (note.translation.x>two.width/2 ? 20 : -50),
             note.translation.y,
             100);
         parameter.center();
         parameter.scale = .5;
         
-        return parameter;
+        return parameter;*/
     }
     
     function CreateSampler(x, y) {
@@ -818,12 +818,12 @@ window.onload = function() {
         back.cap = 'round';
         back.stroke = '#dddddd';*/
         
-        var line = two.makeLine(x, y, x, y-length);
+        var line = two.makeLine(0, 0, 0, -length);
         line.linewidth = LINE_W;
         line.cap = 'round';
         line.stroke = '#333333';
         
-        var dial = two.makeCircle(x, y, PHI*LINE_W);
+        var dial = two.makeCircle(0, 0, PHI*LINE_W);
         dial.fill = 'white';
         dial.linewidth = LINE_W;
         dial.stroke = '#333333';
@@ -832,17 +832,21 @@ window.onload = function() {
         setCursor(dial, 'pointer');
         
         dial.onDrag = function(e, offset, localClickPos) {
-            this.slider.value = (y - Math.min( y, Math.max( y-length, e.clientY ) )) / length;
+            this.slider.value = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
+            console.log(this.slider.value);
             this.update();
         }
         dial.update = function() {
-            this.translation.y = y - length * this.slider.value;
+            this.translation.y = -length * this.slider.value;
         }
         
         var slider = two.makeGroup(line, dial);
-        slider.value = .9;
+        slider.value = .5;
         dial.slider = slider;
         dial.update();
+        
+        slider.translation.set(x, y);
+        slider.scale = 1;
         
         return slider;
     }
