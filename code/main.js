@@ -100,8 +100,8 @@ window.onload = function() {
 
              })
         } else {
-            CreateOrbit(100);
-            CreateOrbit(200);
+            CreateOrbit(50);
+            CreateOrbit(250);
         }
 
         for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation

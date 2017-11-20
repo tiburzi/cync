@@ -8,7 +8,6 @@
 - create note volume sliders
 - button for toggling polygons?
 - improve method for loading external svg data (using two.interpret)
-- make default setup intuitive to start making grooves (1-4 ratio, etc.)
 
 
 
