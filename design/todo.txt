@@ -6,7 +6,8 @@
 - Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- button for toggling polygons
+- button for toggling polygons?
+- 
 
 
 
@@ -22,6 +23,7 @@ Omar:
 	- assign new audio files to samplers (either new or preexisting)
 	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
 	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
+- alt-click orbit to copy it
 
 
 --- Done ---

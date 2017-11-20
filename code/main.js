@@ -43,6 +43,7 @@ window.onload = function() {
         PALETTE.push('#9B3655');
         
         LAYERS['bg'] = two.makeGroup();
+        LAYERS['hud'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
         LAYERS['polygons'] = two.makeGroup();
         LAYERS['center'] = two.makeGroup();
@@ -565,6 +566,7 @@ window.onload = function() {
         sampler.audio = new Howl({src: fileName});
 
         Samplers.push(sampler);
+        LAYERS['hud'].add(sampler);
 
         sampler.update = function() {
             // Check if the sampler needs another note
@@ -756,7 +758,72 @@ window.onload = function() {
         dial.update();
     }
     
-    function CreateButton(x, y, r, imageURL) {
+    
+    var Button = (function(scope) {
+        
+        function Button(two, x, y, r, imageURL) {
+            var makeBtn = function(imageData) {
+                if (imageData != undefined) {
+                    var svgAsset = imageData;
+                    var mySvg = svgAsset.getElementsByTagName('svg')[0];
+                    var preimage = two.interpret(mySvg).center();
+                    preimage.scale = .35;
+                    preimage.fill = 'white';
+                    var image = two.makeGroup(preimage);
+                    image.translation.set(x, y);
+                } else var image = null;
+
+                var circle = two.makeCircle(x, y, r);
+                circle.fill = '#333333';
+                circle.stroke = 'none';
+                circle.linewidth = 0;
+                circle.radius = r;
+
+                var btn = two.makeGroup(circle, image);
+                btn.circle = circle;
+                btn.image = image;
+                btn.hoverOver = false;
+
+                addInteraction(btn);
+                setCursor(btn, 'pointer');
+
+                btn.onGlobalMouseMove = function(e) {
+                    // Check if mouse is over the button
+                    if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
+                        if (!this.hoverOver) {
+                            _.each(btn.children, function(child) {
+                                tweenToScale(child, 1.2, 200);
+                            });
+                            this.hoverOver = true;
+                        }
+                    } else {
+                        if (this.hoverOver) {
+                            _.each(btn.children, function(child) {
+                                tweenToScale(child, 1, 200);
+                            });
+                            this.hoverOver = false;
+                        }
+                    }
+                }
+
+                btn.onMouseDown = function() {
+                    alert("I don't do anything yet.");
+                }
+            }
+
+            if (imageURL != undefined) {
+                $.get(imageURL, function(data) {
+                    makeBtn(data);
+                });
+            } else {makeBtn();}
+        }
+        
+        scope.Button = Button;
+        return Button;
+    })(typeof exports === 'undefined' ? {} : exports)
+    
+    
+    /*function CreateButton(x, y, r, imageURL) {
         var makeBtn = function(imageData) {
             if (imageData != undefined) {
                 var svgAsset = imageData;
@@ -811,7 +878,7 @@ window.onload = function() {
                 makeBtn(data);
             });
         } else {makeBtn();}
-    }
+    }*/
     
     // Reusable global functions
     var isOverCircle = function(x, y, cx, cy, r) {
@@ -994,8 +1061,8 @@ window.onload = function() {
     CreateSampler(two.width-100, 300);
     
     CreateSlider(two.width-50, two.height-100, 100);
-    CreateButton(two.width-50, two.height-50, 30, "assets/images/metronome.svg");
-    
+    var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
+    btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
 
     // Our main update loop!
     function update() {
