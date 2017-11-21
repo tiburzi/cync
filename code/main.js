@@ -465,6 +465,7 @@ window.onload = function() {
         note.volume = 1;
         note.hovering = false;
         note.dragging = false;
+        note.selected = false;
 
         addInteraction(note);
 
@@ -485,7 +486,7 @@ window.onload = function() {
         
         note.onGlobalMouseMove = function(e, offset, localClickPos) {
             // If on a sampler, make a growing animation
-            if (this.onSampler == true && !this.dragging) {
+            if (this.onSampler && !this.dragging) {
                 setCursor(this, "hand");
                 if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
                     if (!this.hovering) {
@@ -493,7 +494,7 @@ window.onload = function() {
                         tweenToScale(this, 1.5, 200);
                     }
                 } else {
-                    if (this.hovering) {
+                    if (!this.selected && this.hovering) {
                         this.hovering = false;
                         tweenToScale(this, 1, 200);
                     }
@@ -516,7 +517,39 @@ window.onload = function() {
             }
         }
         
-        note.onClick = function(e) {alert("clicked");}
+        note.onClick = function(e) {
+            // If on a sampler, select this note
+            if (this.onSampler) {
+                var s = this.selected;
+                _.each(Notes, function(n) {
+                    if (n.selected) {
+                        n.selected = false;
+                        tweenToScale(n, 1, 100);
+                    }
+                });
+                if (!s) {this.selected = true;}
+                
+                tweenToScale(this, this.selected ? 2 : 1.5, 100);
+            }
+        }
+        
+        note.onGlobalMouseDown = function(e) {
+            if (this.selected && !isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
+                // If this note is selected, create notes of this type on every mouse click
+                var spawnNote = true;
+                for (var i=0; i<Notes.length; i++) {
+                    if (this !== Notes[i] && Notes[i].hovering) {spawnNote = false; break;}
+                }
+                if (spawnNote) {
+                    var n = CreateNote(e.clientX, e.clientY);
+                    n.sampler = this.sampler;
+                    n.onSampler = false;
+                    n.fill = this.sampler.color;
+                    $(document.getElementById(n.id)).trigger('mousedown');
+                    n.prevPos = undefined; //override, so note is destroyed if it is not placed
+                }
+            }
+        }
         
         note.onMouseDown = function (e, offset, localClickPos) {
             note.prevPos = {x:note.translation.x, y:note.translation.y};
@@ -536,17 +569,19 @@ window.onload = function() {
                         note.orbit.polygon.update();
                     }
                 });
-            
-            // Return to regular size if dragged off sampler
-            if (this.sampler != null) {tweenToScale(this, 1, 200);}
         }
         
         note.onDrag = function(e, offset, localClickPos) {
-            this.dragging = true;
-            
+            if (!this.dragging) {
+                this.dragging = true;
+
+                // Return to regular size if dragged off sampler
+                if (this.sampler != null) {tweenToScale(this, 1, 200);}
+            }
+
             // By default, move to the mouse location
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
-            
+
             // If close enough to an orbit, snap to that orbit
             var notOnOrbit = true;
             var oldOrbit = this.orbit; //save in case orbit changes
@@ -557,21 +592,21 @@ window.onload = function() {
                     var angle = Util.pointDirection(CENTER, goalPos);
                     goalPos.x = CENTER.x + Math.cos(angle) * dist;
                     goalPos.y = CENTER.y + Math.sin(angle) * dist;
-                    
+
                     // If moved onto a new orbit
                     if ((this.orbit != Orbits[i])) {
-                        
+
                         // Add the note to the orbit
                         this.orbit = Orbits[i];
                         this.orbit.notes.push(this);
                         this.orbit.sortNotes();
-                        
+
                         // Begin a tween to smooth the transition moving onto the orbit
                         this.tweenMove.to(goalPos, tweenTime).start();
                     }
                     notOnOrbit = false;
                     break;
-                    
+
                 } else {
                     // Begin a tween to smooth the transition moving off of the orbit
                     if ((this.orbit == Orbits[i])) {
@@ -581,25 +616,25 @@ window.onload = function() {
                 }
             }
             if (notOnOrbit) {note.orbit = null;}
-            
+
             // If orbit has changed, removed the note from the orbit it was just on
             if (this.orbit != oldOrbit && oldOrbit != null) {
                 oldOrbit.removeNote(this);
             }
-            
+
             // Finally, actually move to the desired position
             if (this.tweenMove._isPlaying == true) {
                 this.tweenMove._valuesEnd = goalPos;
             } else {
                 this.translation.set(goalPos.x, goalPos.y);
             }
-            
+
             // After moving, update the note and its related objects
             if (this.orbit != null) {
                 this.updateTheta();
                 this.orbit.polygon.update();
             }
-            
+
             this.dragging = true;
             DRAGGING_DESTROYABLE = true;
         }
@@ -627,17 +662,19 @@ window.onload = function() {
                     }
                     
                     // Record the note's new orbit
-                    note.prevOrbit = note.orbit;
+                    this.prevOrbit = this.orbit;
                 } else {
-                    // Note is over blank space, so return to previous position
-                    var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
-                    note.tweenMove.to(this.prevPos, time);
-                    note.tweenMove.start();
-                    if (note.prevOrbit != null) { // If the note used to be on an orbit (as opposed to being dragged directly from a sampler)
-                        note.orbit = note.prevOrbit;
-                        note.orbit.notes.push(note);
-                        note.orbit.sortNotes();
-                    }
+                    if (this.prevPos != undefined) {
+                        // Note is over blank space, so return to previous position
+                        var time = Math.max(200, Util.pointDistance( {x:this.translation.x, y:this.translation.y}, this.prevPos ));
+                        this.tweenMove.to(this.prevPos, time);
+                        this.tweenMove.start();
+                        if (this.prevOrbit != null) { // If the note used to be on an orbit (as opposed to being dragged directly from a sampler)
+                            this.orbit = this.prevOrbit;
+                            this.orbit.notes.push(this);
+                            this.orbit.sortNotes();
+                        }
+                    } else {this.destroy();}
                 }
             }
 
@@ -1074,6 +1111,7 @@ window.onload = function() {
             .to({ scale:s }, time)
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
+        return tweenScale;
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
@@ -1198,14 +1236,17 @@ window.onload = function() {
         // Define global mouse events
         document.addEventListener('mousemove', function(e) {
             e.preventDefault();
+            dragged = true;
             if (typeof shape.onGlobalMouseMove === 'function') {shape.onGlobalMouseMove(e);}
         });
         document.addEventListener('mouseup', function(e) {
             e.preventDefault();
             if (typeof shape.onGlobalMouseUp === 'function') {shape.onGlobalMouseUp(e);}
+            if (!dragged) {if (typeof shape.onGlobalClick === 'function') {shape.onGlobalClick(e);}}
         });
         document.addEventListener('mousedown', function(e) {
             e.preventDefault();
+            dragged = false;
             if (typeof shape.onGlobalMouseDown === 'function') {shape.onGlobalMouseDown(e);}
         });
       }
@@ -1224,7 +1265,7 @@ window.onload = function() {
     
     SetupInitialState();
 
-    CreateSlider(two.width-50, two.height-100, 100);
+    //CreateSlider(two.width-50, two.height-100, 100);
     //var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
     //btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
 
