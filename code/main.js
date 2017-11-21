@@ -16,6 +16,8 @@ window.onload = function() {
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
+    var TEMPO_MIN = 30;
+    var TEMPO_MAX = 120;
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
@@ -931,10 +933,6 @@ window.onload = function() {
         /*
             A template for interactive sliders that vary a parameter (such as volume).
         */
-        /*var back = two.makeLine(x, y, x, y-length);
-        back.linewidth = 6*LINE_W;
-        back.cap = 'round';
-        back.stroke = '#dddddd';*/
         
         var line = two.makeLine(0, 0, 0, -length);
         line.linewidth = LINE_W;
@@ -957,12 +955,16 @@ window.onload = function() {
         dial.onGlobalMouseUp = function() {this.slider.dragging = false;};
         dial.update = function() {
             this.translation.y = -length * this.slider.value;
+            this.slider.callBack();
         };
         
         var slider = two.makeGroup(line, dial);
         slider.value = .5;
         slider.length = length;
         slider.dragging = false;
+        slider.callBack = function() {
+            // a default empty callback function. overwritten by specific instances of 'slider'
+        }
         dial.slider = slider;
         dial.update();
         
@@ -991,6 +993,7 @@ window.onload = function() {
             var slider = CreateSlider(x, y-50, h-50);
             slider.fill = bg.stroke;
             slider.stroke = "white";
+            slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
 
             var btn = two.makeGroup(bg, slider, image);
             btn.image = image;
@@ -1004,19 +1007,6 @@ window.onload = function() {
             addInteraction(btn);
             setCursor(btn, 'pointer');
 
-            btn.onMouseEnter = function() {
-                this.hovering = true;
-                this.expanded = true;
-                this.appear();
-            }
-            btn.onMouseLeave = function() {
-                this.hovering = false;
-                if (!slider.dragging) {
-                    this.expanded = false;
-                    this.disappear();
-                }
-            }
-            
             btn.appear = function() {
                 var tweenGrow = new TWEEN.Tween(this)
                     .to({ height:h }, 500)
@@ -1038,6 +1028,18 @@ window.onload = function() {
                         mask.vertices[1].y = -(this._object.height+r);
                     })
                     .start();
+            }
+            btn.onMouseEnter = function() {
+                this.hovering = true;
+                this.expanded = true;
+                this.appear();
+            }
+            btn.onMouseLeave = function() {
+                this.hovering = false;
+                if (!slider.dragging) {
+                    this.expanded = false;
+                    this.disappear();
+                }
             }
             btn.onGlobalMouseUp = function() {
                 if (this.expanded && !this.hovering) {this.disappear();}
