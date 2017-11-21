@@ -419,7 +419,7 @@ window.onload = function() {
                 this.appear();
             }
         }
-        polygon.onMouseOut = function(e, offset, localClickPos) {
+        polygon.onMouseLeave = function(e, offset, localClickPos) {
             polygon.hover = false;
             if (!this.dragging) {this.disappear();}
         }
@@ -486,6 +486,7 @@ window.onload = function() {
         note.onGlobalMouseMove = function(e, offset, localClickPos) {
             // If on a sampler, make a growing animation
             if (this.onSampler == true && !this.dragging) {
+                setCursor(this, "hand");
                 if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
                     if (!this.hovering) {
                         this.hovering = true;
@@ -515,6 +516,8 @@ window.onload = function() {
             }
         }
         
+        note.onClick = function(e) {alert("clicked");}
+        
         note.onMouseDown = function (e, offset, localClickPos) {
             note.prevPos = {x:note.translation.x, y:note.translation.y};
             
@@ -539,6 +542,7 @@ window.onload = function() {
         }
         
         note.onDrag = function(e, offset, localClickPos) {
+            this.dragging = true;
             
             // By default, move to the mouse location
             var goalPos = { x: e.clientX - offset.x, y:e.clientY - offset.y };
@@ -1080,9 +1084,11 @@ window.onload = function() {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
         var localClickPos = {x: 0, y: 0};
+        var dragged = false;
         
         var drag = function(e) {
             e.preventDefault();
+            dragged = true;
             
             //Call the shape's dragging method, if it has one
             if (typeof shape.onDrag === 'function') {shape.onDrag(e, offset, localClickPos);}
@@ -1099,7 +1105,8 @@ window.onload = function() {
         };
         var dragStart = function(e) {
             e.preventDefault();
-            localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y}
+            localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y};
+            dragged = false;
             $(window)
                 .bind('mousemove', drag)
                 .bind('mouseup', dragEnd);
@@ -1111,6 +1118,7 @@ window.onload = function() {
             e.preventDefault();
             var touch = e.originalEvent.changedTouches[0];
             localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
+            dragged = false;
             $(window)
                 .bind('touchmove', touchDrag)
                 .bind('touchend', touchEnd);
@@ -1127,6 +1135,7 @@ window.onload = function() {
             
             //Call the shape's click release method, if it has one
             if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
+            if (!dragged) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
         };
         var touchEnd = function(e) {
             e.preventDefault();
@@ -1136,8 +1145,9 @@ window.onload = function() {
             
             //Call the shape's click release method, if it has one
             if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
+            if (!dragged) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
             
-            return false;
+            return false; //<--- anyone know why this returns false?
         };
         var enter = function(e) {
             e.preventDefault();
@@ -1163,12 +1173,6 @@ window.onload = function() {
             //Call the shape's mouse move method, if it has one
             if (typeof shape.onMouseHover === 'function') {shape.onMouseHover(e, offset, localClickPos);}
         };
-        var out = function(e) {
-            e.preventDefault();
-            
-            //Call the shape's mouse move method, if it has one
-            if (typeof shape.onMouseOut === 'function') {shape.onMouseOut(e, offset, localClickPos);}
-        };
 
         two.update(); // Need to call this before attempting to touch the SVG so that Twojs will actually create it
 
@@ -1180,10 +1184,9 @@ window.onload = function() {
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
-            .bind('mouseleave', leave) //fires when mouse leaves object entirely
+            .bind('mouseleave', leave)
             .bind('mousemove', move)
-            .bind('mouseover', hover)
-            .bind('mouseout', out); //fires when mouse leaves object, or enters one of its children
+            .bind('mouseover', hover);
             //.bind('mouseover', function() {console.log('over')})
             //.bind('dragover', function() {console.log('drag over')});
 
