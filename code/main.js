@@ -951,22 +951,102 @@ window.onload = function() {
         
         dial.onDrag = function(e, offset, localClickPos) {
             this.slider.value = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
-            console.log(this.slider.value);
+            this.slider.dragging = true;
             this.update();
-        }
+        };
+        dial.onGlobalMouseUp = function() {this.slider.dragging = false;};
         dial.update = function() {
             this.translation.y = -length * this.slider.value;
-        }
+        };
         
         var slider = two.makeGroup(line, dial);
         slider.value = .5;
         slider.length = length;
+        slider.dragging = false;
         dial.slider = slider;
         dial.update();
         
         slider.translation.set(x, y);
         
         return slider;
+    }
+    
+    function CreateTempoButton(x, y, r, h) {
+        var makeBtn = function(imageData) {
+            if (imageData != undefined) {
+                var svgAsset = imageData;
+                var mySvg = svgAsset.getElementsByTagName('svg')[0];
+                var preimage = two.interpret(mySvg).center();
+                preimage.scale = .35;
+                preimage.fill = 'white';
+                var image = two.makeGroup(preimage);
+                image.translation.set(x, y);
+            } else var image = null;
+            
+            var bg = two.makeLine(x, y, x, y);
+            bg.linewidth = 2*r;
+            bg.cap = "round";
+            bg.stroke = '#cccccc';
+            
+            var slider = CreateSlider(x, y-50, h-50);
+            slider.fill = bg.stroke;
+            slider.stroke = "white";
+
+            var btn = two.makeGroup(bg, slider, image);
+            btn.image = image;
+            btn.hovering = false;
+            btn.expanded = false;
+            btn.height = 0;
+            
+            var mask = two.makeRectangle(x, y, 2*r, 2*r);
+            btn.mask = mask;
+
+            addInteraction(btn);
+            setCursor(btn, 'pointer');
+
+            btn.onMouseEnter = function() {
+                this.hovering = true;
+                this.expanded = true;
+                this.appear();
+            }
+            btn.onMouseLeave = function() {
+                this.hovering = false;
+                if (!slider.dragging) {
+                    this.expanded = false;
+                    this.disappear();
+                }
+            }
+            
+            btn.appear = function() {
+                var tweenGrow = new TWEEN.Tween(this)
+                    .to({ height:h }, 500)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function() {
+                        bg.vertices[0].y = -this._object.height;
+                        mask.vertices[0].y = -(this._object.height+r);
+                        mask.vertices[1].y = -(this._object.height+r);
+                    })
+                    .start();
+            }
+            btn.disappear = function() {
+                var tweenShrink = new TWEEN.Tween(this)
+                    .to({ height:0 }, 500)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function() {
+                        bg.vertices[0].y = -this._object.height;
+                        mask.vertices[0].y = -(this._object.height+r);
+                        mask.vertices[1].y = -(this._object.height+r);
+                    })
+                    .start();
+            }
+            btn.onGlobalMouseUp = function() {
+                if (this.expanded && !this.hovering) {this.disappear();}
+            }
+        }
+
+        $.get("assets/images/metronome.svg", function(data) {
+            makeBtn(data);
+        });
     }
     
     var Button = (function(scope) {
@@ -1098,6 +1178,9 @@ window.onload = function() {
     }
     var isOverCenter = function(x, y) {
         return isOverCircle(CENTER.x, CENTER.y, x, y, CENTER_RADIUS)
+    }
+    var isOverRectangle = function(x, y, rx1, ry1, rx2, ry2) {
+        return ((rx1 <= x && x <= rx2) && (ry1 <= y && y <= ry2));
     }
     var setRadius = function(circle, r) {
         circle.radius = r;
@@ -1251,9 +1334,9 @@ window.onload = function() {
         });
       }
 
-    // Global time
+    // Global time, in seconds
     var START_TIME = new Date();
-    var TIME = 0; //how long the app has been running, in seconds
+    var TIME = 0;
     function updateTime() {
         TIME = (new Date() - START_TIME) / 1000;
     }
@@ -1265,6 +1348,7 @@ window.onload = function() {
     
     SetupInitialState();
 
+    CreateTempoButton(two.width-50, two.height-50, 30, 200);
     //CreateSlider(two.width-50, two.height-100, 100);
     //var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
     //btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
