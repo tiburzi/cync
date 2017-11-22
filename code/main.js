@@ -11,7 +11,8 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    var SOUND_FILES = [];//["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"]
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -57,7 +58,7 @@ window.onload = function() {
         PALETTE.push('#B8B8D1');
         PALETTE.push('#A2D3E5');
         PALETTE.push('#E58083');
-        //PALETTE.push('#303633');
+        PALETTE.push('#303633');
         
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
@@ -72,7 +73,7 @@ window.onload = function() {
         
         // Create HUD elements
         // samplers
-        for (var i=0; i<5; i++) {
+        for (var i=0; i<SOUND_FILES.length; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
         
