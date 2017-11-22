@@ -6,18 +6,16 @@
 - Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- button for toggling polygons?
 - improve method for loading external svg data (using two.interpret) ?
-
 
 
 Jon:
 - play sample when sampler is clicked?
-- create button prototype
+- create play/pause button
 
 
 Omar:
-- dynamic resizing window and content
+- dynamic resizing window and content (!!!)
 - custom audio files
 	- importing new audio files via drag-n-drop anywhere on screen
 	- assign new audio files to samplers (either new or preexisting)
@@ -58,3 +56,6 @@ Omar:
 - create a basic way to order objects by depth (https://github.com/jonobr1/two.js/issues/245)
 - add subtle pulse animation to notes when played
 - design volume slider
+- make global volume and global tempo sliders
+- button for toggling polygons
+
