@@ -7,11 +7,12 @@
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - improve method for loading external svg data (using two.interpret) ?
-
+- fix glitch with notes not playing during first cycle when a setup is loaded
+- improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
 
 Jon:
 - play sample when sampler is clicked?
-- create play/pause button
+- make play/pause button
 
 
 Omar:
