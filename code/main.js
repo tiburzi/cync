@@ -68,6 +68,24 @@ window.onload = function() {
     }
 
     function SetupInitialState() {
+        
+        // Create HUD elements
+        // samplers
+        for (var i=0; i<5; i++) {
+            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
+        }
+        
+        // global controls
+        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
+        tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
+        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
+
+        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
+        volumeBtn.slider.setValue(MASTER_VOLUME);
+        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value;}
+        
+        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
+        
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
         //var stateData = null; //uncomment this line to prevent state loading while working
@@ -86,9 +104,9 @@ window.onload = function() {
                 var X = CENTER.x + Math.cos(angle) * dist;
                 var Y = CENTER.y + Math.sin(angle) * dist;
 
-
                 var note = CreateNote(X,Y);
                 note.sampler = sampler;
+                note.onSampler = false;
                 sampler.hasNote = false;
                 note.fill = sampler.color;
                 note.theta = n.theta;
@@ -96,32 +114,17 @@ window.onload = function() {
                 note.prevOrbit = orbit;
                 note.orbit.notes.push(note);
                 note.orbit.sortNotes();
-
-
              })
         } else {
             CreateOrbit(RADIUS_SNAP);
             CreateOrbit(4*RADIUS_SNAP);
         }
-
-        for (var i=0; i<Orbits.length; i++) { //snap orbit radii upon creation
+        
+        // Snap orbit radii upon creation
+        for (var i=0; i<Orbits.length; i++) {
             setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
         }
         
-        //Create HUD elements
-        for (var i=0; i<5; i++) {
-            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
-        }
-        
-        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
-        tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
-        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
-
-        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
-        volumeBtn.slider.setValue(MASTER_VOLUME);
-        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value;}
-        
-        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
     }
     
     function CreateOrbit(radius) {
