@@ -18,6 +18,7 @@ window.onload = function() {
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
     var TEMPO_MAX = 120;
+    var MASTER_VOLUME = 1;
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
@@ -69,13 +70,9 @@ window.onload = function() {
     function SetupInitialState() {
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
-        //var stateData = null; //uncomment this line to prevent state loading while working
+        var stateData = null; //uncomment this line to prevent state loading while working
         
-        for (var i=0; i<5; i++) {
-            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
-        }
-
-        if(stateData != null){
+        if (stateData != null){
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
              })
@@ -107,10 +104,22 @@ window.onload = function() {
             CreateOrbit(4*RADIUS_SNAP);
         }
 
-        for(var i=0;i<Orbits.length;i++) { //snap orbit radii upon creation
+        for (var i=0; i<Orbits.length; i++) { //snap orbit radii upon creation
             setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
         }
         
+        //Create HUD elements
+        for (var i=0; i<5; i++) {
+            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
+        }
+        
+        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
+        tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
+        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
+
+        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume.svg");
+        volumeBtn.slider.setValue(MASTER_VOLUME);
+        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value;}
     }
     
     function CreateOrbit(radius) {
@@ -948,25 +957,28 @@ window.onload = function() {
         setCursor(dial, 'pointer');
         
         dial.onDrag = function(e, offset, localClickPos) {
-            this.slider.value = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
+            var val = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
             this.slider.dragging = true;
-            this.update();
+            this.slider.setValue(val);
         };
         dial.onGlobalMouseUp = function() {this.slider.dragging = false;};
-        dial.update = function() {
-            this.translation.y = -length * this.slider.value;
-            this.slider.callBack();
-        };
         
         var slider = two.makeGroup(line, dial);
-        slider.value = .5;
         slider.length = length;
         slider.dragging = false;
+        slider.dial = dial;
+        dial.slider = slider;
+        
         slider.callBack = function() {
             // a default empty callback function. overwritten by specific instances of 'slider'
         }
-        dial.slider = slider;
-        dial.update();
+        slider.setValue = function(val) {
+            this.value = val;
+            this.dial.translation.y = -length * this.value;
+            this.dial.slider.callBack();
+        };
+        
+        slider.setValue(1); //default value
         
         slider.translation.set(x, y);
         
@@ -998,10 +1010,10 @@ window.onload = function() {
         addInteraction(btn);
         setCursor(btn, 'pointer');
         
-        $.get("assets/images/metronome.svg", function(svgAsset) {
+        $.get(imageURL, function(svgAsset) {
             var mySvg = svgAsset.getElementsByTagName('svg')[0];
             var preimage = two.interpret(mySvg).center();
-            preimage.scale = .35;
+            preimage.scale = 1;
             preimage.fill = 'white';
             image = two.makeGroup(preimage);
             image.translation.set(x, y);
@@ -1047,11 +1059,6 @@ window.onload = function() {
         }
 
         return btn;
-    }
-    
-    function CreateTempoButton(x, y) {
-        var tempoBtn = CreateSliderButton(x, y, 30, 200, "assets/images/metronome.svg");
-        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
     }
     
     var Button = (function(scope) {
@@ -1352,8 +1359,7 @@ window.onload = function() {
     var C = CreateCenter(CENTER.x, CENTER.y);
     
     SetupInitialState();
-
-    CreateTempoButton(two.width-50, two.height-50);
+    
     //CreateSlider(two.width-50, two.height-100, 100);
     //var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
     //btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
