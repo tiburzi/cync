@@ -19,6 +19,7 @@ window.onload = function() {
     var TEMPO_MIN = 30;
     var TEMPO_MAX = 120;
     var MASTER_VOLUME = 1;
+    var SHOW_POLYGONS = true;
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
@@ -85,6 +86,13 @@ window.onload = function() {
         volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value; Howler.volume(MASTER_VOLUME);}
         
         var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
+        polygonBtn.callBack = function() {
+            SHOW_POLYGONS = this.on;
+            this.image.opacity = this.on ? 1 : 0.5;
+        };
+        
+        var playBtn = CreateButton(two.width-280, two.height-50, 30, "assets/images/play.svg");
+        
         
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
@@ -123,6 +131,7 @@ window.onload = function() {
         // Snap orbit radii upon creation
         for (var i=0; i<Orbits.length; i++) {
             setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
+            Orbits[i].polygon.update();
         }
         
     }
@@ -374,13 +383,15 @@ window.onload = function() {
                 this._object.setOpacity(this._object.op);
             });
         polygon.appear = function() {
-            this.tweenFade.to({ op:this.maxOpacity }, 500)
-                .onComplete(function() {
-                    //do nothing: we need an placeholder function to cancel the function set in polygon.disappear()
-                })
-                .start();
-            $(this._renderer.elem).css({'cursor': 'move'});
-            this.fill = this.stroke = 'gray';
+            if (SHOW_POLYGONS) {
+                this.tweenFade.to({ op:this.maxOpacity }, 500)
+                    .onComplete(function() {
+                        //do nothing: we need an placeholder function to cancel the function set in polygon.disappear()
+                    })
+                    .start();
+                $(this._renderer.elem).css({'cursor': 'move'});
+                this.fill = this.stroke = 'gray';
+            }
         }
         polygon.disappear = function() {
             this.tweenFade.to({ op:0 }, 500)
@@ -527,7 +538,6 @@ window.onload = function() {
                 } else {
                     if (this.hovering) {
                         this.hovering = false;
-                        this.orbit.polygon.disappear();
                     }
                 }
             }
@@ -700,7 +710,6 @@ window.onload = function() {
         note.setVolume = function(v) {
             var vol = Util.clamp(v, 0, 1);
             this.volume = vol;
-            console.log(vol);
             setRadius(this, (.5+.5*vol)*NOTE_RADIUS);
         }
         
@@ -1018,7 +1027,6 @@ window.onload = function() {
         $.get(imageURL, function(svgAsset) {
             var mySvg = svgAsset.getElementsByTagName('svg')[0];
             var preimage = two.interpret(mySvg).center();
-            preimage.scale = 1;
             preimage.fill = 'white';
             image = two.makeGroup(preimage);
             image.translation.set(x, y);
@@ -1078,6 +1086,7 @@ window.onload = function() {
         var btn = two.makeGroup(circle);
         btn.circle = circle;
         btn.hoverOver = false;
+        btn.on = true;
 
         addInteraction(btn);
         setCursor(btn, 'pointer');
@@ -1085,13 +1094,16 @@ window.onload = function() {
         $.get(imageURL, function(svgAsset) {
             var mySvg = svgAsset.getElementsByTagName('svg')[0];
             var preimage = two.interpret(mySvg).center();
-            //preimage.scale = 1;
-            //preimage.fill = 'white';
+            preimage.fill = 'white';
             image = two.makeGroup(preimage);
             image.translation.set(x, y);
             btn.add(image);
             btn.image = image;
         });
+        
+        btn.callBack = function() {
+            // empty function by default
+        }
 
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
@@ -1113,8 +1125,11 @@ window.onload = function() {
         }
 
         btn.onMouseDown = function() {
-            alert("I don't do anything yet.");
+            this.on = !this.on;
+            this.callBack();
         }
+        
+        return btn;
     }
     
     // Reusable global functions
