@@ -1108,6 +1108,7 @@ window.onload = function() {
         
         btn.callBack = function() {
             // empty function by default
+            alert("I don't do anything yet");
         }
 
         btn.onGlobalMouseMove = function(e) {
