@@ -31,3 +31,15 @@ Util.getParameterByName = function(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+
+Util.isAngleBetween = function(N,a,b){
+	// From: https://stackoverflow.com/a/29721295/1278023
+	// Add Math.PI to all angles so they're in the range 0 to Math.PI * 2 
+	N += Math.PI;
+	a += Math.PI;
+	b += Math.PI;
+
+	if(a < b)
+		return a <= N && N <= b;
+	return a <= N || N <= b;
+}
