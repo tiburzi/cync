@@ -82,7 +82,7 @@ window.onload = function() {
 
         var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
         volumeBtn.slider.setValue(MASTER_VOLUME);
-        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value;}
+        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value; Howler.volume(MASTER_VOLUME);}
         
         var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
         
