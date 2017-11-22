@@ -975,7 +975,12 @@ window.onload = function() {
             this.slider.dragging = true;
             this.slider.setValue(val);
         };
-        dial.onGlobalMouseUp = function() {this.slider.dragging = false;};
+        dial.onGlobalMouseUp = function() {
+            if(this.slider.dragging){
+                this.slider.callBack();
+            }
+            this.slider.dragging = false;
+        };
         
         var slider = two.makeGroup(line, dial);
         slider.length = length;
@@ -989,7 +994,7 @@ window.onload = function() {
         slider.setValue = function(val) {
             this.value = val;
             this.dial.translation.y = -length * this.value;
-            this.dial.slider.callBack();
+            //this.dial.slider.callBack();
         };
         
         slider.setValue(1); //default value
