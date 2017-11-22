@@ -7,7 +7,7 @@
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - button for toggling polygons?
-- improve method for loading external svg data (using two.interpret)
+- improve method for loading external svg data (using two.interpret) ?
 
 
 

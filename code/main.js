@@ -70,7 +70,7 @@ window.onload = function() {
     function SetupInitialState() {
         //This will either load from URL or just create the default orbits 
         var stateData = state.load();
-        var stateData = null; //uncomment this line to prevent state loading while working
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         if (stateData != null){
             stateData.orbits.forEach(function(radius) {
@@ -117,9 +117,11 @@ window.onload = function() {
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
 
-        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume.svg");
+        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value;}
+        
+        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
     }
     
     function CreateOrbit(radius) {
@@ -1061,126 +1063,56 @@ window.onload = function() {
         return btn;
     }
     
-    var Button = (function(scope) {
+    function CreateButton(x, y, r, imageURL) {
+        var circle = two.makeCircle(x, y, r);
+        circle.fill = '#cccccc';
+        circle.stroke = 'none';
+        circle.linewidth = 0;
+        circle.radius = r;
         
-        function Button(two, x, y, r, imageURL) {
-            var makeBtn = function(imageData) {
-                if (imageData != undefined) {
-                    var svgAsset = imageData;
-                    var mySvg = svgAsset.getElementsByTagName('svg')[0];
-                    var preimage = two.interpret(mySvg).center();
-                    preimage.scale = .35;
-                    preimage.fill = 'white';
-                    var image = two.makeGroup(preimage);
-                    image.translation.set(x, y);
-                } else var image = null;
+        var image = null; //added after it's loaded by jQuery's .get() method
 
-                var circle = two.makeCircle(x, y, r);
-                circle.fill = '#333333';
-                circle.stroke = 'none';
-                circle.linewidth = 0;
-                circle.radius = r;
+        var btn = two.makeGroup(circle);
+        btn.circle = circle;
+        btn.hoverOver = false;
 
-                var btn = two.makeGroup(circle, image);
-                btn.circle = circle;
-                btn.image = image;
-                btn.hoverOver = false;
-
-                addInteraction(btn);
-                setCursor(btn, 'pointer');
-
-                btn.onGlobalMouseMove = function(e) {
-                    // Check if mouse is over the button
-                    if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
-                        if (!this.hoverOver) {
-                            _.each(btn.children, function(child) {
-                                tweenToScale(child, 1.2, 200);
-                            });
-                            this.hoverOver = true;
-                        }
-                    } else {
-                        if (this.hoverOver) {
-                            _.each(btn.children, function(child) {
-                                tweenToScale(child, 1, 200);
-                            });
-                            this.hoverOver = false;
-                        }
-                    }
-                }
-
-                btn.onMouseDown = function() {
-                    alert("I don't do anything yet.");
-                }
-            }
-
-            if (imageURL != undefined) {
-                $.get(imageURL, function(data) {
-                    makeBtn(data);
-                });
-            } else {makeBtn();}
-        }
+        addInteraction(btn);
+        setCursor(btn, 'pointer');
         
-        scope.Button = Button;
-        return Button;
-    })(typeof exports === 'undefined' ? {} : exports)
-    
-    
-    /*function CreateButton(x, y, r, imageURL) {
-        var makeBtn = function(imageData) {
-            if (imageData != undefined) {
-                var svgAsset = imageData;
-                var mySvg = svgAsset.getElementsByTagName('svg')[0];
-                var preimage = two.interpret(mySvg).center();
-                preimage.scale = .35;
-                preimage.fill = 'white';
-                var image = two.makeGroup(preimage);
-                image.translation.set(x, y);
-            } else var image = null;
-            
-            var circle = two.makeCircle(x, y, r);
-            circle.fill = '#333333';
-            circle.stroke = 'none';
-            circle.linewidth = 0;
-            circle.radius = r;
-
-            var btn = two.makeGroup(circle, image);
-            btn.circle = circle;
+        $.get(imageURL, function(svgAsset) {
+            var mySvg = svgAsset.getElementsByTagName('svg')[0];
+            var preimage = two.interpret(mySvg).center();
+            //preimage.scale = 1;
+            //preimage.fill = 'white';
+            image = two.makeGroup(preimage);
+            image.translation.set(x, y);
+            btn.add(image);
             btn.image = image;
-            btn.hoverOver = false;
+        });
 
-            addInteraction(btn);
-            setCursor(btn, 'pointer');
-
-            btn.onGlobalMouseMove = function(e) {
-                // Check if mouse is over the button
-                if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
-                    if (!this.hoverOver) {
-                        _.each(btn.children, function(child) {
-                            tweenToScale(child, 1.2, 200);
-                        });
-                        this.hoverOver = true;
-                    }
-                } else {
-                    if (this.hoverOver) {
-                        _.each(btn.children, function(child) {
-                            tweenToScale(child, 1, 200);
-                        });
-                        this.hoverOver = false;
-                    }
+        btn.onGlobalMouseMove = function(e) {
+            // Check if mouse is over the button
+            if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
+                if (!this.hoverOver) {
+                    _.each(btn.children, function(child) {
+                        tweenToScale(child, 1.2, 200);
+                    });
+                    this.hoverOver = true;
+                }
+            } else {
+                if (this.hoverOver) {
+                    _.each(btn.children, function(child) {
+                        tweenToScale(child, 1, 200);
+                    });
+                    this.hoverOver = false;
                 }
             }
-
-            btn.onMouseDown = function() {
-                alert("I don't do anything yet.");
-            }
         }
-        
-        if (imageURL != undefined) {
-            $.get(imageURL, function(data) {
-                makeBtn(data);
-            });
-        } else {makeBtn();}
-    }*/
+
+        btn.onMouseDown = function() {
+            alert("I don't do anything yet.");
+        }
+    }
     
     // Reusable global functions
     var isOverCircle = function(x, y, cx, cy, r) {
