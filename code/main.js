@@ -314,7 +314,7 @@ window.onload = function() {
                     var n = this.orbit.notes[i];
                     var nt = n.theta;
                     if (nt != null) { //just in case
-                        if (nt > oldTheta && nt <= this.theta) {
+                        if (Util.isAngleBetween(nt,oldTheta,this.theta)) {
                             // Trigger a note!
                             if (!GLOBAL_MUTE) {
                                 var snd = n.sampler.audio.play();
