@@ -31,7 +31,7 @@ window.onload = function() {
 
     function UpdateState() {
         // Just a helper function to make it easy to update parameters of state without changing lots of lines of code 
-        state.update(Orbits,Notes);
+        state.update(Orbits,Notes,TEMPO);
     } 
 
     function Init() {
@@ -70,6 +70,8 @@ window.onload = function() {
     }
 
     function SetupInitialState() {
+        var stateData = state.load();
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         // Create HUD elements
         // samplers
@@ -80,7 +82,10 @@ window.onload = function() {
         // global controls
         var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
-        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
+        tempoBtn.slider.callBack = function() {
+            TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
+            UpdateState()
+        }
 
         var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
         volumeBtn.slider.setValue(MASTER_VOLUME);
@@ -96,13 +101,15 @@ window.onload = function() {
         
         
         //This will either load from URL or just create the default orbits 
-        var stateData = state.load();
-        //var stateData = null; //uncomment this line to prevent state loading while working
+        
         
         if (stateData != null){
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
              })
+
+            if(typeof stateData.tempo == "number" && stateData.tempo != -1)
+                TEMPO = stateData.tempo;
 
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];

@@ -2,7 +2,8 @@ var SaveState = (function (scope) {
 	function SaveState(){
 		this.state = {
 			'orbits':[], // Just need to store radii 
-			'notes':[], // Just need to store theta, type, and index of orbit  
+			'notes':[], // Just need to store theta, type, and index of orbit
+			'tempo':-1, // Just a number  
 		};
 	}
 
@@ -15,7 +16,7 @@ var SaveState = (function (scope) {
 		return null;
 	}
 
-	SaveState.prototype.update = function(orbits,notes){
+	SaveState.prototype.update = function(orbits,notes,tempo){
 		// Extract the bare minimum we need to save this state 
 		var orbitData = [];
 
@@ -42,6 +43,8 @@ var SaveState = (function (scope) {
 		})
 		this.state.notes = noteData;
 
+		this.state.tempo = tempo;
+
 		// Construct url
 		var url = this._makeUrl();
 		// Put it in the url 
@@ -67,6 +70,7 @@ var SaveState = (function (scope) {
 		if(stateString == null) return false;
 		var jsonString = atob(stateString);
 		var state = JSON.parse(jsonString);
+
 		this.state = state;
 
 		return true;
