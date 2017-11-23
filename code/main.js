@@ -123,9 +123,26 @@ window.onload = function() {
         
         var playBtn = CreateButton(two.width-280, two.height-50, 30, "play");
         playBtn.callBack = function() {
-            PAUSE = !this.on;
-            this.setImage(PAUSE ? "pause" : "play");
+            PAUSED = !this.on;
+            this.setImage(PAUSED ? "pause" : "play");
         };
+        playBtn.space_pressed = false;
+        document.addEventListener("keydown", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && !playBtn.space_pressed) { //spacebar
+                playBtn.on = !playBtn.on;
+                playBtn.callBack();
+                tweenToScale(playBtn, 0.8, 100);
+                playBtn.space_pressed = true;
+            }
+        });
+        document.addEventListener("keyup", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && playBtn.space_pressed) { //spacebar
+                tweenToScale(playBtn, 1, 100);
+                playBtn.space_pressed = false;
+            }
+        });
         
         
         //This will either load from URL or just create the default orbits 
@@ -1160,12 +1177,12 @@ window.onload = function() {
             // Check if mouse is over the button
             if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
                 if (!this.hoverOver) {
-                    tweenToScale(btn, 1.2, 200);
+                    tweenToScale(this, 1.2, 200);
                     this.hoverOver = true;
                 }
             } else {
                 if (this.hoverOver) {
-                    tweenToScale(btn, 1, 200);
+                    tweenToScale(this, 1, 200);
                     this.hoverOver = false;
                 }
             }
@@ -1173,6 +1190,10 @@ window.onload = function() {
         btn.onMouseDown = function() {
             this.on = !this.on;
             this.callBack();
+            tweenToScale(this, 1, 100);
+        }
+        btn.onMouseUp = function() {
+            tweenToScale(this, 1.2, 100);
         }
         
         btn.setImage(imageName);
