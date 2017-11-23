@@ -29,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // All the main js code runs here
 window.onload = function() {
-    console.log(svgAssets);
 
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
@@ -108,21 +107,21 @@ window.onload = function() {
         }
         
         // Global controls
-        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
+        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
 
-        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
+        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value; Howler.volume(MASTER_VOLUME);}
         
-        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
+        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "polygon");
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
         
-        var playBtn = CreateButton(two.width-280, two.height-50, 30, "assets/images/play.svg");
+        var playBtn = CreateButton(two.width-280, two.height-50, 30, "play");
         playBtn.callBack = function() {
             PAUSE = !this.on;
             this.image.opacity = this.on ? 1 : 0.5;
@@ -1050,7 +1049,7 @@ window.onload = function() {
         return slider;
     }
     
-    function CreateSliderButton(x, y, r, h, imageURL) {
+    function CreateSliderButton(x, y, r, h, imageName) {
         var bg = two.makeLine(x, y, x, y);
         bg.linewidth = 2*r;
         bg.cap = "round";
@@ -1060,9 +1059,13 @@ window.onload = function() {
         slider.fill = bg.stroke;
         slider.stroke = "white";
         
-        var image = null; //added after it's loaded by jQuery's .get() method
+        var preimage = two.interpret(svgAssets[imageName]);
+        preimage.center();
+        preimage.fill = 'white';
+        var image = two.makeGroup(preimage);
+        image.translation.set(x, y);
 
-        var btn = two.makeGroup(bg, slider);
+        var btn = two.makeGroup(bg, image, slider);
         btn.image = image;
         btn.slider = slider;
         btn.hovering = false;
@@ -1074,15 +1077,6 @@ window.onload = function() {
 
         addInteraction(btn);
         setCursor(btn, 'pointer');
-        
-        $.get(imageURL, function(svgAsset) {
-            var mySvg = svgAsset.getElementsByTagName('svg')[0];
-            var preimage = two.interpret(mySvg).center();
-            preimage.fill = 'white';
-            image = two.makeGroup(preimage);
-            image.translation.set(x, y);
-            btn.add(image);
-        });
 
         btn.appear = function() {
             var tweenGrow = new TWEEN.Tween(this)
@@ -1125,32 +1119,27 @@ window.onload = function() {
         return btn;
     }
     
-    function CreateButton(x, y, r, imageURL) {
+    function CreateButton(x, y, r, imageName) {
         var circle = two.makeCircle(x, y, r);
         circle.fill = '#cccccc';
         circle.stroke = 'none';
         circle.linewidth = 0;
         circle.radius = r;
-        
-        var image = null; //added after it's loaded by jQuery's .get() method
 
-        var btn = two.makeGroup(circle);
+        var preimage = two.interpret(svgAssets[imageName]);
+        preimage.center();
+        preimage.fill = 'white';
+        var image = two.makeGroup(preimage);
+        image.translation.set(x, y);
+        
+        var btn = two.makeGroup(circle, image);
         btn.circle = circle;
+        btn.image = image;
         btn.hoverOver = false;
         btn.on = true;
 
         addInteraction(btn);
         setCursor(btn, 'pointer');
-        
-        $.get(imageURL, function(svgAsset) {
-            var mySvg = svgAsset.getElementsByTagName('svg')[0];
-            var preimage = two.interpret(mySvg).center();
-            preimage.fill = 'white';
-            image = two.makeGroup(preimage);
-            image.translation.set(x, y);
-            btn.add(image);
-            btn.image = image;
-        });
         
         btn.callBack = function() {
             // empty function by default
@@ -1175,7 +1164,6 @@ window.onload = function() {
                 }
             }
         }
-
         btn.onMouseDown = function() {
             this.on = !this.on;
             this.callBack();
