@@ -240,6 +240,7 @@ window.onload = function() {
                     })
                     .onComplete(function() {
                         this._object.trigger.rotate = true;
+                        this._object.trigger.sync();
                         UpdateState();
                     })
                 tweenSnap.start();
@@ -286,10 +287,10 @@ window.onload = function() {
         var trigger = two.makePolygon(triggerX, triggerY, size);
         trigger.fill = 'rgba(255,69,0,1)';
         trigger.stroke = 'none';
-        trigger.rotation = Math.PI;
         trigger.orbit = orbit;
         trigger.rotate = true;
-        trigger.theta = 0;
+        trigger.theta = -Math.PI/2; //local variable for tracking the trigger's angle
+        trigger.rotation = 0; //two.js built-in variable
 
         LAYERS['orbits'].add(trigger);
         
@@ -305,16 +306,17 @@ window.onload = function() {
             // Rotate the trigger
             if (this.rotate == true) {
                 // Set a new angle theta
-                var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI;
-                this.rotation = newTheta;
-                this.theta = ((newTheta-(Math.PI/2)) % (2*Math.PI)) - Math.PI; //lots of maths because two.rotation, note.theta, and the visual rotation all have different spots for 0°
+                var dTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * dt);
+                var newTheta = oldTheta + dTheta;
+                this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
+                this._setRotation();
                 
                 // Play notes that the trigger just passed
                 for (var i=0; i<this.orbit.notes.length; i++) {
                     var n = this.orbit.notes[i];
                     var nt = n.theta;
                     if (nt != null) { //just in case
-                        if (Util.isAngleBetween(nt,oldTheta,this.theta)) {
+                        if (Util.isAngleBetween(nt, oldTheta, this.theta)) {
                             // Trigger a note!
                             if (!GLOBAL_MUTE) {
                                 var snd = n.sampler.audio.play();
@@ -328,12 +330,26 @@ window.onload = function() {
                 }
             }
             
-            // Move trigger to the edge of the orbit based on the rotation
-            var dist = this.orbit.radius + size + this.orbit.linewidth/2
-            var angle = this.rotation + Math.PI/2;
-            this.translation.x = CENTER.x + Math.cos(angle) * dist;
-            this.translation.y = CENTER.y + Math.sin(angle) * dist;
+            this._updatePosition();
         }
+        trigger.sync = function() {
+            // Resync the trigger according to the global time. Needs to happen if orbit is resized.
+            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI/2;
+            this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
+            this._setRotation();
+            this._updatePosition();
+        }
+        trigger._setRotation = function() {
+            this.rotation = this.theta - Math.PI/2;
+        }
+        trigger._updatePosition = function() {
+            // Move trigger along the edge of the orbit based on the rotation
+            var dist = this.orbit.radius + size + this.orbit.linewidth/2;
+            this.translation.x = CENTER.x + Math.cos(this.theta) * dist;
+            this.translation.y = CENTER.y + Math.sin(this.theta) * dist;
+        }
+        
+        trigger._setRotation();
         
         return trigger;
     }
@@ -1299,9 +1315,13 @@ window.onload = function() {
 
     // Global time, in seconds
     var START_TIME = new Date();
+    var PREV_TIME = START_TIME;
     var TIME = 0;
+    var dt = 0;
     function updateTime() {
         TIME = (new Date() - START_TIME) / 1000;
+        dt = TIME-PREV_TIME;
+        PREV_TIME = TIME;
     }
    
     
