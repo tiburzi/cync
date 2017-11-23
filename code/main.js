@@ -166,6 +166,7 @@ window.onload = function() {
         for (var i=0; i<Orbits.length; i++) {
             setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
             Orbits[i].polygon.update();
+            Orbits[i].trigger.sync();
         }
         
     }
