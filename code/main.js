@@ -1,5 +1,35 @@
-//All the main js code runs here
+// Load external svg assets before the window loads
+var svgAssets = [];
+document.addEventListener("DOMContentLoaded", function() {
+    var _getSvgData = function(imageURL, assetName) {
+        var file = new XMLHttpRequest();
+        file.open("GET", imageURL, false);
+        file.onreadystatechange = function() {
+            if (this.readyState === 4) {
+                if (this.status === 200 || this.status == 0) {
+                    var dataXML = this.responseXML;
+                    var svgElem = dataXML.getElementsByTagName('svg')[0];
+                    svgAssets[assetName] = svgElem;
+                    //console.log(svgElem);
+                }
+            }
+        }
+        file.send(null);
+    }
+    
+    _getSvgData("assets/images/play.svg", "play");
+    _getSvgData("assets/images/pause.svg", "pause");
+    _getSvgData("assets/images/metronome.svg", "metronome");
+    _getSvgData("assets/images/volume_full.svg", "volume_full");
+    _getSvgData("assets/images/volume_half.svg", "volume_half");
+    _getSvgData("assets/images/volume_zero.svg", "volume_zero");
+    _getSvgData("assets/images/reset.svg", "reset");
+    _getSvgData("assets/images/polygon.svg", "polygon");
+});
+
+// All the main js code runs here
 window.onload = function() {
+    console.log(svgAssets);
 
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
@@ -20,6 +50,7 @@ window.onload = function() {
     var TEMPO_MAX = 120;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
+    var PAUSED = false;
     var CENTER = {};
     var NOTE_RADIUS = 15;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
@@ -71,12 +102,12 @@ window.onload = function() {
     function SetupInitialState() {
         
         // Create HUD elements
-        // samplers
+        // Samplers
         for (var i=0; i<5; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
         
-        // global controls
+        // Global controls
         var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
@@ -92,6 +123,10 @@ window.onload = function() {
         };
         
         var playBtn = CreateButton(two.width-280, two.height-50, 30, "assets/images/play.svg");
+        playBtn.callBack = function() {
+            PAUSE = !this.on;
+            this.image.opacity = this.on ? 1 : 0.5;
+        };
         
         
         //This will either load from URL or just create the default orbits 
@@ -295,8 +330,8 @@ window.onload = function() {
         LAYERS['orbits'].add(trigger);
         
         trigger.update = function() {
-            if(this.orbit.frozen){
-                // Stop all update if this thing is frozen
+            if (this.orbit.frozen || PAUSED) {
+                // Stop all updates
                 return;
             }
 
