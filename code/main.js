@@ -1,5 +1,5 @@
 // Load external svg assets before the window loads
-var svgAssets = [];
+var svgAssets = {};
 document.addEventListener("DOMContentLoaded", function() {
     var _getSvgData = function(imageURL, assetName) {
         var file = new XMLHttpRequest();

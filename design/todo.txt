@@ -6,9 +6,7 @@
 - Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- improve method for loading external svg data (using two.interpret) ?
-- fix glitch with notes not playing during first cycle when a setup is loaded
-- improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
+- fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
 
 Jon:
 - play sample when sampler is clicked?
@@ -16,7 +14,7 @@ Jon:
 
 
 Omar:
-- dynamic resizing window and content (!!!)
+- dynamic resizing window and content (important!!!)
 - custom audio files
 	- importing new audio files via drag-n-drop anywhere on screen
 	- assign new audio files to samplers (either new or preexisting)
@@ -59,4 +57,5 @@ Omar:
 - design volume slider
 - make global volume and global tempo sliders
 - button for toggling polygons
-
+- improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
+- improve method for loading external svg data (using two.interpret)
