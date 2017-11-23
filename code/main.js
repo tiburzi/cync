@@ -124,7 +124,7 @@ window.onload = function() {
         var playBtn = CreateButton(two.width-280, two.height-50, 30, "play");
         playBtn.callBack = function() {
             PAUSE = !this.on;
-            this.image.opacity = this.on ? 1 : 0.5;
+            this.setImage(PAUSE ? "pause" : "play");
         };
         
         
@@ -1121,46 +1121,51 @@ window.onload = function() {
     }
     
     function CreateButton(x, y, r, imageName) {
-        var circle = two.makeCircle(x, y, r);
+        var circle = two.makeCircle(0, 0, r);
         circle.fill = '#cccccc';
         circle.stroke = 'none';
         circle.linewidth = 0;
         circle.radius = r;
 
-        var preimage = two.interpret(svgAssets[imageName]);
-        preimage.center();
-        preimage.fill = 'white';
-        var image = two.makeGroup(preimage);
-        image.translation.set(x, y);
+        var image = null; //set later
         
         var btn = two.makeGroup(circle, image);
+        btn.center();
+        btn.translation.set(x, y);
         btn.circle = circle;
         btn.image = image;
         btn.hoverOver = false;
         btn.on = true;
-
+        
         addInteraction(btn);
         setCursor(btn, 'pointer');
         
+        btn.setImage = function(iName) {
+            if (this.image != null) {
+                btn.remove(this.image);
+                two.remove(this.image);
+            }
+            var preimage = two.interpret(svgAssets[iName]);
+            preimage.center();
+            preimage.fill = 'white';
+            var image = two.makeGroup(preimage);
+            this.add(image);
+            this.image = image;
+        }
         btn.callBack = function() {
             // empty function by default
             alert("I don't do anything yet");
         }
-
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
-            if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
+            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
                 if (!this.hoverOver) {
-                    _.each(btn.children, function(child) {
-                        tweenToScale(child, 1.2, 200);
-                    });
+                    tweenToScale(btn, 1.2, 200);
                     this.hoverOver = true;
                 }
             } else {
                 if (this.hoverOver) {
-                    _.each(btn.children, function(child) {
-                        tweenToScale(child, 1, 200);
-                    });
+                    tweenToScale(btn, 1, 200);
                     this.hoverOver = false;
                 }
             }
@@ -1170,6 +1175,7 @@ window.onload = function() {
             this.callBack();
         }
         
+        btn.setImage(imageName);
         return btn;
     }
     
