@@ -114,25 +114,42 @@ window.onload = function() {
         
         var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
+        volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
             MASTER_VOLUME = this.value;
             Howler.volume(MASTER_VOLUME);
+            volumeBtn.updateImage();
+        }
+        volumeBtn.btn.callBack = function() {
+            if (MASTER_VOLUME > 0) {
+                this.prevVol = MASTER_VOLUME;
+                MASTER_VOLUME = 0;
+                volumeBtn.slider.setValue(MASTER_VOLUME);
+            } else {
+                MASTER_VOLUME = this.prevVol;
+                volumeBtn.slider.setValue(MASTER_VOLUME);
+            }
+            Howler.volume(MASTER_VOLUME);
+            volumeBtn.updateImage();
+        }
+        volumeBtn.updateImage = function() {
+            // Change the little volume image based on the MASTER_VOLUME
             if (MASTER_VOLUME > 0) {
                 if (MASTER_VOLUME > .3) {
                     if (MASTER_VOLUME > .6) {
-                        volumeBtn.btn.setImage("volume_full");
-                        volumeBtn.btn.setImageOffset(0, 0);
+                        this.btn.setImage("volume_full");
+                        this.btn.setImageOffset(0, 0);
                     } else {
-                        volumeBtn.btn.setImage("volume_half");
-                        volumeBtn.btn.setImageOffset(-4, 0);
+                        this.btn.setImage("volume_half");
+                        this.btn.setImageOffset(-4, 0);
                     }
                 } else {
-                    volumeBtn.btn.setImage("volume_zero");
-                    volumeBtn.btn.setImageOffset(-8, 0);
+                    this.btn.setImage("volume_zero");
+                    this.btn.setImageOffset(-8, 0);
                 }
             } else {
-                volumeBtn.btn.setImage("volume_off");
-                volumeBtn.btn.setImageOffset(1, 0);
+                this.btn.setImage("volume_off");
+                this.btn.setImageOffset(1, 0);
             }
         }
         
@@ -170,25 +187,27 @@ window.onload = function() {
         
         var resetBtn = CreateButton(two.width-200, two.height-120, 30, "reset");
         resetBtn.setImageOffset(0, -3);
-        resetBtn.callBack = function() {
-            var tweenRotate = new TWEEN.Tween(this.image)
-            .to({ rotation:2*Math.PI }, 1000)
+        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
             .easing(TWEEN.Easing.Linear.None)
             .onComplete(function() {
-                this._object.rotation = 0;
-                resetBtn.reset();
-            })
-            .start();
-            this.tween = tweenRotate;
+                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
+                    this._object.rotation = 0;
+                })
+        resetBtn.callBack = function() {
+            this.tween.stop()
+                .to({ rotation:2*Math.PI }, 1000)
+                .start();
         }
         resetBtn.callBackUp = function() {
             if (this.image.rotation < 2*Math.PI) {
-                this.tween.stop();
-                this.image.rotation = 0;
+                this.tween.stop()
+                    .to({ rotation:0 }, 100)
+                    .start();
             }
         }
         resetBtn.reset = function() {
             // Reset the orbits and notes
+            alert("I don't do anything yet");
         }
         
         
@@ -1185,6 +1204,13 @@ window.onload = function() {
         sliderBtn.onGlobalMouseUp = function() {
             if (this.expanded && !this.hovering) {this.disappear();}
         }
+        sliderBtn.btn.onMouseDown = function() { //overwrite default to remove tween
+            this.on = !this.on;
+            this.callBack();
+        }
+        sliderBtn.btn.onMouseUp = function() { //overwrite default to remove tween
+            this.callBackUp();
+        }
 
         return sliderBtn;
     }
@@ -1226,13 +1252,8 @@ window.onload = function() {
             this.image.children[0].translation.x = xoff;
             this.image.children[0].translation.y = yoff;
         }
-        btn.callBack = function() {
-            // empty function by default
-            alert("I don't do anything yet");
-        }
-        btn.callBackUp = function() {
-            // empty function by default
-        }
+        btn.callBack = function() {} // empty function by default
+        btn.callBackUp = function() {} // empty function by default
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
             if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
