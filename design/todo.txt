@@ -1,16 +1,15 @@
 --- Task List ---
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
-- Figure out UI
-    - design sampler menu
-    - design music controls (tempo, play/pause, reset, master volume)
-- Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
+- make reset button functional
+- design artwork / visual theme
+
 
 Jon:
 - play sample when sampler is clicked?
-- make play/pause button
+- Create a bottom bar for all the samplers -- workin' on it
 
 
 Omar:
@@ -59,3 +58,8 @@ Omar:
 - button for toggling polygons
 - improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
 - improve method for loading external svg data (using two.interpret)
+- make play/pause button
+- make reset button
+- Figure out UI
+    - design sampler menu
+    - design music controls (tempo, play/pause, reset, master volume)

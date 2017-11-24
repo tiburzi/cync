@@ -112,7 +112,7 @@ window.onload = function() {
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
         
-        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "volume_full");
+        var volumeBtn = CreateSliderButton(two.width-150, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -153,39 +153,14 @@ window.onload = function() {
             }
         }
         
-        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "polygon");
+        var polygonBtn = CreateButton(two.width-250, two.height-50, 30, "polygon");
         polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
         
-        var playBtn = CreateButton(two.width-280, two.height-50, 30, "play");
-        playBtn.setImageOffset(2, 0);
-        playBtn.callBack = function() {
-            PAUSED = !this.on;
-            this.setImage(PAUSED ? "pause" : "play");
-            this.setImageOffset(PAUSED ? 0 : 2, 0);
-        };
-        playBtn.space_pressed = false;
-        document.addEventListener("keydown", function(e) {
-            var key = e.keyCode || e.which; //cross-browser support
-            if (key === 32 && !playBtn.space_pressed) { //spacebar
-                playBtn.on = !playBtn.on;
-                playBtn.callBack();
-                tweenToScale(playBtn, 0.8, 100);
-                playBtn.space_pressed = true;
-            }
-        });
-        document.addEventListener("keyup", function(e) {
-            var key = e.keyCode || e.which; //cross-browser support
-            if (key === 32 && playBtn.space_pressed) { //spacebar
-                tweenToScale(playBtn, 1, 100);
-                playBtn.space_pressed = false;
-            }
-        });
-        
-        var resetBtn = CreateButton(two.width-200, two.height-120, 30, "reset");
+        var resetBtn = CreateButton(two.width-350, two.height-50, 30, "reset");
         resetBtn.setImageOffset(0, -3);
         resetBtn.tween = new TWEEN.Tween(resetBtn.image)
             .easing(TWEEN.Easing.Linear.None)
@@ -209,6 +184,32 @@ window.onload = function() {
             // Reset the orbits and notes
             alert("I don't do anything yet");
         }
+        
+        var playBtn = CreateButton(two.width-450, two.height-50, 30, "play");
+        playBtn.setImageOffset(2, 0);
+        playBtn.callBack = function() {
+            PAUSED = !this.on;
+            this.setImage(PAUSED ? "pause" : "play");
+            this.setImageOffset(PAUSED ? 0 : 2, 0);
+        };
+        playBtn.space_pressed = false;
+        //make the play button also toggle with the spacebar
+        document.addEventListener("keydown", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && !playBtn.space_pressed) { //spacebar
+                playBtn.on = !playBtn.on;
+                playBtn.callBack();
+                tweenToScale(playBtn, 0.8, 100);
+                playBtn.space_pressed = true;
+            }
+        });
+        document.addEventListener("keyup", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && playBtn.space_pressed) { //spacebar
+                tweenToScale(playBtn, 1, 100);
+                playBtn.space_pressed = false;
+            }
+        });
         
         
         //This will either load from URL or just create the default orbits 
@@ -242,7 +243,7 @@ window.onload = function() {
              })
         } else {
             CreateOrbit(RADIUS_SNAP);
-            CreateOrbit(4*RADIUS_SNAP);
+            CreateOrbit(2*RADIUS_SNAP);
         }
         
         // Snap orbit radii upon creation
