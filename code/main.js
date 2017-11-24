@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/volume_full.svg", "volume_full");
     _getSvgData("assets/images/volume_half.svg", "volume_half");
     _getSvgData("assets/images/volume_zero.svg", "volume_zero");
+    _getSvgData("assets/images/volume_off.svg", "volume_off");
     _getSvgData("assets/images/reset.svg", "reset");
     _getSvgData("assets/images/polygon.svg", "polygon");
 });
@@ -110,21 +111,44 @@ window.onload = function() {
         var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
-
+        
         var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
-        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value; Howler.volume(MASTER_VOLUME);}
+        volumeBtn.slider.callBack = function() {
+            MASTER_VOLUME = this.value;
+            Howler.volume(MASTER_VOLUME);
+            if (MASTER_VOLUME > 0) {
+                if (MASTER_VOLUME > .3) {
+                    if (MASTER_VOLUME > .6) {
+                        volumeBtn.btn.setImage("volume_full");
+                        volumeBtn.btn.setImageOffset(0, 0);
+                    } else {
+                        volumeBtn.btn.setImage("volume_half");
+                        volumeBtn.btn.setImageOffset(-4, 0);
+                    }
+                } else {
+                    volumeBtn.btn.setImage("volume_zero");
+                    volumeBtn.btn.setImageOffset(-8, 0);
+                }
+            } else {
+                volumeBtn.btn.setImage("volume_off");
+                volumeBtn.btn.setImageOffset(1, 0);
+            }
+        }
         
         var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "polygon");
+        polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
         
         var playBtn = CreateButton(two.width-280, two.height-50, 30, "play");
+        playBtn.setImageOffset(2, 0);
         playBtn.callBack = function() {
             PAUSED = !this.on;
             this.setImage(PAUSED ? "pause" : "play");
+            this.setImageOffset(PAUSED ? 0 : 2, 0);
         };
         playBtn.space_pressed = false;
         document.addEventListener("keydown", function(e) {
@@ -143,6 +167,29 @@ window.onload = function() {
                 playBtn.space_pressed = false;
             }
         });
+        
+        var resetBtn = CreateButton(two.width-200, two.height-120, 30, "reset");
+        resetBtn.setImageOffset(0, -3);
+        resetBtn.callBack = function() {
+            var tweenRotate = new TWEEN.Tween(this.image)
+            .to({ rotation:2*Math.PI }, 1000)
+            .easing(TWEEN.Easing.Linear.None)
+            .onComplete(function() {
+                this._object.rotation = 0;
+                resetBtn.reset();
+            })
+            .start();
+            this.tween = tweenRotate;
+        }
+        resetBtn.callBackUp = function() {
+            if (this.image.rotation < 2*Math.PI) {
+                this.tween.stop();
+                this.image.rotation = 0;
+            }
+        }
+        resetBtn.reset = function() {
+            // Reset the orbits and notes
+        }
         
         
         //This will either load from URL or just create the default orbits 
@@ -1039,7 +1086,9 @@ window.onload = function() {
         setCursor(dial, 'pointer');
         
         dial.onDrag = function(e, offset, localClickPos) {
-            var val = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
+            var top = $(this.slider.line._renderer.elem).offset().top;
+            var scalar = this.slider.scale*this.slider.parent.scale;
+            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
             this.slider.dragging = true;
             this.slider.setValue(val);
         };
@@ -1048,6 +1097,7 @@ window.onload = function() {
         var slider = two.makeGroup(line, dial);
         slider.length = length;
         slider.dragging = false;
+        slider.line = line;
         slider.dial = dial;
         dial.slider = slider;
         
@@ -1068,35 +1118,35 @@ window.onload = function() {
     }
     
     function CreateSliderButton(x, y, r, h, imageName) {
-        var bg = two.makeLine(x, y, x, y);
+        var bg = two.makeLine(0, 0, 0, 0);
         bg.linewidth = 2*r;
         bg.cap = "round";
         bg.stroke = '#cccccc';
 
-        var slider = CreateSlider(x, y-50, h-50);
+        var slider = CreateSlider(0, -50, h-50);
         slider.fill = bg.stroke;
         slider.stroke = "white";
         
-        var preimage = two.interpret(svgAssets[imageName]);
-        preimage.center();
-        preimage.fill = 'white';
-        var image = two.makeGroup(preimage);
-        image.translation.set(x, y);
+        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
+        
+        var btn = CreateButton(0, 0, r, imageName);
+        btn.onGlobalMouseMove = function(e) {
+            // Overwrite default function
+        }
+        
+        var sliderBtn = two.makeGroup(bg, btn, slider, mask);
+        sliderBtn.translation.set(x, y);
+        sliderBtn.btn = btn;
+        sliderBtn.slider = slider;
+        sliderBtn.hovering = false;
+        sliderBtn.expanded = false;
+        sliderBtn.height = 0;
+        sliderBtn.mask = mask;
+        
+        addInteraction(sliderBtn);
+        setCursor(sliderBtn, 'pointer');
 
-        var btn = two.makeGroup(bg, image, slider);
-        btn.image = image;
-        btn.slider = slider;
-        btn.hovering = false;
-        btn.expanded = false;
-        btn.height = 0;
-
-        var mask = two.makeRectangle(x, y, 2*r, 2*r);
-        btn.mask = mask;
-
-        addInteraction(btn);
-        setCursor(btn, 'pointer');
-
-        btn.appear = function() {
+        sliderBtn.appear = function() {
             var tweenGrow = new TWEEN.Tween(this)
                 .to({ height:h }, 500)
                 .easing(TWEEN.Easing.Cubic.Out)
@@ -1106,8 +1156,9 @@ window.onload = function() {
                     mask.vertices[1].y = -(this._object.height+r);
                 })
                 .start();
+            tweenToScale(this, 1.2, 200);
         }
-        btn.disappear = function() {
+        sliderBtn.disappear = function() {
             var tweenShrink = new TWEEN.Tween(this)
                 .to({ height:0 }, 500)
                 .easing(TWEEN.Easing.Cubic.Out)
@@ -1117,24 +1168,25 @@ window.onload = function() {
                     mask.vertices[1].y = -(this._object.height+r);
                 })
                 .start();
+            tweenToScale(this, 1, 200);
         }
-        btn.onMouseEnter = function() {
+        sliderBtn.onMouseEnter = function() {
             this.hovering = true;
             this.expanded = true;
             this.appear();
         }
-        btn.onMouseLeave = function() {
+        sliderBtn.onMouseLeave = function() {
             this.hovering = false;
             if (!slider.dragging) {
                 this.expanded = false;
                 this.disappear();
             }
         }
-        btn.onGlobalMouseUp = function() {
+        sliderBtn.onGlobalMouseUp = function() {
             if (this.expanded && !this.hovering) {this.disappear();}
         }
 
-        return btn;
+        return sliderBtn;
     }
     
     function CreateButton(x, y, r, imageName) {
@@ -1153,6 +1205,7 @@ window.onload = function() {
         btn.image = image;
         btn.hoverOver = false;
         btn.on = true;
+        btn.clicked = false;
         
         addInteraction(btn);
         setCursor(btn, 'pointer');
@@ -1169,9 +1222,16 @@ window.onload = function() {
             this.add(image);
             this.image = image;
         }
+        btn.setImageOffset = function(xoff, yoff) {
+            this.image.children[0].translation.x = xoff;
+            this.image.children[0].translation.y = yoff;
+        }
         btn.callBack = function() {
             // empty function by default
             alert("I don't do anything yet");
+        }
+        btn.callBackUp = function() {
+            // empty function by default
         }
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
@@ -1189,10 +1249,13 @@ window.onload = function() {
         }
         btn.onMouseDown = function() {
             this.on = !this.on;
+            this.clicked = true;
             this.callBack();
             tweenToScale(this, 1, 100);
         }
         btn.onMouseUp = function() {
+            this.clicked = false;
+            this.callBackUp();
             tweenToScale(this, 1.2, 100);
         }
         
