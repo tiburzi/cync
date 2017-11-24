@@ -2,8 +2,6 @@
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
-- make reset button functional
 - design artwork / visual theme
 
 
@@ -60,6 +58,8 @@ Omar:
 - improve method for loading external svg data (using two.interpret)
 - make play/pause button
 - make reset button
+- make reset button functional
 - Figure out UI
     - design sampler menu
     - design music controls (tempo, play/pause, reset, master volume)
+- fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)

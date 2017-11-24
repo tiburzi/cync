@@ -188,7 +188,8 @@ window.onload = function() {
         }
         resetBtn.reset = function() {
             // Reset the orbits and notes
-            alert("I don't do anything yet");
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            SetupDefault();
         }
         
         var playBtn = CreateButton(two.width-450, two.height-50, 30, "play");
@@ -221,7 +222,7 @@ window.onload = function() {
         //This will either load from URL or just create the default orbits 
         
         
-        if (stateData != null){
+        if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
              })
@@ -250,8 +251,7 @@ window.onload = function() {
                 note.orbit.sortNotes();
              })
         } else {
-            CreateOrbit(RADIUS_SNAP);
-            CreateOrbit(2*RADIUS_SNAP);
+            SetupDefault();
         }
         
         // Snap orbit radii upon creation
@@ -261,6 +261,11 @@ window.onload = function() {
             Orbits[i].trigger.sync();
         }
         
+    }
+    
+    function SetupDefault() {
+        CreateOrbit(RADIUS_SNAP);
+        CreateOrbit(2*RADIUS_SNAP);
     }
     
     function CreateOrbit(radius) {
@@ -1461,7 +1466,7 @@ window.onload = function() {
 
     // Global time, in seconds
     var START_TIME = new Date();
-    var PREV_TIME = START_TIME;
+    var PREV_TIME = 0;
     var TIME = 0;
     var dt = 0;
     function updateTime() {
