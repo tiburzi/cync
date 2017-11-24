@@ -41,7 +41,8 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    var SOUND_FILES = [];//["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"]
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -61,7 +62,7 @@ window.onload = function() {
 
     function UpdateState() {
         // Just a helper function to make it easy to update parameters of state without changing lots of lines of code 
-        state.update(Orbits,Notes);
+        state.update(Orbits,Notes,TEMPO);
     } 
 
     function Init() {
@@ -88,7 +89,7 @@ window.onload = function() {
         PALETTE.push('#B8B8D1');
         PALETTE.push('#A2D3E5');
         PALETTE.push('#E58083');
-        //PALETTE.push('#303633');
+        PALETTE.push('#303633');
         
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
@@ -100,17 +101,22 @@ window.onload = function() {
     }
 
     function SetupInitialState() {
+        var stateData = state.load();
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         // Create HUD elements
         // Samplers
-        for (var i=0; i<5; i++) {
+        for (var i=0; i<SOUND_FILES.length; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
         
         // Global controls
         var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
-        tempoBtn.slider.callBack = function() {TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);}
+        tempoBtn.slider.callBack = function() {
+            TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
+            UpdateState();
+        }
         
         var volumeBtn = CreateSliderButton(two.width-150, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
@@ -213,13 +219,15 @@ window.onload = function() {
         
         
         //This will either load from URL or just create the default orbits 
-        var stateData = state.load();
-        //var stateData = null; //uncomment this line to prevent state loading while working
+        
         
         if (stateData != null){
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
              })
+
+            if(typeof stateData.tempo == "number" && stateData.tempo != -1)
+                TEMPO = stateData.tempo;
 
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
@@ -1112,7 +1120,9 @@ window.onload = function() {
             this.slider.dragging = true;
             this.slider.setValue(val);
         };
-        dial.onGlobalMouseUp = function() {this.slider.dragging = false;};
+        dial.onGlobalMouseUp = function() {
+            this.slider.dragging = false;
+        };
         
         var slider = two.makeGroup(line, dial);
         slider.length = length;
