@@ -97,7 +97,6 @@ window.onload = function() {
         LAYERS['hud'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
         LAYERS['polygons'] = two.makeGroup();
-        LAYERS['center'] = two.makeGroup();
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
     }
@@ -1000,18 +999,13 @@ window.onload = function() {
             line.linewidth = LINE_W;
             line.cap = 'round';
 
-            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
-            circle.fill = 'red';
-            circle.linewidth = 0;
-
-            var trash = two.makeGroup(circle, line);
+            var trash = CreateButton(0, 0, CENTER_RADIUS);
+            trash.fill = '#ff9999';
+            trash.add(line);
             trash.center();
             trash.translation.set(x,y);
-            trash.opacity = .5;
             
-            trash.clicked = false;
             trash.visible = true;
-            trash.hoverOver = false;
 
             addInteraction(trash);
             setCursor(trash, 'default');
@@ -1026,30 +1020,22 @@ window.onload = function() {
             X.stroke = 'white';
             X.linewidth = LINE_W;
             X.cap = 'round';
-
-            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
-            circle.fill = 'gray';
-            circle.linewidth = 0;
-
-            var plus = two.makeGroup(circle, X);
+            
+            var plus = CreateButton(0, 0, CENTER_RADIUS);
+            plus.add(X);
             plus.center();
-            plus.translation.set(x,y);
-            plus.opacity = .5;
-
-            plus.clicked = false;
-            plus.visible = true;
-            plus.hoverOver = false;
-
-            addInteraction(plus);
-            setCursor(plus, 'pointer');
-
-            plus.onMouseDown = function(e, offset, localClickPos) {
+            plus.translation.set(x, y);
+            
+            plus.visible = true; //custom variable for keeping track of if button is visible
+            
+            plus.callBack = function(e) {
                 if (this.visible) {
                     // Create a new orbit
                     this.clicked = true;
+                    this.hoverOver = false;
                     tweenToScale(this, 0, 200);
                     var orbit = CreateOrbit(10);
-                    orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
+                    orbit.onDrag(e, {x:0, y:0}); //force onDrag, which updates the radius, trigger animation, etc
                     $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
                 }
             }
@@ -1061,7 +1047,7 @@ window.onload = function() {
         var t = CreateTrash(x, y);
         var c = two.makeGroup(p, t);
         c.state = 'plus';
-        LAYERS['center'].add(c);
+        LAYERS['hud'].add(c);
 
         addInteraction(c);
         
@@ -1074,7 +1060,7 @@ window.onload = function() {
             }
             
             // Check if mouse is over the center
-            if (isOverCenter(e.clientX, e.clientY)) {
+            /*if (isOverCenter(e.clientX, e.clientY)) {
                 _.each(c.children, function(child) {
                     if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
                         tweenToScale(child, 1.2, 200);
@@ -1088,7 +1074,7 @@ window.onload = function() {
                         child.hoverOver = false;
                     }
                 });
-            }
+            }*/
         };
         c.onGlobalMouseUp = function(e) {
             /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
@@ -1283,16 +1269,18 @@ window.onload = function() {
         setCursor(btn, 'pointer');
         
         btn.setImage = function(iName) {
-            if (this.image != null) {
-                btn.remove(this.image);
-                two.remove(this.image);
+            if (iName !== undefined && iName !== null) {
+                if (this.image != null) {
+                    btn.remove(this.image);
+                    two.remove(this.image);
+                }
+                var preimage = two.interpret(svgAssets[iName]);
+                preimage.center();
+                preimage.fill = 'white';
+                var image = two.makeGroup(preimage);
+                this.add(image);
+                this.image = image;
             }
-            var preimage = two.interpret(svgAssets[iName]);
-            preimage.center();
-            preimage.fill = 'white';
-            var image = two.makeGroup(preimage);
-            this.add(image);
-            this.image = image;
         }
         btn.setImageOffset = function(xoff, yoff) {
             this.image.children[0].translation.x = xoff;
@@ -1303,27 +1291,27 @@ window.onload = function() {
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
             if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
-                if (!this.hoverOver) {
+                if (!this.hoverOver && !this.clicked) {
                     tweenToScale(this, 1.2, 200);
                     this.hoverOver = true;
                 }
             } else {
-                if (this.hoverOver) {
+                if (this.hoverOver && !this.clicked) {
                     tweenToScale(this, 1, 200);
                     this.hoverOver = false;
                 }
             }
         }
-        btn.onMouseDown = function() {
+        btn.onMouseDown = function(e) {
             this.on = !this.on;
             this.clicked = true;
-            this.callBack();
             tweenToScale(this, 1, 100);
+            this.callBack(e);
         }
-        btn.onMouseUp = function() {
+        btn.onMouseUp = function(e) {
             this.clicked = false;
-            this.callBackUp();
             tweenToScale(this, 1.2, 100);
+            this.callBackUp(e);
         }
         
         btn.setImage(imageName);
