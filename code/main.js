@@ -174,15 +174,17 @@ window.onload = function() {
             // Create a random configuration
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             for (var i=1; i<=MAX_ORBITS; i++) {
-                if (Math.random() < 1-.16*i) {
+                if (Math.random() < 1-.12*i) {
+                    // Create an orbit and populate it with notes
                     var o = CreateOrbit(i*RADIUS_SNAP);
                     var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
                     var notes = Math.round(Math.random()*4) + 1;
+                    var mostCommonSamp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
                     while(notes > 0) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
-                        var samp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                        var samp = Math.random()<.5 ? mostCommonSamp : Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
                         o.addNewNote(angleFinal, samp);
                         notes --;
                     }

@@ -3,6 +3,12 @@
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
 - design artwork / visual theme
+- simplify / refactor button and sliders ?
+- simplify / refactor SetupInitialState() ?
+
+
+--- Bugs ---
+#1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
 
 
 Jon:
@@ -63,3 +69,4 @@ Omar:
     - design sampler menu
     - design music controls (tempo, play/pause, reset, master volume)
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
+- prototype a randomize feature
