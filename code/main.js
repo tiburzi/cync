@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/volume_off.svg", "volume_off");
     _getSvgData("assets/images/reset.svg", "reset");
     _getSvgData("assets/images/polygon.svg", "polygon");
+    _getSvgData("assets/images/randomize.svg", "randomize");
 });
 
 // All the main js code runs here
@@ -41,7 +42,7 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = [];//["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    var SOUND_FILES = [];// ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
     SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"]
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
@@ -118,6 +119,7 @@ window.onload = function() {
             UpdateState();
         }
         
+        
         var volumeBtn = CreateSliderButton(two.width-150, two.height-50, 30, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
@@ -164,6 +166,31 @@ window.onload = function() {
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
+        };
+        
+        var randomizeBtn = CreateButton(two.width-250, two.height-120, 30, "randomize");
+        randomizeBtn.setImageOffset(0, 0);
+        randomizeBtn.callBack = function() {
+            // Create a random configuration
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            for (var i=1; i<=MAX_ORBITS; i++) {
+                if (Math.random() < 1-.16*i) {
+                    var o = CreateOrbit(i*RADIUS_SNAP);
+                    var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
+                    var notes = Math.round(Math.random()*4) + 1;
+                    while(notes > 0) {
+                        var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
+                        var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
+                        var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
+                        var samp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                        o.addNewNote(angleFinal, samp);
+                        notes --;
+                    }
+                    o.polygon.update();
+                }
+            }
+            //tempoBtn.slider.setValue(Math.random());
+            UpdateState();
         };
         
         var resetBtn = CreateButton(two.width-350, two.height-50, 30, "reset");
@@ -219,9 +246,7 @@ window.onload = function() {
         });
         
         
-        //This will either load from URL or just create the default orbits 
-        
-        
+        //This will either load from URL or just create the default orbits
         if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
@@ -233,22 +258,7 @@ window.onload = function() {
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
                 var orbit = Orbits[n.oIndex];
-
-                var dist = orbit.radius;
-                var angle = n.theta;
-                var X = CENTER.x + Math.cos(angle) * dist;
-                var Y = CENTER.y + Math.sin(angle) * dist;
-
-                var note = CreateNote(X,Y);
-                note.sampler = sampler;
-                note.onSampler = false;
-                sampler.hasNote = false;
-                note.fill = sampler.color;
-                note.theta = n.theta;
-                note.orbit = orbit;
-                note.prevOrbit = orbit;
-                note.orbit.notes.push(note);
-                note.orbit.sortNotes();
+                orbit.addNewNote(n.theta, sampler);
              })
         } else {
             SetupDefault();
@@ -325,6 +335,7 @@ window.onload = function() {
             } else {
                 this.stroke = this.originalStroke;
                 this.trigger.fill = this.trigger.originalFill;
+                this.trigger.sync();
             }
 
             this.frozen = bool;
@@ -401,6 +412,21 @@ window.onload = function() {
                 return a.theta-b.theta; //order the notes by their theta values
             });
         }
+        orbit.addNewNote = function(angle, sampler) {
+            var dist = this.radius;
+            var X = orbit.translation.x + Math.cos(angle) * dist;
+            var Y = orbit.translation.y + Math.sin(angle) * dist;
+            
+            var note = CreateNote(X,Y);
+            note.sampler = sampler;
+            note.onSampler = false;
+            sampler.hasNote = false;
+            note.fill = sampler.color;
+            note.theta = angle;
+            note.prevOrbit = note.orbit = this;
+            this.notes.push(note);
+            this.sortNotes();
+        }
     
         addInteraction(orbit);
         
@@ -465,7 +491,7 @@ window.onload = function() {
             this._updatePosition();
         }
         trigger.sync = function() {
-            // Resync the trigger according to the global time. Needs to happen if orbit is resized.
+            // Resync the trigger according to the global time. Needs to happen if orbit is resized, frozen, or other such nonsense.
             var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI/2;
             this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
             this._setRotation();
