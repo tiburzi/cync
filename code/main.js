@@ -55,6 +55,7 @@ window.onload = function() {
     var PAUSED = false;
     var CENTER = {};
     var NOTE_RADIUS = 15;
+    var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
@@ -105,22 +106,21 @@ window.onload = function() {
         var stateData = state.load();
         //var stateData = null; //uncomment this line to prevent state loading while working
         
-        // Create HUD elements
-        // Samplers
+        // Create samplers
         for (var i=0; i<SOUND_FILES.length; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
         
-        // Global controls
-        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "metronome");
+        // Create global controls
+        var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
             UpdateState();
         }
+        LAYERS['hud'].add(tempoBtn);
         
-        
-        var volumeBtn = CreateSliderButton(two.width-150, two.height-50, 30, 200, "volume_full");
+        var volumeBtn = CreateSliderButton(two.width-5*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -160,15 +160,17 @@ window.onload = function() {
                 this.btn.setImageOffset(1, 0);
             }
         }
+        LAYERS['hud'].add(volumeBtn);
         
-        var polygonBtn = CreateButton(two.width-250, two.height-50, 30, "polygon");
+        var polygonBtn = CreateButton(two.width-8*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "polygon");
         polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
+        LAYERS['hud'].add(polygonBtn);
         
-        var randomizeBtn = CreateButton(two.width-250, two.height-120, 30, "randomize");
+        var randomizeBtn = CreateButton(two.width-11*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "randomize");
         randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
             // Create a random configuration
@@ -194,8 +196,9 @@ window.onload = function() {
             //tempoBtn.slider.setValue(Math.random());
             UpdateState();
         };
+        LAYERS['hud'].add(randomizeBtn);
         
-        var resetBtn = CreateButton(two.width-350, two.height-50, 30, "reset");
+        var resetBtn = CreateButton(two.width-14*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "reset");
         resetBtn.setImageOffset(0, -3);
         resetBtn.tween = new TWEEN.Tween(resetBtn.image)
             .easing(TWEEN.Easing.Linear.None)
@@ -205,7 +208,7 @@ window.onload = function() {
                 })
         resetBtn.callBack = function() {
             this.tween.stop()
-                .to({ rotation:2*Math.PI }, 1000)
+                .to({ rotation:2*Math.PI }, 800)
                 .start();
         }
         resetBtn.callBackUp = function() {
@@ -220,8 +223,9 @@ window.onload = function() {
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             SetupDefault();
         }
+        LAYERS['hud'].add(resetBtn);
         
-        var playBtn = CreateButton(two.width-450, two.height-50, 30, "play");
+        var playBtn = CreateButton(two.width-17*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "play");
         playBtn.setImageOffset(2, 0);
         playBtn.callBack = function() {
             PAUSED = !this.on;
@@ -246,7 +250,7 @@ window.onload = function() {
                 playBtn.space_pressed = false;
             }
         });
-        
+        LAYERS['hud'].add(playBtn);
         
         //This will either load from URL or just create the default orbits
         if (stateData != null) {
@@ -262,9 +266,7 @@ window.onload = function() {
                 var orbit = Orbits[n.oIndex];
                 orbit.addNewNote(n.theta, sampler);
              })
-        } else {
-            SetupDefault();
-        }
+        } else { SetupDefault(); }
         
         // Snap orbit radii upon creation
         for (var i=0; i<Orbits.length; i++) {

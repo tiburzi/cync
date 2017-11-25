@@ -34,10 +34,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4142136"
-     inkscape:cx="96.654067"
-     inkscape:cy="244.18494"
+     inkscape:cx="103.00522"
+     inkscape:cy="243.77307"
      inkscape:document-units="mm"
-     inkscape:current-layer="g4513"
+     inkscape:current-layer="layer2"
      showgrid="true"
      inkscape:window-width="1916"
      inkscape:window-height="531"
@@ -83,13 +83,6 @@
        id="path4502"
        cx="19.290535"
        cy="182.90948"
-       rx="13.203664"
-       ry="13.229167" />
-    <ellipse
-       style="opacity:1;fill:#bcbcbc;fill-opacity:1;stroke:none;stroke-width:5.28656435;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
-       id="path4502-6"
-       cx="50.372902"
-       cy="241.52142"
        rx="13.203664"
        ry="13.229167" />
   </g>
