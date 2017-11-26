@@ -1,4 +1,35 @@
-//All the main js code runs here
+// Load external svg assets before the window loads
+var svgAssets = {};
+document.addEventListener("DOMContentLoaded", function() {
+    var _getSvgData = function(imageURL, assetName) {
+        var file = new XMLHttpRequest();
+        file.open("GET", imageURL, false);
+        file.onreadystatechange = function() {
+            if (this.readyState === 4) {
+                if (this.status === 200 || this.status == 0) {
+                    var dataXML = this.responseXML;
+                    var svgElem = dataXML.getElementsByTagName('svg')[0];
+                    svgAssets[assetName] = svgElem;
+                    //console.log(svgElem);
+                }
+            }
+        }
+        file.send(null);
+    }
+    
+    _getSvgData("assets/images/play.svg", "play");
+    _getSvgData("assets/images/pause.svg", "pause");
+    _getSvgData("assets/images/metronome.svg", "metronome");
+    _getSvgData("assets/images/volume_full.svg", "volume_full");
+    _getSvgData("assets/images/volume_half.svg", "volume_half");
+    _getSvgData("assets/images/volume_zero.svg", "volume_zero");
+    _getSvgData("assets/images/volume_off.svg", "volume_off");
+    _getSvgData("assets/images/reset.svg", "reset");
+    _getSvgData("assets/images/polygon.svg", "polygon");
+    _getSvgData("assets/images/randomize.svg", "randomize");
+});
+
+// All the main js code runs here
 window.onload = function() {
 
     // Our 'global' variables defined up here so they're accessible everywhere below
@@ -11,7 +42,7 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = [];//["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    var SOUND_FILES = [];// ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
     SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"]
     var MAX_ORBITS = 5;
     var ORBIT_MAX_RADIUS = 300;
@@ -21,8 +52,10 @@ window.onload = function() {
     var TEMPO_MAX = 120;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
+    var PAUSED = false;
     var CENTER = {};
     var NOTE_RADIUS = 15;
+    var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
@@ -64,7 +97,6 @@ window.onload = function() {
         LAYERS['hud'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
         LAYERS['polygons'] = two.makeGroup();
-        LAYERS['center'] = two.makeGroup();
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
     }
@@ -73,37 +105,154 @@ window.onload = function() {
         var stateData = state.load();
         //var stateData = null; //uncomment this line to prevent state loading while working
         
-        // Create HUD elements
-        // samplers
+        // Create samplers
         for (var i=0; i<SOUND_FILES.length; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
         
-        // global controls
-        var tempoBtn = CreateSliderButton(two.width-50, two.height-50, 30, 200, "assets/images/metronome.svg");
+        // Create global controls
+        var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
-            UpdateState()
+            UpdateState();
         }
-
-        var volumeBtn = CreateSliderButton(two.width-120, two.height-50, 30, 200, "assets/images/volume_full.svg");
-        volumeBtn.slider.setValue(MASTER_VOLUME);
-        volumeBtn.slider.callBack = function() {MASTER_VOLUME = this.value; Howler.volume(MASTER_VOLUME);}
+        LAYERS['hud'].add(tempoBtn);
         
-        var polygonBtn = CreateButton(two.width-200, two.height-50, 30, "assets/images/polygon.svg");
+        var volumeBtn = CreateSliderButton(two.width-5*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "volume_full");
+        volumeBtn.slider.setValue(MASTER_VOLUME);
+        volumeBtn.prevVol = 1;
+        volumeBtn.slider.callBack = function() {
+            MASTER_VOLUME = this.value;
+            Howler.volume(MASTER_VOLUME);
+            volumeBtn.updateImage();
+        }
+        volumeBtn.btn.callBack = function() {
+            if (MASTER_VOLUME > 0) {
+                this.prevVol = MASTER_VOLUME;
+                MASTER_VOLUME = 0;
+                volumeBtn.slider.setValue(MASTER_VOLUME);
+            } else {
+                MASTER_VOLUME = this.prevVol;
+                volumeBtn.slider.setValue(MASTER_VOLUME);
+            }
+            Howler.volume(MASTER_VOLUME);
+            volumeBtn.updateImage();
+        }
+        volumeBtn.updateImage = function() {
+            // Change the little volume image based on the MASTER_VOLUME
+            if (MASTER_VOLUME > 0) {
+                if (MASTER_VOLUME > .3) {
+                    if (MASTER_VOLUME > .6) {
+                        this.btn.setImage("volume_full");
+                        this.btn.setImageOffset(0, 0);
+                    } else {
+                        this.btn.setImage("volume_half");
+                        this.btn.setImageOffset(-4, 0);
+                    }
+                } else {
+                    this.btn.setImage("volume_zero");
+                    this.btn.setImageOffset(-8, 0);
+                }
+            } else {
+                this.btn.setImage("volume_off");
+                this.btn.setImageOffset(1, 0);
+            }
+        }
+        LAYERS['hud'].add(volumeBtn);
+        
+        var polygonBtn = CreateButton(two.width-8*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "polygon");
+        polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
+        LAYERS['hud'].add(polygonBtn);
         
-        var playBtn = CreateButton(two.width-280, two.height-50, 30, "assets/images/play.svg");
+        var randomizeBtn = CreateButton(two.width-11*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "randomize");
+        randomizeBtn.setImageOffset(0, 0);
+        randomizeBtn.callBack = function() {
+            // Create a random configuration
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            for (var i=1; i<=MAX_ORBITS; i++) {
+                if (Math.random() < 1-.12*i) {
+                    // Create an orbit and populate it with notes
+                    var o = CreateOrbit(i*RADIUS_SNAP);
+                    var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
+                    var notes = Math.round(Math.random()*4) + 1;
+                    var mostCommonSamp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                    while(notes > 0) {
+                        var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
+                        var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
+                        var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
+                        var samp = Math.random()<.5 ? mostCommonSamp : Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                        o.addNewNote(angleFinal, samp);
+                        notes --;
+                    }
+                    o.polygon.update();
+                }
+            }
+            //tempoBtn.slider.setValue(Math.random());
+            UpdateState();
+        };
+        LAYERS['hud'].add(randomizeBtn);
         
+        var resetBtn = CreateButton(two.width-14*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "reset");
+        resetBtn.setImageOffset(0, -3);
+        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
+            .easing(TWEEN.Easing.Linear.None)
+            .onComplete(function() {
+                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
+                    this._object.rotation = 0;
+                })
+        resetBtn.callBack = function() {
+            this.tween.stop()
+                .to({ rotation:2*Math.PI }, 800)
+                .start();
+        }
+        resetBtn.callBackUp = function() {
+            if (this.image.rotation < 2*Math.PI) {
+                this.tween.stop()
+                    .to({ rotation:0 }, 100)
+                    .start();
+            }
+        }
+        resetBtn.reset = function() {
+            // Reset the orbits and notes
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            SetupDefault();
+        }
+        LAYERS['hud'].add(resetBtn);
         
-        //This will either load from URL or just create the default orbits 
+        var playBtn = CreateButton(two.width-17*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "play");
+        playBtn.setImageOffset(2, 0);
+        playBtn.callBack = function() {
+            PAUSED = !this.on;
+            this.setImage(PAUSED ? "pause" : "play");
+            this.setImageOffset(PAUSED ? 0 : 2, 0);
+        };
+        playBtn.space_pressed = false;
+        //make the play button also toggle with the spacebar
+        document.addEventListener("keydown", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && !playBtn.space_pressed) { //spacebar
+                playBtn.on = !playBtn.on;
+                playBtn.callBack();
+                tweenToScale(playBtn, 0.8, 100);
+                playBtn.space_pressed = true;
+            }
+        });
+        document.addEventListener("keyup", function(e) {
+            var key = e.keyCode || e.which; //cross-browser support
+            if (key === 32 && playBtn.space_pressed) { //spacebar
+                tweenToScale(playBtn, 1, 100);
+                playBtn.space_pressed = false;
+            }
+        });
+        LAYERS['hud'].add(playBtn);
         
-        
-        if (stateData != null){
+        //This will either load from URL or just create the default orbits
+        if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
              })
@@ -114,34 +263,22 @@ window.onload = function() {
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
                 var orbit = Orbits[n.oIndex];
-
-                var dist = orbit.radius;
-                var angle = n.theta;
-                var X = CENTER.x + Math.cos(angle) * dist;
-                var Y = CENTER.y + Math.sin(angle) * dist;
-
-                var note = CreateNote(X,Y);
-                note.sampler = sampler;
-                note.onSampler = false;
-                sampler.hasNote = false;
-                note.fill = sampler.color;
-                note.theta = n.theta;
-                note.orbit = orbit;
-                note.prevOrbit = orbit;
-                note.orbit.notes.push(note);
-                note.orbit.sortNotes();
+                orbit.addNewNote(n.theta, sampler);
              })
-        } else {
-            CreateOrbit(RADIUS_SNAP);
-            CreateOrbit(4*RADIUS_SNAP);
-        }
+        } else { SetupDefault(); }
         
         // Snap orbit radii upon creation
         for (var i=0; i<Orbits.length; i++) {
             setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
             Orbits[i].polygon.update();
+            Orbits[i].trigger.sync();
         }
         
+    }
+    
+    function SetupDefault() {
+        CreateOrbit(RADIUS_SNAP);
+        CreateOrbit(2*RADIUS_SNAP);
     }
     
     function CreateOrbit(radius) {
@@ -201,6 +338,7 @@ window.onload = function() {
             } else {
                 this.stroke = this.originalStroke;
                 this.trigger.fill = this.trigger.originalFill;
+                this.trigger.sync();
             }
 
             this.frozen = bool;
@@ -248,6 +386,7 @@ window.onload = function() {
                     })
                     .onComplete(function() {
                         this._object.trigger.rotate = true;
+                        this._object.trigger.sync();
                         UpdateState();
                     })
                 tweenSnap.start();
@@ -276,6 +415,21 @@ window.onload = function() {
                 return a.theta-b.theta; //order the notes by their theta values
             });
         }
+        orbit.addNewNote = function(angle, sampler) {
+            var dist = this.radius;
+            var X = orbit.translation.x + Math.cos(angle) * dist;
+            var Y = orbit.translation.y + Math.sin(angle) * dist;
+            
+            var note = CreateNote(X,Y);
+            note.sampler = sampler;
+            note.onSampler = false;
+            sampler.hasNote = false;
+            note.fill = sampler.color;
+            note.theta = angle;
+            note.prevOrbit = note.orbit = this;
+            this.notes.push(note);
+            this.sortNotes();
+        }
     
         addInteraction(orbit);
         
@@ -294,16 +448,16 @@ window.onload = function() {
         var trigger = two.makePolygon(triggerX, triggerY, size);
         trigger.fill = 'rgba(255,69,0,1)';
         trigger.stroke = 'none';
-        trigger.rotation = Math.PI;
         trigger.orbit = orbit;
         trigger.rotate = true;
-        trigger.theta = 0;
+        trigger.theta = -Math.PI/2; //local variable for tracking the trigger's angle
+        trigger.rotation = 0; //two.js built-in variable
 
         LAYERS['orbits'].add(trigger);
         
         trigger.update = function() {
-            if(this.orbit.frozen){
-                // Stop all update if this thing is frozen
+            if (this.orbit.frozen || PAUSED) {
+                // Stop all updates
                 return;
             }
 
@@ -313,16 +467,17 @@ window.onload = function() {
             // Rotate the trigger
             if (this.rotate == true) {
                 // Set a new angle theta
-                var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI;
-                this.rotation = newTheta;
-                this.theta = ((newTheta-(Math.PI/2)) % (2*Math.PI)) - Math.PI; //lots of maths because two.rotation, note.theta, and the visual rotation all have different spots for 0°
+                var dTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * dt);
+                var newTheta = oldTheta + dTheta;
+                this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
+                this._setRotation();
                 
                 // Play notes that the trigger just passed
                 for (var i=0; i<this.orbit.notes.length; i++) {
                     var n = this.orbit.notes[i];
                     var nt = n.theta;
                     if (nt != null) { //just in case
-                        if (Util.isAngleBetween(nt,oldTheta,this.theta)) {
+                        if (Util.isAngleBetween(nt, oldTheta, this.theta)) {
                             // Trigger a note!
                             if (!GLOBAL_MUTE) {
                                 var snd = n.sampler.audio.play();
@@ -336,12 +491,26 @@ window.onload = function() {
                 }
             }
             
-            // Move trigger to the edge of the orbit based on the rotation
-            var dist = this.orbit.radius + size + this.orbit.linewidth/2
-            var angle = this.rotation + Math.PI/2;
-            this.translation.x = CENTER.x + Math.cos(angle) * dist;
-            this.translation.y = CENTER.y + Math.sin(angle) * dist;
+            this._updatePosition();
         }
+        trigger.sync = function() {
+            // Resync the trigger according to the global time. Needs to happen if orbit is resized, frozen, or other such nonsense.
+            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI/2;
+            this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
+            this._setRotation();
+            this._updatePosition();
+        }
+        trigger._setRotation = function() {
+            this.rotation = this.theta - Math.PI/2;
+        }
+        trigger._updatePosition = function() {
+            // Move trigger along the edge of the orbit based on the rotation
+            var dist = this.orbit.radius + size + this.orbit.linewidth/2;
+            this.translation.x = CENTER.x + Math.cos(this.theta) * dist;
+            this.translation.y = CENTER.y + Math.sin(this.theta) * dist;
+        }
+        
+        trigger._setRotation();
         
         return trigger;
     }
@@ -830,18 +999,13 @@ window.onload = function() {
             line.linewidth = LINE_W;
             line.cap = 'round';
 
-            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
-            circle.fill = 'red';
-            circle.linewidth = 0;
-
-            var trash = two.makeGroup(circle, line);
+            var trash = CreateButton(0, 0, CENTER_RADIUS);
+            trash.fill = '#ff9999';
+            trash.add(line);
             trash.center();
             trash.translation.set(x,y);
-            trash.opacity = .5;
             
-            trash.clicked = false;
             trash.visible = true;
-            trash.hoverOver = false;
 
             addInteraction(trash);
             setCursor(trash, 'default');
@@ -856,30 +1020,22 @@ window.onload = function() {
             X.stroke = 'white';
             X.linewidth = LINE_W;
             X.cap = 'round';
-
-            var circle = two.makeCircle(0, 0, CENTER_RADIUS);
-            circle.fill = 'gray';
-            circle.linewidth = 0;
-
-            var plus = two.makeGroup(circle, X);
+            
+            var plus = CreateButton(0, 0, CENTER_RADIUS);
+            plus.add(X);
             plus.center();
-            plus.translation.set(x,y);
-            plus.opacity = .5;
-
-            plus.clicked = false;
-            plus.visible = true;
-            plus.hoverOver = false;
-
-            addInteraction(plus);
-            setCursor(plus, 'pointer');
-
-            plus.onMouseDown = function(e, offset, localClickPos) {
+            plus.translation.set(x, y);
+            
+            plus.visible = true; //custom variable for keeping track of if button is visible
+            
+            plus.callBack = function(e) {
                 if (this.visible) {
                     // Create a new orbit
                     this.clicked = true;
+                    this.hoverOver = false;
                     tweenToScale(this, 0, 200);
                     var orbit = CreateOrbit(10);
-                    orbit.onDrag(e, offset, localClickPos); //force onDrag, which updates the radius, trigger animation, etc
+                    orbit.onDrag(e, {x:0, y:0}); //force onDrag, which updates the radius, trigger animation, etc
                     $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
                 }
             }
@@ -891,7 +1047,7 @@ window.onload = function() {
         var t = CreateTrash(x, y);
         var c = two.makeGroup(p, t);
         c.state = 'plus';
-        LAYERS['center'].add(c);
+        LAYERS['hud'].add(c);
 
         addInteraction(c);
         
@@ -904,7 +1060,7 @@ window.onload = function() {
             }
             
             // Check if mouse is over the center
-            if (isOverCenter(e.clientX, e.clientY)) {
+            /*if (isOverCenter(e.clientX, e.clientY)) {
                 _.each(c.children, function(child) {
                     if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
                         tweenToScale(child, 1.2, 200);
@@ -918,7 +1074,7 @@ window.onload = function() {
                         child.hoverOver = false;
                     }
                 });
-            }
+            }*/
         };
         c.onGlobalMouseUp = function(e) {
             /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
@@ -979,20 +1135,20 @@ window.onload = function() {
         setCursor(dial, 'pointer');
         
         dial.onDrag = function(e, offset, localClickPos) {
-            var val = Math.max(0, Math.min(1, -(e.clientY-this.slider.translation.y) / (length*this.slider.scale) ));
+            var top = $(this.slider.line._renderer.elem).offset().top;
+            var scalar = this.slider.scale*this.slider.parent.scale;
+            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
             this.slider.dragging = true;
             this.slider.setValue(val);
         };
         dial.onGlobalMouseUp = function() {
-            if(this.slider.dragging){
-                this.slider.callBack();
-            }
             this.slider.dragging = false;
         };
         
         var slider = two.makeGroup(line, dial);
         slider.length = length;
         slider.dragging = false;
+        slider.line = line;
         slider.dial = dial;
         dial.slider = slider;
         
@@ -1002,7 +1158,7 @@ window.onload = function() {
         slider.setValue = function(val) {
             this.value = val;
             this.dial.translation.y = -length * this.value;
-            //this.dial.slider.callBack();
+            this.dial.slider.callBack();
         };
         
         slider.setValue(1); //default value
@@ -1012,41 +1168,36 @@ window.onload = function() {
         return slider;
     }
     
-    function CreateSliderButton(x, y, r, h, imageURL) {
-        var bg = two.makeLine(x, y, x, y);
+    function CreateSliderButton(x, y, r, h, imageName) {
+        var bg = two.makeLine(0, 0, 0, 0);
         bg.linewidth = 2*r;
         bg.cap = "round";
         bg.stroke = '#cccccc';
 
-        var slider = CreateSlider(x, y-50, h-50);
+        var slider = CreateSlider(0, -50, h-50);
         slider.fill = bg.stroke;
         slider.stroke = "white";
         
-        var image = null; //added after it's loaded by jQuery's .get() method
-
-        var btn = two.makeGroup(bg, slider);
-        btn.image = image;
-        btn.slider = slider;
-        btn.hovering = false;
-        btn.expanded = false;
-        btn.height = 0;
-
-        var mask = two.makeRectangle(x, y, 2*r, 2*r);
-        btn.mask = mask;
-
-        addInteraction(btn);
-        setCursor(btn, 'pointer');
+        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
         
-        $.get(imageURL, function(svgAsset) {
-            var mySvg = svgAsset.getElementsByTagName('svg')[0];
-            var preimage = two.interpret(mySvg).center();
-            preimage.fill = 'white';
-            image = two.makeGroup(preimage);
-            image.translation.set(x, y);
-            btn.add(image);
-        });
+        var btn = CreateButton(0, 0, r, imageName);
+        btn.onGlobalMouseMove = function(e) {
+            // Overwrite default function
+        }
+        
+        var sliderBtn = two.makeGroup(bg, btn, slider, mask);
+        sliderBtn.translation.set(x, y);
+        sliderBtn.btn = btn;
+        sliderBtn.slider = slider;
+        sliderBtn.hovering = false;
+        sliderBtn.expanded = false;
+        sliderBtn.height = 0;
+        sliderBtn.mask = mask;
+        
+        addInteraction(sliderBtn);
+        setCursor(sliderBtn, 'pointer');
 
-        btn.appear = function() {
+        sliderBtn.appear = function() {
             var tweenGrow = new TWEEN.Tween(this)
                 .to({ height:h }, 500)
                 .easing(TWEEN.Easing.Cubic.Out)
@@ -1056,8 +1207,9 @@ window.onload = function() {
                     mask.vertices[1].y = -(this._object.height+r);
                 })
                 .start();
+            tweenToScale(this, 1.2, 200);
         }
-        btn.disappear = function() {
+        sliderBtn.disappear = function() {
             var tweenShrink = new TWEEN.Tween(this)
                 .to({ height:0 }, 500)
                 .easing(TWEEN.Easing.Cubic.Out)
@@ -1067,82 +1219,102 @@ window.onload = function() {
                     mask.vertices[1].y = -(this._object.height+r);
                 })
                 .start();
+            tweenToScale(this, 1, 200);
         }
-        btn.onMouseEnter = function() {
+        sliderBtn.onMouseEnter = function() {
             this.hovering = true;
             this.expanded = true;
             this.appear();
         }
-        btn.onMouseLeave = function() {
+        sliderBtn.onMouseLeave = function() {
             this.hovering = false;
             if (!slider.dragging) {
                 this.expanded = false;
                 this.disappear();
             }
         }
-        btn.onGlobalMouseUp = function() {
+        sliderBtn.onGlobalMouseUp = function() {
             if (this.expanded && !this.hovering) {this.disappear();}
         }
+        sliderBtn.btn.onMouseDown = function() { //overwrite default to remove tween
+            this.on = !this.on;
+            this.callBack();
+        }
+        sliderBtn.btn.onMouseUp = function() { //overwrite default to remove tween
+            this.callBackUp();
+        }
 
-        return btn;
+        return sliderBtn;
     }
     
-    function CreateButton(x, y, r, imageURL) {
-        var circle = two.makeCircle(x, y, r);
+    function CreateButton(x, y, r, imageName) {
+        var circle = two.makeCircle(0, 0, r);
         circle.fill = '#cccccc';
         circle.stroke = 'none';
         circle.linewidth = 0;
         circle.radius = r;
-        
-        var image = null; //added after it's loaded by jQuery's .get() method
 
-        var btn = two.makeGroup(circle);
+        var image = null; //set later
+        
+        var btn = two.makeGroup(circle, image);
+        btn.center();
+        btn.translation.set(x, y);
         btn.circle = circle;
+        btn.image = image;
         btn.hoverOver = false;
         btn.on = true;
-
+        btn.clicked = false;
+        
         addInteraction(btn);
         setCursor(btn, 'pointer');
         
-        $.get(imageURL, function(svgAsset) {
-            var mySvg = svgAsset.getElementsByTagName('svg')[0];
-            var preimage = two.interpret(mySvg).center();
-            preimage.fill = 'white';
-            image = two.makeGroup(preimage);
-            image.translation.set(x, y);
-            btn.add(image);
-            btn.image = image;
-        });
-        
-        btn.callBack = function() {
-            // empty function by default
-            alert("I don't do anything yet");
+        btn.setImage = function(iName) {
+            if (iName !== undefined && iName !== null) {
+                if (this.image != null) {
+                    btn.remove(this.image);
+                    two.remove(this.image);
+                }
+                var preimage = two.interpret(svgAssets[iName]);
+                preimage.center();
+                preimage.fill = 'white';
+                var image = two.makeGroup(preimage);
+                this.add(image);
+                this.image = image;
+            }
         }
-
+        btn.setImageOffset = function(xoff, yoff) {
+            this.image.children[0].translation.x = xoff;
+            this.image.children[0].translation.y = yoff;
+        }
+        btn.callBack = function() {} // empty function by default
+        btn.callBackUp = function() {} // empty function by default
         btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
-            if (isOverCircle(e.clientX, e.clientY, this.circle.translation.x, this.circle.translation.y, this.circle.radius)) {
-                if (!this.hoverOver) {
-                    _.each(btn.children, function(child) {
-                        tweenToScale(child, 1.2, 200);
-                    });
+            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
+                if (!this.hoverOver && !this.clicked) {
+                    tweenToScale(this, 1.2, 200);
                     this.hoverOver = true;
                 }
             } else {
-                if (this.hoverOver) {
-                    _.each(btn.children, function(child) {
-                        tweenToScale(child, 1, 200);
-                    });
+                if (this.hoverOver && !this.clicked) {
+                    tweenToScale(this, 1, 200);
                     this.hoverOver = false;
                 }
             }
         }
-
-        btn.onMouseDown = function() {
+        btn.onMouseDown = function(e) {
             this.on = !this.on;
-            this.callBack();
+            this.clicked = true;
+            tweenToScale(this, 1, 100);
+            this.callBack(e);
+        }
+        btn.onMouseUp = function(e) {
+            this.clicked = false;
+            tweenToScale(this, 1.2, 100);
+            this.callBackUp(e);
         }
         
+        btn.setImage(imageName);
         return btn;
     }
     
@@ -1312,9 +1484,13 @@ window.onload = function() {
 
     // Global time, in seconds
     var START_TIME = new Date();
+    var PREV_TIME = 0;
     var TIME = 0;
+    var dt = 0;
     function updateTime() {
         TIME = (new Date() - START_TIME) / 1000;
+        dt = TIME-PREV_TIME;
+        PREV_TIME = TIME;
     }
    
     

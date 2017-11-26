@@ -1,22 +1,23 @@
 --- Task List ---
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
-- Figure out UI
-    - design sampler menu
-    - design music controls (tempo, play/pause, reset, master volume)
-- Create a bottom bar for all the samplers
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- improve method for loading external svg data (using two.interpret) ?
-- fix glitch with notes not playing during first cycle when a setup is loaded
-- improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
+- design artwork / visual theme
+- simplify / refactor button and sliders ?
+- simplify / refactor SetupInitialState() ?
+
+
+--- Bugs ---
+#1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
+
 
 Jon:
 - play sample when sampler is clicked?
-- make play/pause button
+- Create a bottom bar for all the samplers -- workin' on it
 
 
 Omar:
-- dynamic resizing window and content (!!!)
+- dynamic resizing window and content (important!!!)
 - custom audio files
 	- importing new audio files via drag-n-drop anywhere on screen
 	- assign new audio files to samplers (either new or preexisting)
@@ -59,4 +60,13 @@ Omar:
 - design volume slider
 - make global volume and global tempo sliders
 - button for toggling polygons
-
+- improve tempo changing (changes tempo triggers all notes in a cacophony of noises)
+- improve method for loading external svg data (using two.interpret)
+- make play/pause button
+- make reset button
+- make reset button functional
+- Figure out UI
+    - design sampler menu
+    - design music controls (tempo, play/pause, reset, master volume)
+- fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
+- prototype a randomize feature
