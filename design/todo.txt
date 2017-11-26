@@ -5,6 +5,13 @@
 - design artwork / visual theme
 - simplify / refactor button and sliders ?
 - simplify / refactor SetupInitialState() ?
+- dynamic resizing window and content (important!!!)
+- custom audio files
+	- importing new audio files via drag-n-drop anywhere on screen
+	- assign new audio files to samplers (either new or preexisting)
+	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
+	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
+- alt-click orbit to copy it
 
 
 --- Bugs ---
@@ -17,13 +24,7 @@ Jon:
 
 
 Omar:
-- dynamic resizing window and content (important!!!)
-- custom audio files
-	- importing new audio files via drag-n-drop anywhere on screen
-	- assign new audio files to samplers (either new or preexisting)
-	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
-	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
-- alt-click orbit to copy it
+
 
 
 --- Done ---
