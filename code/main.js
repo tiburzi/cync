@@ -100,15 +100,14 @@ window.onload = function() {
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
     }
-
-    function SetupInitialState() {
-        var stateData = state.load();
-        //var stateData = null; //uncomment this line to prevent state loading while working
-        
+    
+    function CreateHUD() {
         // Create samplers
         for (var i=0; i<SOUND_FILES.length; i++) {
             CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
         }
+        
+        var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
         var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
@@ -250,6 +249,11 @@ window.onload = function() {
             }
         });
         LAYERS['hud'].add(playBtn);
+    }
+
+    function SetupInitialState() {
+        var stateData = state.load();
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         //This will either load from URL or just create the default orbits
         if (stateData != null) {
@@ -721,36 +725,12 @@ window.onload = function() {
         }
         
         note.onClick = function(e) {
-            // If on a sampler, select this note
+            // If on a sampler, preview this note
             if (this.onSampler) {
-                var s = this.selected;
-                _.each(Notes, function(n) {
-                    if (n.selected) {
-                        n.selected = false;
-                        tweenToScale(n, 1, 100);
-                    }
-                });
-                if (!s) {this.selected = true;}
-                
-                tweenToScale(this, this.selected ? 2 : 1.5, 100);
-            }
-        }
-        
-        note.onGlobalMouseDown = function(e) {
-            if (this.selected && !isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
-                // If this note is selected, create notes of this type on every mouse click
-                var spawnNote = true;
-                for (var i=0; i<Notes.length; i++) {
-                    if (this !== Notes[i] && Notes[i].hovering) {spawnNote = false; break;}
-                }
-                if (spawnNote) {
-                    var n = CreateNote(e.clientX, e.clientY);
-                    n.sampler = this.sampler;
-                    n.onSampler = false;
-                    n.fill = this.sampler.color;
-                    $(document.getElementById(n.id)).trigger('mousedown');
-                    n.prevPos = undefined; //override, so note is destroyed if it is not placed
-                }
+                this.sampler.audio.play();
+                var t2 = tweenToScale(this, 1.5, 50);
+                var t1 = tweenToScale(this, 1, 50);
+                t1.chain(t2);
             }
         }
         
@@ -1498,6 +1478,7 @@ window.onload = function() {
     
     var C = CreateCenter(CENTER.x, CENTER.y);
     
+    CreateHUD();
     SetupInitialState();
     
     //CreateSlider(two.width-50, two.height-100, 100);
