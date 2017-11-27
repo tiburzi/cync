@@ -12,7 +12,6 @@
 	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
 	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 - alt-click orbit to copy it
-- play sample when sampler is clicked?
 - Create a bottom bar for all the samplers -- workin' on it
 
 
@@ -66,3 +65,4 @@
     - design music controls (tempo, play/pause, reset, master volume)
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
 - prototype a randomize feature
+- play sample when sampler is clicked
