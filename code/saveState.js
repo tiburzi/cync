@@ -60,7 +60,12 @@ var SaveState = (function (scope) {
 		var jsonString = JSON.stringify(this.state);
 		// Now convert it into base64 because you can't put characters like '{}' in a url 
 		var b64 = btoa(jsonString);
-		var url = "?state=" + b64;
+		// Preserve set param 
+		var prepend = '';
+		if(Util.getParameterByName('set')){
+			prepend += 'set=' + String(Util.getParameterByName('set')) + "&"
+		}
+		var url = "?"+prepend+"state=" + b64;
 		return url;
 	}
 
