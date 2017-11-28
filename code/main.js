@@ -1340,7 +1340,7 @@ window.onload = function() {
     var saveMIDI = function() {
         
         // Use jsmidgen to create a MIDI file from the current groove
-        var file = new Midi.File();
+        /*var file = new Midi.File();
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
             
@@ -1358,7 +1358,9 @@ window.onload = function() {
                 }
             }
         }
-        console.log(file);
+        console.log(file.toBytes());
+        var blob = new Blob([file.toBytes()], {type: "audio/midi"});
+        saveAs(blob, "test.mid");*/
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
