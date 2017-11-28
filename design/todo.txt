@@ -18,7 +18,7 @@
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
-
+#2 - When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes
 
 
 --- Done ---

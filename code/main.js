@@ -35,16 +35,17 @@ window.onload = function() {
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
     var GLOBAL_MUTE = false; //so we can mute everything while working
-    var LINE_W = 8; //global line width unit
+    var LINE_W = 5; //global line width unit
     var PHI = 1.618;
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SOUND_FILES = [];// ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
-    SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"];
-    var MAX_ORBITS = 5;
+    var SAMPLERS_MAX = 5;
+    var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
+    //SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"];
+    var MAX_ORBITS = 4;
     var ORBIT_MAX_RADIUS = 240;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
@@ -54,10 +55,9 @@ window.onload = function() {
     var SHOW_POLYGONS = true;
     var PAUSED = false;
     var CENTER = {};
-    var NOTE_RADIUS = 16;
-    var CTL_RADIUS = 30;
+    var NOTE_RADIUS = 15;
+    var CTL_RADIUS = 25;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
-    var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
 
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
@@ -103,9 +103,8 @@ window.onload = function() {
     
     function CreateHUD() {
         // Create samplers
-        var sampNum = 5;
-        for (var i=0; i<sampNum; i++) {
-            CreateSampler(two.width/2 + ORBIT_MAX_RADIUS + 100, two.height/2 + (i-(sampNum-1)/2)*(4*NOTE_RADIUS));
+        for (var i=0; i<SAMPLERS_MAX; i++) {
+            CreateSampler(two.width/2 + ORBIT_MAX_RADIUS + 100, two.height/2 + (i-(SAMPLERS_MAX-1)/2)*(4*NOTE_RADIUS));
         }
         
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
@@ -172,6 +171,11 @@ window.onload = function() {
         var randomizeBtn = CreateButton(two.width-11*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "randomize");
         randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
+            
+            var _getRandomSampler = function() {
+                return Samplers[Math.round(Math.random()*(SAMPLERS_MAX-1))];
+            }
+            
             // Create a random configuration
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             for (var i=1; i<=MAX_ORBITS; i++) {
@@ -180,12 +184,12 @@ window.onload = function() {
                     var o = CreateOrbit(i*RADIUS_SNAP);
                     var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
                     var notes = Math.round(Math.random()*4) + 1;
-                    var mostCommonSamp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                    var mostCommonSamp = _getRandomSampler();
                     while(notes > 0) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
-                        var samp = Math.random()<.5 ? mostCommonSamp : Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                        var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
                         notes --;
                     }
@@ -622,8 +626,8 @@ window.onload = function() {
             this.hover = true;
         }
         polygon.onMouseEnter = function() {
-            if (this.op > 0) {
-                /* If opacity>0 when the mouse enters, that means the mouse *just* left the polygon, and it is fading away.
+            if (this.op > .5) {
+                /* The mouse *just* left the polygon, and it is fading away.
                    So, make it appear again. */
                 this.appear();
             }
@@ -979,13 +983,13 @@ window.onload = function() {
             A button that either which adds orbits (+), or destroys notes and orbits dragged onto it (-).
         */
         var CreateTrash = function(x, y) {
-            var dist = .4*CENTER_RADIUS;
+            var dist = .4*CTL_RADIUS;
             var line = two.makeLine(-dist, 0, +dist, 0);
             line.stroke = 'white';
             line.linewidth = LINE_W;
             line.cap = 'round';
 
-            var trash = CreateButton(0, 0, CENTER_RADIUS);
+            var trash = CreateButton(0, 0, CTL_RADIUS);
             trash.fill = '#ff9999';
             trash.add(line);
             trash.center();
@@ -999,7 +1003,7 @@ window.onload = function() {
             return trash;
 }
         var CreatePlus = function(x, y) {
-            var dist = .4*CENTER_RADIUS;
+            var dist = .4*CTL_RADIUS;
             var line1 = two.makeLine(0, -dist, 0, +dist);
             var line2 = two.makeLine(-dist, 0, +dist, 0);
             var X = two.makeGroup(line1, line2);
@@ -1007,7 +1011,7 @@ window.onload = function() {
             X.linewidth = LINE_W;
             X.cap = 'round';
             
-            var plus = CreateButton(0, 0, CENTER_RADIUS);
+            var plus = CreateButton(0, 0, CTL_RADIUS);
             plus.add(X);
             plus.center();
             plus.translation.set(x, y);
@@ -1311,7 +1315,7 @@ window.onload = function() {
         } else return false;
     }
     var isOverCenter = function(x, y) {
-        return isOverCircle(CENTER.x, CENTER.y, x, y, CENTER_RADIUS)
+        return isOverCircle(CENTER.x, CENTER.y, x, y, CTL_RADIUS)
     }
     var isOverRectangle = function(x, y, rx1, ry1, rx2, ry2) {
         return ((rx1 <= x && x <= rx2) && (ry1 <= y && y <= ry2));
@@ -1332,6 +1336,29 @@ window.onload = function() {
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
+    }
+    var saveMIDI = function() {
+        
+        // Use jsmidgen to create a MIDI file from the current groove
+        var file = new Midi.File();
+        for (var i=0; i<Orbits.length; i++) {
+            var o = Orbits[i];
+            
+            if (o.notes.length > 0) {
+                // Save this orbit's notes on a new track
+                var track = new Midi.Track();
+                file.addTrack(track);
+                track.setTempo(TEMPO);
+                
+                for (var j=0; j<o.notes.length; j++) {
+                    var n = o.notes[j];
+                    var angle = (n.theta + 2*Math.PI + Math.PI/2) % (2*Math.PI);
+                    var time = (angle/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * TEMPO;
+                    track.addNote(0, 'c4', 32, time);
+                }
+            }
+        }
+        console.log(file);
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
@@ -1481,12 +1508,13 @@ window.onload = function() {
    
     
     Init();
-    
     var C = CreateCenter(CENTER.x, CENTER.y);
     
     CreateHUD();
     SetupInitialState();
 
+    saveMIDI();
+    
     // Our main update loop!
     function update() {
         // Keep track of time for time-synced animations and music
