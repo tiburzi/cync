@@ -1,11 +1,11 @@
 function Util () {};
- 
+
+// Math utility functions
 Util.carteToPolar = function(x, y) {
     var dis = Math.sqrt(x*x + y*y);
     var rad = Math.atan2(y, x);
     return { distance:dis, radians:rad };
 }
-
 Util.polarToCarte = function(radius, theta) {
     var xx = radius * Math.cos(theta);
     var yy = radius * Math.sin(theta);
@@ -20,18 +20,6 @@ Util.pointDirection = function(start, end) {
 Util.clamp = function(value, minimum, maximum) {
     return Math.max( Math.min(value, maximum), minimum);
 }
-
-Util.getParameterByName = function(name, url) {
-	// Courtesy of https://stackoverflow.com/a/901144/1278023
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
-
 Util.isAngleBetween = function(N,a,b){
 	// From: https://stackoverflow.com/a/29721295/1278023
 	// Add Math.PI to all angles so they're in the range 0 to Math.PI * 2 
@@ -43,3 +31,16 @@ Util.isAngleBetween = function(N,a,b){
 		return a <= N && N <= b;
 	return a <= N || N <= b;
 }
+
+// State saving utility functions
+Util.getParameterByName = function(name, url) {
+	// Courtesy of https://stackoverflow.com/a/901144/1278023
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+

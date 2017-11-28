@@ -43,9 +43,9 @@ window.onload = function() {
     var PALETTE = [];
     var LAYERS = [];
     var SOUND_FILES = [];// ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
-    SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"]
+    SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"];
     var MAX_ORBITS = 5;
-    var ORBIT_MAX_RADIUS = 300;
+    var ORBIT_MAX_RADIUS = 240;
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
@@ -54,7 +54,7 @@ window.onload = function() {
     var SHOW_POLYGONS = true;
     var PAUSED = false;
     var CENTER = {};
-    var NOTE_RADIUS = 15;
+    var NOTE_RADIUS = 16;
     var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var CENTER_RADIUS = 0.5*RADIUS_SNAP;
@@ -103,11 +103,12 @@ window.onload = function() {
     
     function CreateHUD() {
         // Create samplers
-        for (var i=0; i<SOUND_FILES.length; i++) {
-            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
+        var sampNum = 5;
+        for (var i=0; i<sampNum; i++) {
+            CreateSampler(two.width/2 + ORBIT_MAX_RADIUS + 100, two.height/2 + (i-(sampNum-1)/2)*(4*NOTE_RADIUS));
         }
         
-        var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
+        //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
         var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
@@ -949,15 +950,20 @@ window.onload = function() {
         sampler.radius = .5*NOTE_RADIUS;
         sampler.hasNote = false;
         sampler.index = Samplers.length;
-        var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
-        sampler.audio = new Howl({src: fileName});
+        if (SOUND_FILES[Samplers.length] !== undefined) {
+            var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
+            sampler.audio = new Howl({src: fileName});
+        } else {
+            sampler.audio = null;
+        }
+        
 
         Samplers.push(sampler);
         LAYERS['hud'].add(sampler);
 
         sampler.update = function() {
             // Check if the sampler needs another note
-            if (!this.hasNote) {
+            if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
                 note.onSampler = true;
