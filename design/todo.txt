@@ -12,7 +12,13 @@
 	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
 	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 - alt-click orbit to copy it
-- Create a bottom bar for all the samplers -- workin' on it
+- organize UI
+	- placement of samplers relative to orbits for optimization
+	- sample managment (loading new samples, viewing sample filename, deleting samples?)
+	- global control buttons (play/pause, volume, tempo, reset)
+	- maybe extra buttons in their own area/category? (like import, export, randomize, options?)
+	- determine maxmium orbit number, maximum orbit radius
+- redesign how orbits snap radii to be relative to one another, instead of absolute increments?
 
 
 
