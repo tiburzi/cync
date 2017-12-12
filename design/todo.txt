@@ -24,7 +24,6 @@
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
-#2 - When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes
 
 
 --- Done ---
@@ -72,3 +71,4 @@
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
 - prototype a randomize feature
 - play sample when sampler is clicked
+#2 - When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes

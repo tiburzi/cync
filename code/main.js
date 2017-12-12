@@ -432,7 +432,6 @@ window.onload = function() {
             var note = CreateNote(X,Y);
             note.sampler = sampler;
             note.onSampler = false;
-            sampler.hasNote = false;
             note.fill = sampler.color;
             note.theta = angle;
             note.prevOrbit = note.orbit = this;
