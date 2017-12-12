@@ -518,7 +518,7 @@ window.onload = function() {
             this.translation.y = CENTER.y + Math.sin(this.theta) * dist;
         }
         
-        trigger._setRotation();
+        trigger.sync();
         
         return trigger;
     }
