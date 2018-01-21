@@ -54,7 +54,7 @@ window.onload = function() {
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
-    var TEMPO_MAX = 120;
+    var TEMPO_MAX = 150;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
@@ -125,6 +125,8 @@ window.onload = function() {
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
+        }
+        tempoBtn.slider.dial.onMouseUp = function() {
             UpdateState();
         }
         LAYERS['hud'].add(tempoBtn);
