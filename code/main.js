@@ -59,10 +59,12 @@ window.onload = function() {
     var SHOW_POLYGONS = true;
     var PAUSED = false;
     var CENTER = {}; //default, updated in Init()
-    var NOTE_RADIUS = 15;
+    var NOTE_RADIUS = 12;
     var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
+    var GRAY = 'rgba(180,180,180,1)';
+    var LT_GRAY = '#eeeeee';
 
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
@@ -91,7 +93,7 @@ window.onload = function() {
         
         PALETTE.push('#E53D75');
         PALETTE.push('#EF9B40');
-        PALETTE.push('#5FBEAC');
+        PALETTE.push('#56C4B0');
         PALETTE.push('#726DAF');
         PALETTE.push('#1B9CD3');
         PALETTE.push('#B8B8D1');
@@ -278,25 +280,28 @@ window.onload = function() {
         if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
-             })
-
-            if(typeof stateData.tempo == "number" && stateData.tempo != -1)
-                TEMPO = stateData.tempo;
-
+            })
+            
+            // Snap orbit radii upon creation
+            for (var i=0; i<Orbits.length; i++) {
+                setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
+                Orbits[i].polygon.update();
+                Orbits[i].trigger.sync();
+            }
+            
+            //load in note data
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
                 var orbit = Orbits[n.oIndex];
                 orbit.addNewNote(n.theta, sampler);
              })
+            
+            //load tempo data
+            if (typeof stateData.tempo == "number" && stateData.tempo != -1) {
+                TEMPO = stateData.tempo;
+            }
+            
         } else { SetupDefault(); }
-        
-        // Snap orbit radii upon creation
-        for (var i=0; i<Orbits.length; i++) {
-            setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
-            Orbits[i].polygon.update();
-            Orbits[i].trigger.sync();
-        }
-        
     }
     
     function SetupDefault() {
@@ -310,7 +315,7 @@ window.onload = function() {
         */
         var orbit = two.makeCircle(CENTER.x, CENTER.y, radius);
         orbit.fill = 'none';
-        orbit.stroke = 'rgba(107,107,107,1)';
+        orbit.stroke = GRAY;
         orbit.linewidth = LINE_W;
         orbit.radius = radius; //Just for keeping track of the radius in our own application
         orbit.notes = [];
@@ -464,11 +469,11 @@ window.onload = function() {
         /*
             A marker that triggers notes as it rotates around its orbit.
         */
-        var size = 15;
+        var size = 12;
         var triggerX = CENTER.x;
         var triggerY = CENTER.y-orbit.radius-size - orbit.linewidth/2;
         var trigger = two.makePolygon(triggerX, triggerY, size);
-        trigger.fill = 'rgba(255,69,0,1)';
+        trigger.fill = '#777777';
         trigger.stroke = 'none';
         trigger.orbit = orbit;
         trigger.rotate = true;
@@ -543,7 +548,7 @@ window.onload = function() {
         */
         var polygon = new Two.Path();
         two.add(polygon);
-        polygon.fill = polygon.stroke = 'gray';
+        polygon.fill = polygon.stroke = '#aaaaaa';
         polygon.linewidth = 2*NOTE_RADIUS+10;
         polygon.join = 'round';
         polygon.cap = 'round';
@@ -589,7 +594,7 @@ window.onload = function() {
                     })
                     .start();
                 $(this._renderer.elem).css({'cursor': 'move'});
-                this.fill = this.stroke = 'gray';
+                this.fill = this.stroke = '#aaaaaa';
             }
         }
         polygon.disappear = function() {
@@ -709,7 +714,6 @@ window.onload = function() {
                 })
                 .start();
         }
-        
         note.onGlobalMouseMove = function(e, offset, localClickPos) {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
@@ -741,7 +745,6 @@ window.onload = function() {
                 }
             }
         }
-        
         note.onClick = function(e) {
             // If on a sampler, preview this note
             if (this.onSampler) {
@@ -751,7 +754,6 @@ window.onload = function() {
                 t1.chain(t2);
             }
         }
-        
         note.onMouseDown = function (e, offset, localClickPos) {
             note.prevPos = {x:note.translation.x, y:note.translation.y};
             
@@ -771,7 +773,6 @@ window.onload = function() {
                     }
                 });
         }
-        
         note.onDrag = function(e, offset, localClickPos) {
             if (!this.dragging) {
                 this.dragging = true;
@@ -839,7 +840,6 @@ window.onload = function() {
             this.dragging = true;
             DRAGGING_DESTROYABLE = true;
         }
-        
         note.onMouseUp = function(e, offset, localClickPos) {
             this.dragging = false;
             
@@ -881,20 +881,17 @@ window.onload = function() {
 
             UpdateState();
         }
-        
         note.setVolume = function(v) {
             var vol = Util.clamp(v, 0, 1);
             this.volume = vol;
             setRadius(this, (.5+.5*vol)*NOTE_RADIUS);
         }
-        
         note.updateTheta = function() {
             if (this.orbit != null) {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
                 this.orbit.sortNotes();
             }
         }
-
         note.update = function() {
             // Update note's parameter object
             if (note.parameter != undefined) {
@@ -903,7 +900,6 @@ window.onload = function() {
                 note.parameter.translation.set(X, Y);
             }
         }
-        
         note.destroy = function() {
             var index = Notes.indexOf(this);
             if (index > -1) {Notes.splice(index, 1);}
@@ -998,7 +994,7 @@ window.onload = function() {
         var CreateTrash = function(x, y) {
             var dist = .4*CTL_RADIUS;
             var line = two.makeLine(-dist, 0, +dist, 0);
-            line.stroke = 'white';
+            line.stroke = LT_GRAY;
             line.linewidth = LINE_W;
             line.cap = 'round';
 
@@ -1020,7 +1016,7 @@ window.onload = function() {
             var line1 = two.makeLine(0, -dist, 0, +dist);
             var line2 = two.makeLine(-dist, 0, +dist, 0);
             var X = two.makeGroup(line1, line2);
-            X.stroke = 'white';
+            X.stroke = LT_GRAY;
             X.linewidth = LINE_W;
             X.cap = 'round';
             
@@ -1130,7 +1126,7 @@ window.onload = function() {
         line.stroke = '#333333';
         
         var dial = two.makeCircle(0, 0, PHI*LINE_W);
-        dial.fill = 'white';
+        dial.fill = 'LT_GRAY';
         dial.linewidth = LINE_W;
         dial.stroke = '#333333';
         
@@ -1175,11 +1171,11 @@ window.onload = function() {
         var bg = two.makeLine(0, 0, 0, 0);
         bg.linewidth = 2*r;
         bg.cap = "round";
-        bg.stroke = '#cccccc';
+        bg.stroke = GRAY;
 
         var slider = CreateSlider(0, -50, h-50);
         slider.fill = bg.stroke;
-        slider.stroke = "white";
+        slider.stroke = LT_GRAY;
         
         var mask = two.makeRectangle(0, 0, 2*r, 2*r);
         
@@ -1252,7 +1248,7 @@ window.onload = function() {
     
     function CreateButton(x, y, r, imageName) {
         var circle = two.makeCircle(0, 0, r);
-        circle.fill = '#cccccc';
+        circle.fill = GRAY;
         circle.stroke = 'none';
         circle.linewidth = 0;
         circle.radius = r;
@@ -1279,7 +1275,7 @@ window.onload = function() {
                 }
                 var preimage = two.interpret(svgAssets[iName]);
                 preimage.center();
-                preimage.fill = 'white';
+                preimage.fill = LT_GRAY;
                 var image = two.makeGroup(preimage);
                 this.add(image);
                 this.image = image;
