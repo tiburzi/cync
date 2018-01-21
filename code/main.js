@@ -43,8 +43,12 @@ window.onload = function() {
     var PALETTE = [];
     var LAYERS = [];
     var SAMPLERS_MAX = 5;
-    var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
-    //SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"];
+    var AVAILABLE_SAMPLES_ARRAYS = [
+        ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"],
+        ["postal_kick","postal_slap1","postal_slap2","postal_snare"],
+        ["bell_1","bell_2","bell_3","bell_4","bell_5","bell_6","bell_7"],
+    ];
+    var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0]; 
     var MAX_ORBITS = 4;
     var ORBIT_MAX_RADIUS = 240; //default, updated in Init()
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
