@@ -308,7 +308,6 @@ window.onload = function() {
     function SetupDefault() {
         CreateOrbit(RADIUS_SNAP);
         CreateOrbit(2*RADIUS_SNAP);
-        //PAUSED = true;
     }
     
     function CreateOrbit(radius) {
