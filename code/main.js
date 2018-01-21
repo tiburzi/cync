@@ -209,12 +209,11 @@ window.onload = function() {
         };
         LAYERS['hud'].add(randomizeBtn);
         
-        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "play");
-        playBtn.setImageOffset(2, 0);
+        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "pause");
         playBtn.callBack = function() {
             PAUSED = !this.on;
-            this.setImage(PAUSED ? "pause" : "play");
-            this.setImageOffset(PAUSED ? 0 : 2, 0);
+            this.setImage(PAUSED ? "play" : "pause");
+            this.setImageOffset(PAUSED ? 2 : 0, 0);
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -309,6 +308,7 @@ window.onload = function() {
     function SetupDefault() {
         CreateOrbit(RADIUS_SNAP);
         CreateOrbit(2*RADIUS_SNAP);
+        //PAUSED = true;
     }
     
     function CreateOrbit(radius) {
@@ -720,10 +720,10 @@ window.onload = function() {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
                 setCursor(this, "hand");
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
+                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2.5*this.radius)) {
                     if (!this.hovering) {
                         this.hovering = true;
-                        tweenToScale(this, 1.5, 200);
+                        tweenToScale(this, PHI, 200);
                     }
                 } else {
                     if (!this.selected && this.hovering) {
@@ -1001,7 +1001,7 @@ window.onload = function() {
             line.cap = 'round';
 
             var trash = CreateButton(0, 0, CTL_RADIUS);
-            trash.fill = '#ff9999';
+            trash.fill = 'rgba(250,155,155,1)';
             trash.add(line);
             trash.center();
             trash.translation.set(x,y);
