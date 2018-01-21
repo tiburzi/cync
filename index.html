@@ -11,6 +11,7 @@
         <script src='code/util.js'></script>
         <script src='code/saveState.js'></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.5/howler.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.12.13/Tone.min.js"></script>
         <style type="text/css">
             body {
                 margin: 0px;
@@ -21,5 +22,41 @@
     <body>
         <div id="main-container"></div>
         <script src='code/main.js'></script>
+        <script type="text/javascript">
+            // var bell = new Tone.MetalSynth({
+            //     "harmonicity" : 12,
+            //     "resonance" : 200,
+            //     "modulationIndex" : 20,
+            //     "envelope" : {
+            //         "decay" : 0.99,
+            //     },
+            //     "volume" : -10
+            // }).toMaster();
+
+            // Tone.Transport.bpm.value = 115;
+
+            // document.addEventListener("keydown", onDocumentKeyDown, false);
+      
+            // function onDocumentKeyDown(event) {
+            //     var keyCode = event.which;
+            //     var frequencies = [];
+            //     for(var i=0;i<26;i++){
+            //         var f = i / 26;
+            //         var min = 30;
+            //         var max = 80;
+            //         let freq = Math.round((max - min) * f + min);
+            //         frequencies.push( freq );
+            //     }
+            //     var final_freqs = [32,36,42,55,62,78,110];
+                
+            //     var freq = final_freqs[keyCode-65];
+            //     console.log(freq)
+            //     bell.frequency.setValueAtTime(freq);
+            //     bell.triggerAttack();
+            // }
+        
+            
+
+        </script>
     </body>
 </html>
