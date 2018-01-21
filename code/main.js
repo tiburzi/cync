@@ -46,7 +46,7 @@ window.onload = function() {
     var SOUND_FILES = ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"];
     //SOUND_FILES = ["postal_kick","postal_slap1","postal_slap2","postal_snare"];
     var MAX_ORBITS = 4;
-    var ORBIT_MAX_RADIUS = 240;
+    var ORBIT_MAX_RADIUS = 240; //default, updated in Init()
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
@@ -54,9 +54,9 @@ window.onload = function() {
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
-    var CENTER = {};
+    var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 15;
-    var CTL_RADIUS = 25;
+    var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
 
@@ -81,7 +81,9 @@ window.onload = function() {
         var h = 700;
         two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
         */
-        CENTER = { x:two.width / 2, y:two.height / 2 };
+        CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
+        ORBIT_MAX_RADIUS = .8*two.height/2;
+        RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
         PALETTE.push('#E53D75');
         PALETTE.push('#EF9B40');
@@ -102,15 +104,18 @@ window.onload = function() {
     }
     
     function CreateHUD() {
+        var controlsX = two.width/4;
+        var controlsY = two.height/2;
+        
         // Create samplers
         for (var i=0; i<SAMPLERS_MAX; i++) {
-            CreateSampler(two.width/2 + ORBIT_MAX_RADIUS + 100, two.height/2 + (i-(SAMPLERS_MAX-1)/2)*(4*NOTE_RADIUS));
+            CreateSampler(controlsX+3.5*CTL_RADIUS, controlsY -4*CTL_RADIUS + 10*CTL_RADIUS*(i/SAMPLERS_MAX));
         }
         
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
-        var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
+        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
@@ -118,7 +123,7 @@ window.onload = function() {
         }
         LAYERS['hud'].add(tempoBtn);
         
-        var volumeBtn = CreateSliderButton(two.width-5*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "volume_full");
+        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -160,15 +165,7 @@ window.onload = function() {
         }
         LAYERS['hud'].add(volumeBtn);
         
-        var polygonBtn = CreateButton(two.width-8*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "polygon");
-        polygonBtn.setImageOffset(0, -2);
-        polygonBtn.callBack = function() {
-            SHOW_POLYGONS = this.on;
-            this.image.opacity = this.on ? 1 : 0.5;
-        };
-        LAYERS['hud'].add(polygonBtn);
-        
-        var randomizeBtn = CreateButton(two.width-11*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "randomize");
+        var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
         randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
             
@@ -177,21 +174,24 @@ window.onload = function() {
             }
             
             // Create a random configuration
+            var maxNotes = 6+Math.round(Math.random()*4);
+            var totalNotes = 0;
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             for (var i=1; i<=MAX_ORBITS; i++) {
                 if (Math.random() < 1-.12*i) {
                     // Create an orbit and populate it with notes
                     var o = CreateOrbit(i*RADIUS_SNAP);
                     var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
-                    var notes = Math.round(Math.random()*4) + 1;
+                    var notes = Math.round(Math.random()*3) + 1;
                     var mostCommonSamp = _getRandomSampler();
-                    while(notes > 0) {
+                    while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
                         var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
                         notes --;
+                        totalNotes ++;
                     }
                     o.polygon.update();
                 }
@@ -201,34 +201,7 @@ window.onload = function() {
         };
         LAYERS['hud'].add(randomizeBtn);
         
-        var resetBtn = CreateButton(two.width-14*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "reset");
-        resetBtn.setImageOffset(0, -3);
-        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
-            .easing(TWEEN.Easing.Linear.None)
-            .onComplete(function() {
-                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
-                    this._object.rotation = 0;
-                })
-        resetBtn.callBack = function() {
-            this.tween.stop()
-                .to({ rotation:2*Math.PI }, 800)
-                .start();
-        }
-        resetBtn.callBackUp = function() {
-            if (this.image.rotation < 2*Math.PI) {
-                this.tween.stop()
-                    .to({ rotation:0 }, 100)
-                    .start();
-            }
-        }
-        resetBtn.reset = function() {
-            // Reset the orbits and notes
-            while(Orbits.length > 0) { Orbits[0].destroy(); };
-            SetupDefault();
-        }
-        LAYERS['hud'].add(resetBtn);
-        
-        var playBtn = CreateButton(two.width-17*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "play");
+        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "play");
         playBtn.setImageOffset(2, 0);
         playBtn.callBack = function() {
             PAUSED = !this.on;
@@ -254,6 +227,43 @@ window.onload = function() {
             }
         });
         LAYERS['hud'].add(playBtn);
+        
+        var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
+        polygonBtn.setImageOffset(0, -2);
+        polygonBtn.callBack = function() {
+            SHOW_POLYGONS = this.on;
+            this.image.opacity = this.on ? 1 : 0.5;
+        };
+        LAYERS['hud'].add(polygonBtn);
+        
+        
+        
+        var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
+        resetBtn.setImageOffset(0, -3);
+        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
+            .easing(TWEEN.Easing.Linear.None)
+            .onComplete(function() {
+                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
+                    this._object.rotation = 0;
+                })
+        resetBtn.callBack = function() {
+            this.tween.stop()
+                .to({ rotation:2*Math.PI }, 800)
+                .start();
+        }
+        resetBtn.callBackUp = function() {
+            if (this.image.rotation < 2*Math.PI) {
+                this.tween.stop()
+                    .to({ rotation:0 }, 100)
+                    .start();
+            }
+        }
+        resetBtn.reset = function() {
+            // Reset the orbits and notes
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            SetupDefault();
+        }
+        LAYERS['hud'].add(resetBtn);
     }
 
     function SetupInitialState() {
@@ -354,7 +364,7 @@ window.onload = function() {
         }
         orbit.onDrag = function(e, offset, localClickPos) {
             var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
-            var center = {x:two.width / 2, y:two.height / 2};
+            var center = CENTER;
             var dist = Util.pointDistance(point, center);
 
             //Drag the orbit's radius around
