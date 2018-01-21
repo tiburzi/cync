@@ -12,19 +12,18 @@
 	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
 	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 - alt-click orbit to copy it
+- organize UI
+	- placement of samplers relative to orbits for optimization
+	- sample managment (loading new samples, viewing sample filename, deleting samples?)
+	- global control buttons (play/pause, volume, tempo, reset)
+	- maybe extra buttons in their own area/category? (like import, export, randomize, options?)
+	- determine maxmium orbit number, maximum orbit radius
+- redesign how orbits snap radii to be relative to one another, instead of absolute increments?
+
 
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
-
-
-Jon:
-- play sample when sampler is clicked?
-- Create a bottom bar for all the samplers -- workin' on it
-
-
-Omar:
-
 
 
 --- Done ---
@@ -71,3 +70,5 @@ Omar:
     - design music controls (tempo, play/pause, reset, master volume)
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
 - prototype a randomize feature
+- play sample when sampler is clicked
+#2 - When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes

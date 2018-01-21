@@ -35,21 +35,22 @@ window.onload = function() {
     // Our 'global' variables defined up here so they're accessible everywhere below
     var two;
     var GLOBAL_MUTE = false; //so we can mute everything while working
-    var LINE_W = 8; //global line width unit
+    var LINE_W = 5; //global line width unit
     var PHI = 1.618;
     var Orbits = [];
     var Notes = [];
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
+    var SAMPLERS_MAX = 5;
     var AVAILABLE_SAMPLES_ARRAYS = [
         ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"],
         ["postal_kick","postal_slap1","postal_slap2","postal_snare"],
         ["bell_1","bell_2","bell_3","bell_4","bell_5","bell_6","bell_7"],
-    ]
+    ];
     var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0]; 
-    var MAX_ORBITS = 5;
-    var ORBIT_MAX_RADIUS = 300;
+    var MAX_ORBITS = 4;
+    var ORBIT_MAX_RADIUS = 240; //default, updated in Init()
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
@@ -57,11 +58,10 @@ window.onload = function() {
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
-    var CENTER = {};
+    var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 15;
     var CTL_RADIUS = 30;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
-    var CENTER_RADIUS = 0.5*RADIUS_SNAP;
     var DRAGGING_DESTROYABLE = false;
 
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
@@ -85,7 +85,9 @@ window.onload = function() {
         var h = 700;
         two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
         */
-        CENTER = { x:two.width / 2, y:two.height / 2 };
+        CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
+        ORBIT_MAX_RADIUS = .8*two.height/2;
+        RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
         PALETTE.push('#E53D75');
         PALETTE.push('#EF9B40');
@@ -104,18 +106,20 @@ window.onload = function() {
         LAYERS['notes'] = two.makeGroup();
         LAYERS['fg'] = two.makeGroup();
     }
-
-    function SetupInitialState() {
-        var stateData = state.load();
-        //var stateData = null; //uncomment this line to prevent state loading while working
+    
+    function CreateHUD() {
+        var controlsX = two.width/4;
+        var controlsY = two.height/2;
         
         // Create samplers
-        for (var i=0; i<SOUND_FILES.length; i++) {
-            CreateSampler(two.width-50, 50+i*(4*NOTE_RADIUS));
+        for (var i=0; i<SAMPLERS_MAX; i++) {
+            CreateSampler(controlsX+3.5*CTL_RADIUS, controlsY -4*CTL_RADIUS + 10*CTL_RADIUS*(i/SAMPLERS_MAX));
         }
         
+        //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
+        
         // Create global controls
-        var tempoBtn = CreateSliderButton(two.width-2*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "metronome");
+        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
@@ -123,7 +127,7 @@ window.onload = function() {
         }
         LAYERS['hud'].add(tempoBtn);
         
-        var volumeBtn = CreateSliderButton(two.width-5*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, 200, "volume_full");
+        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -165,33 +169,33 @@ window.onload = function() {
         }
         LAYERS['hud'].add(volumeBtn);
         
-        var polygonBtn = CreateButton(two.width-8*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "polygon");
-        polygonBtn.setImageOffset(0, -2);
-        polygonBtn.callBack = function() {
-            SHOW_POLYGONS = this.on;
-            this.image.opacity = this.on ? 1 : 0.5;
-        };
-        LAYERS['hud'].add(polygonBtn);
-        
-        var randomizeBtn = CreateButton(two.width-11*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "randomize");
+        var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
         randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
+            
+            var _getRandomSampler = function() {
+                return Samplers[Math.round(Math.random()*(SAMPLERS_MAX-1))];
+            }
+            
             // Create a random configuration
+            var maxNotes = 6+Math.round(Math.random()*4);
+            var totalNotes = 0;
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             for (var i=1; i<=MAX_ORBITS; i++) {
                 if (Math.random() < 1-.12*i) {
                     // Create an orbit and populate it with notes
                     var o = CreateOrbit(i*RADIUS_SNAP);
                     var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
-                    var notes = Math.round(Math.random()*4) + 1;
-                    var mostCommonSamp = Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
-                    while(notes > 0) {
+                    var notes = Math.round(Math.random()*3) + 1;
+                    var mostCommonSamp = _getRandomSampler();
+                    while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
-                        var samp = Math.random()<.5 ? mostCommonSamp : Samplers[Math.round(Math.random()*(SOUND_FILES.length-1))];
+                        var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
                         notes --;
+                        totalNotes ++;
                     }
                     o.polygon.update();
                 }
@@ -201,34 +205,7 @@ window.onload = function() {
         };
         LAYERS['hud'].add(randomizeBtn);
         
-        var resetBtn = CreateButton(two.width-14*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "reset");
-        resetBtn.setImageOffset(0, -3);
-        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
-            .easing(TWEEN.Easing.Linear.None)
-            .onComplete(function() {
-                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
-                    this._object.rotation = 0;
-                })
-        resetBtn.callBack = function() {
-            this.tween.stop()
-                .to({ rotation:2*Math.PI }, 800)
-                .start();
-        }
-        resetBtn.callBackUp = function() {
-            if (this.image.rotation < 2*Math.PI) {
-                this.tween.stop()
-                    .to({ rotation:0 }, 100)
-                    .start();
-            }
-        }
-        resetBtn.reset = function() {
-            // Reset the orbits and notes
-            while(Orbits.length > 0) { Orbits[0].destroy(); };
-            SetupDefault();
-        }
-        LAYERS['hud'].add(resetBtn);
-        
-        var playBtn = CreateButton(two.width-17*CTL_RADIUS, two.height-2*CTL_RADIUS, CTL_RADIUS, "play");
+        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "play");
         playBtn.setImageOffset(2, 0);
         playBtn.callBack = function() {
             PAUSED = !this.on;
@@ -254,6 +231,48 @@ window.onload = function() {
             }
         });
         LAYERS['hud'].add(playBtn);
+        
+        var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
+        polygonBtn.setImageOffset(0, -2);
+        polygonBtn.callBack = function() {
+            SHOW_POLYGONS = this.on;
+            this.image.opacity = this.on ? 1 : 0.5;
+        };
+        LAYERS['hud'].add(polygonBtn);
+        
+        
+        
+        var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
+        resetBtn.setImageOffset(0, -3);
+        resetBtn.tween = new TWEEN.Tween(resetBtn.image)
+            .easing(TWEEN.Easing.Linear.None)
+            .onComplete(function() {
+                    if (this._object.rotation >= 2*Math.PI) {resetBtn.reset();}
+                    this._object.rotation = 0;
+                })
+        resetBtn.callBack = function() {
+            this.tween.stop()
+                .to({ rotation:2*Math.PI }, 800)
+                .start();
+        }
+        resetBtn.callBackUp = function() {
+            if (this.image.rotation < 2*Math.PI) {
+                this.tween.stop()
+                    .to({ rotation:0 }, 100)
+                    .start();
+            }
+        }
+        resetBtn.reset = function() {
+            // Reset the orbits and notes
+            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            SetupDefault();
+        }
+        LAYERS['hud'].add(resetBtn);
+    }
+
+    function SetupInitialState() {
+        var stateData = state.load();
+        //var stateData = null; //uncomment this line to prevent state loading while working
         
         //This will either load from URL or just create the default orbits
         if (stateData != null) {
@@ -349,7 +368,7 @@ window.onload = function() {
         }
         orbit.onDrag = function(e, offset, localClickPos) {
             var point = {x:e.clientX - offset.x, y:e.clientY - offset.y};
-            var center = {x:two.width / 2, y:two.height / 2};
+            var center = CENTER;
             var dist = Util.pointDistance(point, center);
 
             //Drag the orbit's radius around
@@ -427,7 +446,6 @@ window.onload = function() {
             var note = CreateNote(X,Y);
             note.sampler = sampler;
             note.onSampler = false;
-            sampler.hasNote = false;
             note.fill = sampler.color;
             note.theta = angle;
             note.prevOrbit = note.orbit = this;
@@ -514,7 +532,7 @@ window.onload = function() {
             this.translation.y = CENTER.y + Math.sin(this.theta) * dist;
         }
         
-        trigger._setRotation();
+        trigger.sync();
         
         return trigger;
     }
@@ -621,8 +639,8 @@ window.onload = function() {
             this.hover = true;
         }
         polygon.onMouseEnter = function() {
-            if (this.op > 0) {
-                /* If opacity>0 when the mouse enters, that means the mouse *just* left the polygon, and it is fading away.
+            if (this.op > .5) {
+                /* The mouse *just* left the polygon, and it is fading away.
                    So, make it appear again. */
                 this.appear();
             }
@@ -725,36 +743,12 @@ window.onload = function() {
         }
         
         note.onClick = function(e) {
-            // If on a sampler, select this note
+            // If on a sampler, preview this note
             if (this.onSampler) {
-                var s = this.selected;
-                _.each(Notes, function(n) {
-                    if (n.selected) {
-                        n.selected = false;
-                        tweenToScale(n, 1, 100);
-                    }
-                });
-                if (!s) {this.selected = true;}
-                
-                tweenToScale(this, this.selected ? 2 : 1.5, 100);
-            }
-        }
-        
-        note.onGlobalMouseDown = function(e) {
-            if (this.selected && !isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
-                // If this note is selected, create notes of this type on every mouse click
-                var spawnNote = true;
-                for (var i=0; i<Notes.length; i++) {
-                    if (this !== Notes[i] && Notes[i].hovering) {spawnNote = false; break;}
-                }
-                if (spawnNote) {
-                    var n = CreateNote(e.clientX, e.clientY);
-                    n.sampler = this.sampler;
-                    n.onSampler = false;
-                    n.fill = this.sampler.color;
-                    $(document.getElementById(n.id)).trigger('mousedown');
-                    n.prevPos = undefined; //override, so note is destroyed if it is not placed
-                }
+                this.sampler.audio.play();
+                var t2 = tweenToScale(this, 1.5, 50);
+                var t1 = tweenToScale(this, 1, 50);
+                t1.chain(t2);
             }
         }
         
@@ -973,15 +967,20 @@ window.onload = function() {
         sampler.radius = .5*NOTE_RADIUS;
         sampler.hasNote = false;
         sampler.index = Samplers.length;
-        var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
-        sampler.audio = new Howl({src: fileName});
+        if (SOUND_FILES[Samplers.length] !== undefined) {
+            var fileName = "assets/samples/" + SOUND_FILES[Samplers.length] + ".wav";
+            sampler.audio = new Howl({src: fileName});
+        } else {
+            sampler.audio = null;
+        }
+        
 
         Samplers.push(sampler);
         LAYERS['hud'].add(sampler);
 
         sampler.update = function() {
             // Check if the sampler needs another note
-            if (!this.hasNote) {
+            if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
                 note.onSampler = true;
@@ -997,13 +996,13 @@ window.onload = function() {
             A button that either which adds orbits (+), or destroys notes and orbits dragged onto it (-).
         */
         var CreateTrash = function(x, y) {
-            var dist = .4*CENTER_RADIUS;
+            var dist = .4*CTL_RADIUS;
             var line = two.makeLine(-dist, 0, +dist, 0);
             line.stroke = 'white';
             line.linewidth = LINE_W;
             line.cap = 'round';
 
-            var trash = CreateButton(0, 0, CENTER_RADIUS);
+            var trash = CreateButton(0, 0, CTL_RADIUS);
             trash.fill = '#ff9999';
             trash.add(line);
             trash.center();
@@ -1017,7 +1016,7 @@ window.onload = function() {
             return trash;
 }
         var CreatePlus = function(x, y) {
-            var dist = .4*CENTER_RADIUS;
+            var dist = .4*CTL_RADIUS;
             var line1 = two.makeLine(0, -dist, 0, +dist);
             var line2 = two.makeLine(-dist, 0, +dist, 0);
             var X = two.makeGroup(line1, line2);
@@ -1025,7 +1024,7 @@ window.onload = function() {
             X.linewidth = LINE_W;
             X.cap = 'round';
             
-            var plus = CreateButton(0, 0, CENTER_RADIUS);
+            var plus = CreateButton(0, 0, CTL_RADIUS);
             plus.add(X);
             plus.center();
             plus.translation.set(x, y);
@@ -1329,7 +1328,7 @@ window.onload = function() {
         } else return false;
     }
     var isOverCenter = function(x, y) {
-        return isOverCircle(CENTER.x, CENTER.y, x, y, CENTER_RADIUS)
+        return isOverCircle(CENTER.x, CENTER.y, x, y, CTL_RADIUS)
     }
     var isOverRectangle = function(x, y, rx1, ry1, rx2, ry2) {
         return ((rx1 <= x && x <= rx2) && (ry1 <= y && y <= ry2));
@@ -1351,17 +1350,42 @@ window.onload = function() {
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
     }
+    var saveMIDI = function() {
+        
+        // Use jsmidgen to create a MIDI file from the current groove
+        /*var file = new Midi.File();
+        for (var i=0; i<Orbits.length; i++) {
+            var o = Orbits[i];
+            
+            if (o.notes.length > 0) {
+                // Save this orbit's notes on a new track
+                var track = new Midi.Track();
+                file.addTrack(track);
+                track.setTempo(TEMPO);
+                
+                for (var j=0; j<o.notes.length; j++) {
+                    var n = o.notes[j];
+                    var angle = (n.theta + 2*Math.PI + Math.PI/2) % (2*Math.PI);
+                    var time = (angle/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * TEMPO;
+                    track.addNote(0, 'c4', 32, time);
+                }
+            }
+        }
+        console.log(file.toBytes());
+        var blob = new Blob([file.toBytes()], {type: "audio/midi"});
+        saveAs(blob, "test.mid");*/
+    }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
 
         var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
         var localClickPos = {x: 0, y: 0};
-        var dragged = false;
+        var dragDist = 0; //differentiate a click from a drag (and give the user a bit of buffer) by measuring the distance the mouse moves during a mousedown-mouseup interval
         
         var drag = function(e) {
             e.preventDefault();
-            dragged = true;
+            dragDist += 1;
             
             //Call the shape's dragging method, if it has one
             if (typeof shape.onDrag === 'function') {shape.onDrag(e, offset, localClickPos);}
@@ -1379,7 +1403,7 @@ window.onload = function() {
         var dragStart = function(e) {
             e.preventDefault();
             localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y};
-            dragged = false;
+            dragDist = 0;
             $(window)
                 .bind('mousemove', drag)
                 .bind('mouseup', dragEnd);
@@ -1391,7 +1415,7 @@ window.onload = function() {
             e.preventDefault();
             var touch = e.originalEvent.changedTouches[0];
             localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
-            dragged = false;
+            dragDist = 0;
             $(window)
                 .bind('touchmove', touchDrag)
                 .bind('touchend', touchEnd);
@@ -1408,7 +1432,7 @@ window.onload = function() {
             
             //Call the shape's click release method, if it has one
             if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
-            if (!dragged) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
+            if (dragDist < 5) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
         };
         var touchEnd = function(e) {
             e.preventDefault();
@@ -1418,7 +1442,7 @@ window.onload = function() {
             
             //Call the shape's click release method, if it has one
             if (typeof shape.onMouseUp === 'function') {shape.onMouseUp(e, offset, localClickPos);}
-            if (!dragged) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
+            if (dragDist < 5) {if (typeof shape.onClick === 'function') {shape.onClick(e, offset, localClickPos);}}
             
             return false; //<--- anyone know why this returns false?
         };
@@ -1471,17 +1495,17 @@ window.onload = function() {
         // Define global mouse events
         document.addEventListener('mousemove', function(e) {
             e.preventDefault();
-            dragged = true;
+            dragDist += 1;
             if (typeof shape.onGlobalMouseMove === 'function') {shape.onGlobalMouseMove(e);}
         });
         document.addEventListener('mouseup', function(e) {
             e.preventDefault();
             if (typeof shape.onGlobalMouseUp === 'function') {shape.onGlobalMouseUp(e);}
-            if (!dragged) {if (typeof shape.onGlobalClick === 'function') {shape.onGlobalClick(e);}}
+            if (!dragDist < 5) {if (typeof shape.onGlobalClick === 'function') {shape.onGlobalClick(e);}}
         });
         document.addEventListener('mousedown', function(e) {
             e.preventDefault();
-            dragged = false;
+            dragDist = 0;
             if (typeof shape.onGlobalMouseDown === 'function') {shape.onGlobalMouseDown(e);}
         });
       }
@@ -1499,15 +1523,13 @@ window.onload = function() {
    
     
     Init();
-    
     var C = CreateCenter(CENTER.x, CENTER.y);
     
+    CreateHUD();
     SetupInitialState();
-    
-    //CreateSlider(two.width-50, two.height-100, 100);
-    //var btn1 = new Button(two, two.width-50, two.height-50, 30, "assets/images/metronome.svg");
-    //btn1.onMouseDown = function() {alert("I do something different")}; //why doesn't this override Button.onMouseDown()?
 
+    saveMIDI();
+    
     // Our main update loop!
     function update() {
         // Keep track of time for time-synced animations and music
