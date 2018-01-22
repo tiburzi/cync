@@ -64,7 +64,7 @@ window.onload = function() {
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(180,180,180,1)';
-    var LT_GRAY = '#eeeeee';
+    var LT_GRAY = '#f0f0f0';
 
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
@@ -461,7 +461,7 @@ window.onload = function() {
     
         addInteraction(orbit);
         
-        UpdateState();
+        //UpdateState();
 
         return orbit;
     }
@@ -913,7 +913,7 @@ window.onload = function() {
         note.scale = 0;
         tweenToScale(note, 1, 300);
 
-        UpdateState();
+        //UpdateState();
 
         return note;
     }
