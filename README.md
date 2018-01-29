@@ -1,5 +1,11 @@
 # non-quantized-drums
-A cyclic drum machine about non-quantized grooves
+A cyclic drum machine about non-quantized grooves. Click here to run the app: <a href="https://tiburzi.github.io/non-quantized-drums/" target="blank">Launch App</a>
+
+Alternatively, download or clone this repository. Make sure you have Python installed. Then double click on the `server.pythonX.bat` depending on your version of python, or if you're not on windows, just run the command inside those files.  
+
+This will run the server on localhost:8000 so just visit that in your browser and you should be good to go! 
+
+
 
 ## Project Structure
 
@@ -9,12 +15,3 @@ A cyclic drum machine about non-quantized grooves
 
 And finally:
 * `design/` is all miscellaneous design notes and inspiration.
-
-## Running the App
-
-Run the app directly using this link: https://tiburzi.github.io/non-quantized-drums/
-
-
-Alternatively, download or clone this repository. Make sure you have Python installed. Then double click on the `server.pythonX.bat` depending on your version of python, or if you're not on windows, just run the command inside those files.  
-
-This will run the server on localhost:8000 so just visit that in your browser and you should be good to go! 
