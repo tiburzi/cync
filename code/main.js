@@ -1376,19 +1376,25 @@ window.onload = function() {
         var track = new Midi.Track();
         file.addTrack(track);
         track.addNote(0, 'c4', 64);
-        /*track.addNote(0, 'd4', 64);
+        track.addNote(0, 'd4', 64);
         track.addNote(0, 'e4', 64);
         track.addNote(0, 'f4', 64);
         track.addNote(0, 'g4', 64);
         track.addNote(0, 'a4', 64);
         track.addNote(0, 'b4', 64);
-        track.addNote(0, 'c5', 64);*/
+        track.addNote(0, 'c5', 64);
         
         //Convert the file to binary to save & download
         //var BOM = "\uFEFF";
-        var bytes = file.toBytes(); //returns a UTF-16 encoded string
-        var blob = new Blob([bytes], {type: "audio/midi"}); //populate a blob with the data
-        
+        var bytesU16 = file.toBytes(); //returns a UTF-16 encoded string
+        var bytesU8 = new Uint8Array(bytesU16.length);
+
+        for(var i=0;i<bytesU16.length;i++){
+            bytesU8[i] = bytesU16[i].charCodeAt(0);
+        }
+
+
+        var blob = new Blob([bytesU8], {type: "audio/midi"}); //populate a blob with the data
         //filesaver.js uses blob object to save data, but blobs only save with UTF-8 encoding.
         //Setting the blob's charset=ANSI or =UTF-16 does not change it.
         saveAs(blob, "test.mid", true);
