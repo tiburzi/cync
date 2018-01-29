@@ -110,6 +110,9 @@ var Midi = {};
 			}
 			return Math.floor(60000000 / mpqn);
 		},
+        
+        //UTF8encode: function(s) { return unescape(encodeURIComponent(s)) },
+        //UTF8decode: function(u) { return decodeURIComponent(escape(u)) },
 
 		/**
 		 * Converts an array of bytes to a string of hexadecimal characters. Prepares
@@ -119,7 +122,44 @@ var Midi = {};
 		 * @returns {string} Hexadecimal string, e.g. "097B8A".
 		 */
 		codes2Str: function(byteArray) {
-			return String.fromCharCode.apply(null, byteArray);
+            //console.log(byteArray);
+			var str = String.fromCharCode.apply(null, byteArray);
+            //console.log(str);
+            
+            //VARIOUS ATTEMPTS TO CHANGE THE ENCODING OF byteArray
+            
+            /*console.log(byteArray);
+            var val = Number(144).toString(16);
+            val = "\x90";//.concat(val);
+            console.log(val);
+            console.log(encodeURIComponent(val));
+            console.log(decodeURIComponent(val));*/
+            
+            /*toUnicode = function(str) {
+                var result = "";
+                for(var i = 0; i < str.length; i++){
+                    // Assumption: all characters are < 0xffff
+                    result += "\\x" + ("0" + str[i].charCodeAt(0).toString(16)).substr(-2);
+                }
+                return result;
+            };
+            
+            var a = toUnicode('ÿ');
+            console.log(a);
+            var b = decodeURIComponent(escape(a));
+            console.log(b);*/
+            
+            /*var a = [];
+            a.push(255);
+            var i, str = '';
+            for (i = 0; i < a.length; i++) {
+                str += '%' + ('0' + a[i].toString(16)).slice(-2);
+            }
+            console.log(str);
+            str = decodeURIComponent(str);
+            console.log(str);*/
+            
+            return str;
 		},
 
 		/**
@@ -651,13 +691,13 @@ var Midi = {};
 		// add the number of tracks (2 bytes)
 		bytes += Util.codes2Str(Util.str2Bytes(trackCount, 2));
 		// add the number of ticks per beat (currently hardcoded)
-		bytes += String.fromCharCode((this.ticks/256),  this.ticks%256);;
+		bytes += String.fromCharCode((this.ticks/256),  this.ticks%256); //'\x00`';
 
 		// iterate over the tracks, converting to bytes too
 		this.tracks.forEach(function(track) {
 			bytes += Util.codes2Str(track.toBytes());
 		});
-
+        
 		return bytes;
 	};
 

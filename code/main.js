@@ -54,7 +54,7 @@ window.onload = function() {
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
-    var TEMPO_MAX = 120;
+    var TEMPO_MAX = 150;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
@@ -64,7 +64,7 @@ window.onload = function() {
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(180,180,180,1)';
-    var LT_GRAY = '#eeeeee';
+    var LT_GRAY = '#f0f0f0';
 
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
@@ -125,6 +125,8 @@ window.onload = function() {
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
+        }
+        tempoBtn.slider.dial.onMouseUp = function() {
             UpdateState();
         }
         LAYERS['hud'].add(tempoBtn);
@@ -207,12 +209,11 @@ window.onload = function() {
         };
         LAYERS['hud'].add(randomizeBtn);
         
-        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "play");
-        playBtn.setImageOffset(2, 0);
+        var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "pause");
         playBtn.callBack = function() {
             PAUSED = !this.on;
-            this.setImage(PAUSED ? "pause" : "play");
-            this.setImageOffset(PAUSED ? 0 : 2, 0);
+            this.setImage(PAUSED ? "play" : "pause");
+            this.setImageOffset(PAUSED ? 2 : 0, 0);
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -460,7 +461,7 @@ window.onload = function() {
     
         addInteraction(orbit);
         
-        UpdateState();
+        //UpdateState();
 
         return orbit;
     }
@@ -718,10 +719,10 @@ window.onload = function() {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
                 setCursor(this, "hand");
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2*this.radius)) {
+                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2.5*this.radius)) {
                     if (!this.hovering) {
                         this.hovering = true;
-                        tweenToScale(this, 1.5, 200);
+                        tweenToScale(this, PHI, 200);
                     }
                 } else {
                     if (!this.selected && this.hovering) {
@@ -912,7 +913,7 @@ window.onload = function() {
         note.scale = 0;
         tweenToScale(note, 1, 300);
 
-        UpdateState();
+        //UpdateState();
 
         return note;
     }
@@ -999,7 +1000,7 @@ window.onload = function() {
             line.cap = 'round';
 
             var trash = CreateButton(0, 0, CTL_RADIUS);
-            trash.fill = '#ff9999';
+            trash.fill = 'rgba(250,155,155,1)';
             trash.add(line);
             trash.center();
             trash.translation.set(x,y);
@@ -1366,10 +1367,32 @@ window.onload = function() {
                     track.addNote(0, 'c4', 32, time);
                 }
             }
-        }
-        console.log(file.toBytes());
-        var blob = new Blob([file.toBytes()], {type: "audio/midi"});
-        saveAs(blob, "test.mid");*/
+        }*/
+        
+        //Create a new MIDI files with jsmidgen
+        var file = new Midi.File();
+        
+        //Create a new Track for the MIDI file, and populate it
+        var track = new Midi.Track();
+        file.addTrack(track);
+        track.addNote(0, 'c4', 64);
+        /*track.addNote(0, 'd4', 64);
+        track.addNote(0, 'e4', 64);
+        track.addNote(0, 'f4', 64);
+        track.addNote(0, 'g4', 64);
+        track.addNote(0, 'a4', 64);
+        track.addNote(0, 'b4', 64);
+        track.addNote(0, 'c5', 64);*/
+        
+        //Convert the file to binary to save & download
+        //var BOM = "\uFEFF";
+        var bytes = file.toBytes(); //returns a UTF-16 encoded string
+        var blob = new Blob([bytes], {type: "audio/midi"}); //populate a blob with the data
+        
+        //filesaver.js uses blob object to save data, but blobs only save with UTF-8 encoding.
+        //Setting the blob's charset=ANSI or =UTF-16 does not change it.
+        saveAs(blob, "test.mid", true);
+        
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
