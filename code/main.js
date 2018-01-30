@@ -441,7 +441,9 @@ window.onload = function() {
         }
         orbit.sortNotes = function() {
             this.notes.sort(function(a,b) {
-                return a.theta-b.theta; //organize notes in same order they play (clockwise from top)
+                var aa = (a.theta<-Math.PI/2 ? a.theta+2*Math.PI : a.theta);
+                var bb = (b.theta<-Math.PI/2 ? b.theta+2*Math.PI : b.theta);
+                return aa-bb; //organize notes in same order they play (clockwise from top)
             });
         }
         orbit.addNewNote = function(angle, sampler) {
@@ -887,8 +889,7 @@ window.onload = function() {
         }
         note.updateTheta = function() {
             if (this.orbit != null) {
-                this.dir = Util.pointDirection(this.orbit.translation, this.translation);
-                this.theta = dir;
+                this.theta = Util.pointDirection(this.orbit.translation, this.translation);
                 this.orbit.sortNotes();
             }
         }
@@ -1367,14 +1368,19 @@ window.onload = function() {
                 var track = new Midi.Track();
                 file.addTrack(track);
                 track.setTempo(TEMPO);
+                //track.addNote(0, 'c4', 64);
                 
                 var timePrev = 0;
-                for (var j=0; j<o.notes.length; j++) {
+                var noteDur = 16;
+                for (var j=0; j<o.notes.length; j++) { //notes order in array is same as order they are played (clockwise from top)
                     var n = o.notes[j];
-                    var angle = (n.theta + 2*Math.PI + Math.PI/2) % (2*Math.PI);
-                    var time = (angle/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * TEMPO;
-                    track.addNote(0, 'c4', 32, time-timePrev);
-                    timePrev = time;
+                    var angle = n.theta<-Math.PI/2 ? n.theta+2*Math.PI : n.theta; //returns a theta between (-Pi/2, 3Pi/2]
+                    var fraction = angle+Math.PI/2; //returns between (0, 2Pi] with 0 at top and clockwise rotation
+                    var time = (fraction/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * file.ticks; //ticks per beat, default=128
+                    console.log('time = '+time);
+                    console.log('timePrev = '+timePrev);
+                    track.addNote(0, 'c4', noteDur, (time-timePrev));
+                    timePrev = time+noteDur;
                 }
             }
         }
