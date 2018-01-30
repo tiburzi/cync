@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/reset.svg", "reset");
     _getSvgData("assets/images/polygon.svg", "polygon");
     _getSvgData("assets/images/randomize.svg", "randomize");
+    _getSvgData("assets/images/save.svg", "save");
 });
 
 // All the main js code runs here
@@ -235,15 +236,19 @@ window.onload = function() {
         });
         LAYERS['hud'].add(playBtn);
         
-        var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
+        var saveBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "save");
+        saveBtn.callBack = function() {
+            saveMIDI();
+        };
+        LAYERS['hud'].add(saveBtn);
+        
+        /*var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
         polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
-        LAYERS['hud'].add(polygonBtn);
-        
-        
+        LAYERS['hud'].add(polygonBtn);*/
         
         var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
         resetBtn.setImageOffset(0, -3);
@@ -1604,8 +1609,6 @@ window.onload = function() {
     
     CreateHUD();
     SetupInitialState();
-
-    saveMIDI();
     
     // Our main update loop!
     function update() {
