@@ -128,6 +128,7 @@ window.onload = function() {
         
         // Create global controls
         var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
+        tempoBtn.btn.setImageOffset(-2, 0);
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
@@ -180,7 +181,6 @@ window.onload = function() {
         LAYERS['hud'].add(volumeBtn);
         
         var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
-        randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
             
             var _getRandomSampler = function() {
