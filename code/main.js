@@ -66,7 +66,6 @@ window.onload = function() {
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(180,180,180,1)';
     var LT_GRAY = '#f0f0f0';
-
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
     function UpdateState() {
@@ -128,7 +127,7 @@ window.onload = function() {
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
-        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "metronome");
+        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
@@ -138,7 +137,7 @@ window.onload = function() {
         }
         LAYERS['hud'].add(tempoBtn);
         
-        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "volume_full");
+        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -1138,7 +1137,7 @@ window.onload = function() {
         
         var dial = two.makeCircle(0, 0, PHI*LINE_W);
         dial.fill = 'LT_GRAY';
-        dial.linewidth = LINE_W;
+        dial.linewidth = .5*LINE_W;
         dial.stroke = '#333333';
         
         var slider = two.makeGroup(line, dial);
@@ -1607,10 +1606,9 @@ window.onload = function() {
         PREV_TIME = TIME;
     }
    
-    
+    // Initialize and create the UI
     Init();
-    var C = CreateCenter(CENTER.x, CENTER.y);
-    
+    CreateCenter(CENTER.x, CENTER.y);
     CreateHUD();
     SetupInitialState();
     
