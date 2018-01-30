@@ -75,19 +75,25 @@ window.onload = function() {
     } 
 
     function Init() {
-        // Initialize everything here 
+        // Initialize everything here
+        var TWO_WIDTH = 1280;
+        var TWO_HEIGHT = 720;
 
          // Make an instance of two and place it on the page.
         var elem = document.getElementById('main-container');
-        //var params = { fullscreen: true}, width:'100%', height:'100%' }
         var params = { fullscreen: true };
+        //var params = { fullscreen: true };
         two = new Two(params).appendTo(elem);
         // Make the SVG always maintain this aspect ratio
-        /*
-        var w = 1080;
-        var h = 700;
-        two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
-        */
+        
+        /*var ww = window.innerWidth;
+        var wh = window.innerHeight;
+        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(ww) + " " + String(wh));
+        
+        var rect = two.makeRectangle(two.width/2, two.height/2, two.width-20, two.height-20);
+        rect.fill = "yellow";
+        rect.stroke = "none";*/
+        
         CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -1125,9 +1131,8 @@ window.onload = function() {
         /*
             A template for interactive sliders that vary a parameter (such as volume).
         */
-        
         var line = two.makeLine(0, 0, 0, -length);
-        line.linewidth = LINE_W;
+        line.linewidth = 5*LINE_W;
         line.cap = 'round';
         line.stroke = '#333333';
         
@@ -1136,20 +1141,6 @@ window.onload = function() {
         dial.linewidth = LINE_W;
         dial.stroke = '#333333';
         
-        addInteraction(dial);
-        setCursor(dial, 'pointer');
-        
-        dial.onDrag = function(e, offset, localClickPos) {
-            var top = $(this.slider.line._renderer.elem).offset().top;
-            var scalar = this.slider.scale*this.slider.parent.scale;
-            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
-            this.slider.dragging = true;
-            this.slider.setValue(val);
-        };
-        dial.onGlobalMouseUp = function() {
-            this.slider.dragging = false;
-        };
-        
         var slider = two.makeGroup(line, dial);
         slider.length = length;
         slider.dragging = false;
@@ -1157,6 +1148,18 @@ window.onload = function() {
         slider.dial = dial;
         dial.slider = slider;
         
+        addInteraction(slider);
+        setCursor(slider, 'pointer');
+        slider.onMouseDown = slider.onDrag = function(e) {
+            var top = $(slider.line._renderer.elem).offset().top;
+            var scalar = slider.scale*slider.parent.scale;
+            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
+            slider.setValue(val);
+            slider.dragging = true;
+        }
+        slider.onGlobalMouseUp = function() {
+            slider.dragging = false;
+        }
         slider.callBack = function() {
             // a default empty callback function. overwritten by specific instances of 'slider'
         }
@@ -1165,6 +1168,7 @@ window.onload = function() {
             this.dial.translation.y = -length * this.value;
             this.dial.slider.callBack();
         };
+        
         
         slider.setValue(1); //default value
         
@@ -1635,4 +1639,3 @@ window.onload = function() {
 
     update();
 }
-
