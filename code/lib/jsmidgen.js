@@ -691,7 +691,7 @@ var Midi = {};
 		// add the number of tracks (2 bytes)
 		bytes += Util.codes2Str(Util.str2Bytes(trackCount, 2));
 		// add the number of ticks per beat (currently hardcoded)
-		bytes += String.fromCharCode((this.ticks/256),  this.ticks%256); //'\x00`';
+		bytes += String.fromCharCode((this.ticks/256),  this.ticks%256);
 
 		// iterate over the tracks, converting to bytes too
 		this.tracks.forEach(function(track) {

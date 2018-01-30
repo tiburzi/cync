@@ -441,7 +441,7 @@ window.onload = function() {
         }
         orbit.sortNotes = function() {
             this.notes.sort(function(a,b) {
-                return a.theta-b.theta; //order the notes by their theta values
+                return a.theta-b.theta; //organize notes in same order they play (clockwise from top)
             });
         }
         orbit.addNewNote = function(angle, sampler) {
@@ -704,8 +704,6 @@ window.onload = function() {
         Notes.push(note);
         LAYERS['notes'].add(note);
         
-        //note.parameter = CreateNoteParameter(note);
-        
         note.tweenToRadius = function(r) {
             var tweenRadius = new TWEEN.Tween(this)
                 .to({ radius:r }, 200)
@@ -889,7 +887,8 @@ window.onload = function() {
         }
         note.updateTheta = function() {
             if (this.orbit != null) {
-                this.theta = Util.pointDirection(this.orbit.translation, this.translation);
+                this.dir = Util.pointDirection(this.orbit.translation, this.translation);
+                this.theta = dir;
                 this.orbit.sortNotes();
             }
         }
@@ -1349,32 +1348,43 @@ window.onload = function() {
     }
     var saveMIDI = function() {
         
-        // Use jsmidgen to create a MIDI file from the current groove
-        /*var file = new Midi.File();
+        //Confirm there is note data to save
+        var noteNum = 0;
+        for (var i=0; i<Orbits.length; i++) {
+            noteNum += Orbits[i].notes.length;
+        }
+        if (noteNum == 0) {return false;} //no note data, so there's nothing to save
+        
+        // Create a new MIDI files with jsmidgen
+        var file = new Midi.File();
+        
+        // Create a new MIDI track for each orbit
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
-            
             if (o.notes.length > 0) {
+                
                 // Save this orbit's notes on a new track
                 var track = new Midi.Track();
                 file.addTrack(track);
                 track.setTempo(TEMPO);
                 
+                var timePrev = 0;
                 for (var j=0; j<o.notes.length; j++) {
                     var n = o.notes[j];
                     var angle = (n.theta + 2*Math.PI + Math.PI/2) % (2*Math.PI);
                     var time = (angle/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * TEMPO;
-                    track.addNote(0, 'c4', 32, time);
+                    track.addNote(0, 'c4', 32, time-timePrev);
+                    timePrev = time;
                 }
             }
-        }*/
+        }
         
-        //Create a new MIDI files with jsmidgen
-        var file = new Midi.File();
-        
-        //Create a new Track for the MIDI file, and populate it
+        /* // For testing purposes:
+        // Create a new Track for the MIDI file
         var track = new Midi.Track();
         file.addTrack(track);
+        
+        // Populate track with a scale
         track.addNote(0, 'c4', 64);
         track.addNote(0, 'd4', 64);
         track.addNote(0, 'e4', 64);
@@ -1383,22 +1393,28 @@ window.onload = function() {
         track.addNote(0, 'a4', 64);
         track.addNote(0, 'b4', 64);
         track.addNote(0, 'c5', 64);
+        */
         
-        //Convert the file to binary to save & download
-        //var BOM = "\uFEFF";
+        // Get MIDI data to be saved
         var bytesU16 = file.toBytes(); //returns a UTF-16 encoded string
+        
+        // Convert data to UTF-8 encoding
         var bytesU8 = new Uint8Array(bytesU16.length);
-
-        for(var i=0;i<bytesU16.length;i++){
+        for (var i=0; i<bytesU16.length; i++) {
             bytesU8[i] = bytesU16[i].charCodeAt(0);
         }
 
-
-        var blob = new Blob([bytesU8], {type: "audio/midi"}); //populate a blob with the data
-        //filesaver.js uses blob object to save data, but blobs only save with UTF-8 encoding.
-        //Setting the blob's charset=ANSI or =UTF-16 does not change it.
-        saveAs(blob, "test.mid", true);
+        // Populate a blob with the data
+        var blob = new Blob([bytesU8], {type: "audio/midi"});
+        /*
+          FileSaver.min.js uses blob object to save data, but blobs only save with UTF-8 encoding.
+          Setting the blob's charset=ANSI or =UTF-16 does not change encoding.
+        */
         
+        // Export the file!
+        saveAs(blob, "test.mid");
+        
+        return true;
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
