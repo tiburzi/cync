@@ -43,4 +43,10 @@ Util.getParameterByName = function(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+Util.gcd = function(a, b) {
+    return !b ? a : Util.gcd(b, a % b);
+}
+Util.lcm = function(a, b) {
+    return (a*b) / Util.gcd(a, b);
+}
 

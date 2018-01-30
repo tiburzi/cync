@@ -1349,40 +1349,70 @@ window.onload = function() {
     }
     var saveMIDI = function() {
         
-        //Confirm there is note data to save
+        //Confirm there are notes to save, aborting if there are none
         var noteNum = 0;
         for (var i=0; i<Orbits.length; i++) {
             noteNum += Orbits[i].notes.length;
         }
-        if (noteNum == 0) {return false;} //no note data, so there's nothing to save
+        if (noteNum == 0) {return false;}
         
-        // Create a new MIDI files with jsmidgen
+        // Create a new MIDI file with jsmidgen, and a track to store the note data
         var file = new Midi.File();
+        var track = new Midi.Track();
+        file.addTrack(track);
+        track.setTempo(TEMPO);
         
-        // Create a new MIDI track for each orbit
+        // Determine MIDI length that guarentees all orbits loop and end aligned
+        var len = 1;
+        for (var i=0; i<Orbits.length; i++) {
+            for (var j=i+1; j<Orbits.length; j++) {
+                var a = Math.round(Orbits[i].radius/RADIUS_SNAP);
+                var b = Math.round(Orbits[j].radius/RADIUS_SNAP);
+                len = Math.max(len, Util.lcm(a, b));
+            }
+        }
+        
+        // Compile an array of all the notes on all the orbits
+        var allNotes = [];
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
-            if (o.notes.length > 0) {
-                
-                // Save this orbit's notes on a new track
-                var track = new Midi.Track();
-                file.addTrack(track);
-                track.setTempo(TEMPO);
-                //track.addNote(0, 'c4', 64);
-                
-                var timePrev = 0;
-                var noteDur = 16;
-                for (var j=0; j<o.notes.length; j++) { //notes order in array is same as order they are played (clockwise from top)
-                    var n = o.notes[j];
+            
+            // Smaller orbits need to repeat since bigger orbits take longer to complete
+            var repeats = len/Math.round(o.radius/RADIUS_SNAP);
+            for (var j=0; j<repeats; j++) {
+                for (var k=0; k<o.notes.length; k++) {
+                    // Record the time and type of each note on this orbit
+                    var n = o.notes[k];
                     var angle = n.theta<-Math.PI/2 ? n.theta+2*Math.PI : n.theta; //returns a theta between (-Pi/2, 3Pi/2]
-                    var fraction = angle+Math.PI/2; //returns between (0, 2Pi] with 0 at top and clockwise rotation
-                    var time = (fraction/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * file.ticks; //ticks per beat, default=128
-                    console.log('time = '+time);
-                    console.log('timePrev = '+timePrev);
-                    track.addNote(0, 'c4', noteDur, (time-timePrev));
-                    timePrev = time+noteDur;
+                    var fraction = (angle+Math.PI/2)/(2*Math.PI); //returns the fraction of the note's angle on the orbit (0 at top, increases clockwise up to 1)
+                    var time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat, default=128)
+                    var noteMarker = {
+                        time: time,
+                        type: n.sampler.index,
+                    };
+                    allNotes.push(noteMarker);
                 }
             }
+        }
+        
+        // Sort all notes chronologically
+        allNotes.sort(function(a,b) {
+            return a.time-b.time;
+        });
+        
+        // Add all notes to MIDI track
+        var tPrev = 0;
+        var noteDur = 16; //default
+        for (var i=0; i<allNotes.length; i++) {
+            var t = allNotes[i].time;
+            var dur = noteDur;
+            
+            // Shorten note if following note is closer than noteDur
+            if (i < allNotes.length-1) {dur = Math.min(noteDur, allNotes[i+1].time-t);}
+            
+            // Add the note and record the time it finishes
+            track.addNote(0, 35+allNotes[i].type, dur, (t-tPrev));
+            tPrev = t + dur;
         }
         
         /* // For testing purposes:
@@ -1413,7 +1443,7 @@ window.onload = function() {
         // Populate a blob with the data
         var blob = new Blob([bytesU8], {type: "audio/midi"});
         /*
-          FileSaver.min.js uses blob object to save data, but blobs only save with UTF-8 encoding.
+          NOTE: FileSaver.min.js uses blob object to save data, but blobs only save with UTF-8 encoding.
           Setting the blob's charset=ANSI or =UTF-16 does not change encoding.
         */
         
