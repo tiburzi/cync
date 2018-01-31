@@ -1456,7 +1456,7 @@ window.onload = function() {
         */
         
         // Export the file!
-        saveAs(blob, "test.mid");
+        saveAs(blob, "cyclic_drums.mid");
         
         return true;
     }
