@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/reset.svg", "reset");
     _getSvgData("assets/images/polygon.svg", "polygon");
     _getSvgData("assets/images/randomize.svg", "randomize");
+    _getSvgData("assets/images/save.svg", "save");
 });
 
 // All the main js code runs here
@@ -65,7 +66,6 @@ window.onload = function() {
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(180,180,180,1)';
     var LT_GRAY = '#f0f0f0';
-
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
     function UpdateState() {
@@ -74,19 +74,25 @@ window.onload = function() {
     } 
 
     function Init() {
-        // Initialize everything here 
+        // Initialize everything here
+        var TWO_WIDTH = 1280;
+        var TWO_HEIGHT = 720;
 
          // Make an instance of two and place it on the page.
         var elem = document.getElementById('main-container');
-        //var params = { fullscreen: true}, width:'100%', height:'100%' }
         var params = { fullscreen: true };
+        //var params = { fullscreen: true };
         two = new Two(params).appendTo(elem);
         // Make the SVG always maintain this aspect ratio
-        /*
-        var w = 1080;
-        var h = 700;
-        two.renderer.domElement.setAttribute("viewBox","0 0 " + String(w) + " " + String(h));
-        */
+        
+        /*var ww = window.innerWidth;
+        var wh = window.innerHeight;
+        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(ww) + " " + String(wh));
+        
+        var rect = two.makeRectangle(two.width/2, two.height/2, two.width-20, two.height-20);
+        rect.fill = "yellow";
+        rect.stroke = "none";*/
+        
         CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
@@ -121,7 +127,8 @@ window.onload = function() {
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
-        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "metronome");
+        var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
+        tempoBtn.btn.setImageOffset(-2, 0);
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
         tempoBtn.slider.callBack = function() {
             TEMPO = Math.round(TEMPO_MIN + (TEMPO_MAX-TEMPO_MIN)*this.value);
@@ -131,7 +138,7 @@ window.onload = function() {
         }
         LAYERS['hud'].add(tempoBtn);
         
-        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, controlsY-3.5*CTL_RADIUS-100, "volume_full");
+        var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
         volumeBtn.slider.callBack = function() {
@@ -174,7 +181,6 @@ window.onload = function() {
         LAYERS['hud'].add(volumeBtn);
         
         var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
-        randomizeBtn.setImageOffset(0, 0);
         randomizeBtn.callBack = function() {
             
             var _getRandomSampler = function() {
@@ -235,15 +241,19 @@ window.onload = function() {
         });
         LAYERS['hud'].add(playBtn);
         
-        var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
+        var saveBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "save");
+        saveBtn.callBack = function() {
+            saveMIDI();
+        };
+        LAYERS['hud'].add(saveBtn);
+        
+        /*var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
         polygonBtn.setImageOffset(0, -2);
         polygonBtn.callBack = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
-        LAYERS['hud'].add(polygonBtn);
-        
-        
+        LAYERS['hud'].add(polygonBtn);*/
         
         var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
         resetBtn.setImageOffset(0, -3);
@@ -441,7 +451,9 @@ window.onload = function() {
         }
         orbit.sortNotes = function() {
             this.notes.sort(function(a,b) {
-                return a.theta-b.theta; //order the notes by their theta values
+                var aa = (a.theta<-Math.PI/2 ? a.theta+2*Math.PI : a.theta);
+                var bb = (b.theta<-Math.PI/2 ? b.theta+2*Math.PI : b.theta);
+                return aa-bb; //organize notes in same order they play (clockwise from top)
             });
         }
         orbit.addNewNote = function(angle, sampler) {
@@ -703,8 +715,6 @@ window.onload = function() {
 
         Notes.push(note);
         LAYERS['notes'].add(note);
-        
-        //note.parameter = CreateNoteParameter(note);
         
         note.tweenToRadius = function(r) {
             var tweenRadius = new TWEEN.Tween(this)
@@ -1120,30 +1130,15 @@ window.onload = function() {
         /*
             A template for interactive sliders that vary a parameter (such as volume).
         */
-        
         var line = two.makeLine(0, 0, 0, -length);
-        line.linewidth = LINE_W;
+        line.linewidth = 5*LINE_W;
         line.cap = 'round';
         line.stroke = '#333333';
         
         var dial = two.makeCircle(0, 0, PHI*LINE_W);
         dial.fill = 'LT_GRAY';
-        dial.linewidth = LINE_W;
+        dial.linewidth = .5*LINE_W;
         dial.stroke = '#333333';
-        
-        addInteraction(dial);
-        setCursor(dial, 'pointer');
-        
-        dial.onDrag = function(e, offset, localClickPos) {
-            var top = $(this.slider.line._renderer.elem).offset().top;
-            var scalar = this.slider.scale*this.slider.parent.scale;
-            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
-            this.slider.dragging = true;
-            this.slider.setValue(val);
-        };
-        dial.onGlobalMouseUp = function() {
-            this.slider.dragging = false;
-        };
         
         var slider = two.makeGroup(line, dial);
         slider.length = length;
@@ -1152,6 +1147,18 @@ window.onload = function() {
         slider.dial = dial;
         dial.slider = slider;
         
+        addInteraction(slider);
+        setCursor(slider, 'pointer');
+        slider.onMouseDown = slider.onDrag = function(e) {
+            var top = $(slider.line._renderer.elem).offset().top;
+            var scalar = slider.scale*slider.parent.scale;
+            var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
+            slider.setValue(val);
+            slider.dragging = true;
+        }
+        slider.onGlobalMouseUp = function() {
+            slider.dragging = false;
+        }
         slider.callBack = function() {
             // a default empty callback function. overwritten by specific instances of 'slider'
         }
@@ -1160,6 +1167,7 @@ window.onload = function() {
             this.dial.translation.y = -length * this.value;
             this.dial.slider.callBack();
         };
+        
         
         slider.setValue(1); //default value
         
@@ -1349,28 +1357,108 @@ window.onload = function() {
     }
     var saveMIDI = function() {
         
-        // Use jsmidgen to create a MIDI file from the current groove
-        /*var file = new Midi.File();
+        //Confirm there are notes to save, aborting if there are none
+        var noteNum = 0;
+        for (var i=0; i<Orbits.length; i++) {
+            noteNum += Orbits[i].notes.length;
+        }
+        if (noteNum == 0) {return false;}
+        
+        // Create a new MIDI file with jsmidgen, and a track to store the note data
+        var file = new Midi.File();
+        var track = new Midi.Track();
+        file.addTrack(track);
+        track.setTempo(TEMPO);
+        
+        // Determine MIDI length that guarentees all orbits loop and end aligned
+        var len = 1;
+        for (var i=0; i<Orbits.length; i++) {
+            for (var j=i+1; j<Orbits.length; j++) {
+                var a = Math.round(Orbits[i].radius/RADIUS_SNAP);
+                var b = Math.round(Orbits[j].radius/RADIUS_SNAP);
+                len = Math.max(len, Util.lcm(a, b));
+            }
+        }
+        
+        // Compile an array of all the notes on all the orbits
+        var allNotes = [];
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
             
-            if (o.notes.length > 0) {
-                // Save this orbit's notes on a new track
-                var track = new Midi.Track();
-                file.addTrack(track);
-                track.setTempo(TEMPO);
-                
-                for (var j=0; j<o.notes.length; j++) {
-                    var n = o.notes[j];
-                    var angle = (n.theta + 2*Math.PI + Math.PI/2) % (2*Math.PI);
-                    var time = (angle/(2*Math.PI)) * (o.radius/RADIUS_SNAP) * TEMPO;
-                    track.addNote(0, 'c4', 32, time);
+            // Smaller orbits need to repeat since bigger orbits take longer to complete
+            var repeats = len/Math.round(o.radius/RADIUS_SNAP);
+            for (var j=0; j<repeats; j++) {
+                for (var k=0; k<o.notes.length; k++) {
+                    // Record the time and type of each note on this orbit
+                    var n = o.notes[k];
+                    var angle = n.theta<-Math.PI/2 ? n.theta+2*Math.PI : n.theta; //returns a theta between (-Pi/2, 3Pi/2]
+                    var fraction = (angle+Math.PI/2)/(2*Math.PI); //returns the fraction of the note's angle on the orbit (0 at top, increases clockwise up to 1)
+                    var time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat, default=128)
+                    var noteMarker = {
+                        time: time,
+                        type: n.sampler.index,
+                    };
+                    allNotes.push(noteMarker);
                 }
             }
         }
-        console.log(file.toBytes());
-        var blob = new Blob([file.toBytes()], {type: "audio/midi"});
-        saveAs(blob, "test.mid");*/
+        
+        // Sort all notes chronologically
+        allNotes.sort(function(a,b) {
+            return a.time-b.time;
+        });
+        
+        // Add all notes to MIDI track
+        var tPrev = 0;
+        var noteDur = 16; //default
+        for (var i=0; i<allNotes.length; i++) {
+            var t = allNotes[i].time;
+            var dur = noteDur;
+            
+            // Shorten note if following note is closer than noteDur
+            if (i < allNotes.length-1) {dur = Math.min(noteDur, allNotes[i+1].time-t);}
+            
+            // Add the note and record the time it finishes
+            track.addNote(0, 35+allNotes[i].type, dur, (t-tPrev));
+            tPrev = t + dur;
+        }
+        
+        /* // For testing purposes:
+        // Create a new Track for the MIDI file
+        var track = new Midi.Track();
+        file.addTrack(track);
+        
+        // Populate track with a scale
+        track.addNote(0, 'c4', 64);
+        track.addNote(0, 'd4', 64);
+        track.addNote(0, 'e4', 64);
+        track.addNote(0, 'f4', 64);
+        track.addNote(0, 'g4', 64);
+        track.addNote(0, 'a4', 64);
+        track.addNote(0, 'b4', 64);
+        track.addNote(0, 'c5', 64);
+        */
+        
+        // Get MIDI data to be saved
+        var bytesU16 = file.toBytes(); //returns a UTF-16 encoded string
+        
+        // Convert data to UTF-8 encoding
+        var bytesU8 = new Uint8Array(bytesU16.length);
+        for (var i=0; i<bytesU16.length; i++) {
+            bytesU8[i] = bytesU16[i].charCodeAt(0);
+        }
+
+        // Populate a blob with the data
+        var blob = new Blob([bytesU8], {type: "audio/midi"});
+        /*
+          NOTE: FileSaver.min.js uses blob object to save data, but blobs only save with UTF-8 encoding.
+          Setting the blob's charset=ANSI or =UTF-16 does not change encoding.
+        */
+        
+        // Export the file!
+        saveAs(blob, "test.mid");
+        
+        return true;
     }
     
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
@@ -1518,14 +1606,11 @@ window.onload = function() {
         PREV_TIME = TIME;
     }
    
-    
+    // Initialize and create the UI
     Init();
-    var C = CreateCenter(CENTER.x, CENTER.y);
-    
+    CreateCenter(CENTER.x, CENTER.y);
     CreateHUD();
     SetupInitialState();
-
-    saveMIDI();
     
     // Our main update loop!
     function update() {
@@ -1552,4 +1637,3 @@ window.onload = function() {
 
     update();
 }
-

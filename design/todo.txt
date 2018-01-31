@@ -2,29 +2,23 @@
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- design artwork / visual theme
 - simplify / refactor button and sliders ?
 - simplify / refactor SetupInitialState() ?
 - dynamic resizing window and content (important!!!)
-- custom audio files
+- custom audio files?
 	- importing new audio files via drag-n-drop anywhere on screen
 	- assign new audio files to samplers (either new or preexisting)
 	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
 	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
 - alt-click orbit to copy it
-- organize UI
-	- placement of samplers relative to orbits for optimization
-	- sample managment (loading new samples, viewing sample filename, deleting samples?)
-	- global control buttons (play/pause, volume, tempo, reset)
-	- maybe extra buttons in their own area/category? (like import, export, randomize, options?)
-	- determine maxmium orbit number, maximum orbit radius
 - redesign how orbits snap radii to be relative to one another, instead of absolute increments?
 
 
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
-
+#2 - orbits do not resize appropriately after change page size and reloading
+#3 - in really small window, the sliderbuttons for tempo and master volume do not work
 
 --- Done ---
 - Render a small circle on screen (solid color)
@@ -71,4 +65,16 @@
 - fix glitch with notes not playing during first cycle when a setup is loaded (caused by trigger's theta values being less than -2PI when starting???)
 - prototype a randomize feature
 - play sample when sampler is clicked
-#2 - When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes
+- When randomizing, if a note is placed on an orbit, its sampler creates a ton of notes
+- organize UI
+	- placement of samplers relative to orbits for optimization
+	- sample managment (loading new samples, viewing sample filename, deleting samples?)
+	- global control buttons (play/pause, volume, tempo, reset)
+	- maybe extra buttons in their own area/category? (like import, export, randomize, options?)
+	- determine maxmium orbit number, maximum orbit radius
+- MIDI exporting
+    - create test MIDI file
+    - add ability to download
+    - translate cyclic drum groove into MIDI loop
+    - make MIDI file download and playable in DAW
+    - make save button in UI

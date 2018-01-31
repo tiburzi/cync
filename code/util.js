@@ -15,7 +15,7 @@ Util.pointDistance = function(start, end) {
     return Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
 }
 Util.pointDirection = function(start, end) {
-    return Math.atan2(end.y - start.y, end.x - start.x); //returns radians, in range (PI, PI]
+    return Math.atan2(end.y - start.y, end.x - start.x); //returns radians, in range (PI, PI], with 0 radians pointing to the right
 }
 Util.clamp = function(value, minimum, maximum) {
     return Math.max( Math.min(value, maximum), minimum);
@@ -42,5 +42,11 @@ Util.getParameterByName = function(name, url) {
     if (!results) return null;
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+Util.gcd = function(a, b) {
+    return !b ? a : Util.gcd(b, a % b);
+}
+Util.lcm = function(a, b) {
+    return (a*b) / Util.gcd(a, b);
 }
 
