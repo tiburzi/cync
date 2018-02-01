@@ -97,15 +97,16 @@ window.onload = function() {
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
-        PALETTE.push('#E53D75');
-        PALETTE.push('#EF9B40');
-        PALETTE.push('#56C4B0');
-        PALETTE.push('#726DAF');
-        PALETTE.push('#1B9CD3');
-        PALETTE.push('#B8B8D1');
+        PALETTE.push('#6F69B2');
+        PALETTE.push('#EC4784');
+        PALETTE.push('#F6A450');
+        PALETTE.push('#3FC6B7');
+        PALETTE.push('#34A8E2');
+        /*PALETTE.push('#B8B8D1');
         PALETTE.push('#A2D3E5');
         PALETTE.push('#E58083');
         PALETTE.push('#303633');
+        PALETTE.push('#303633');*/
         
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
