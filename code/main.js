@@ -197,20 +197,25 @@ window.onload = function() {
             }
             
             // Create a random configuration
-            var maxNotes = 6+Math.round(Math.random()*4);
+            var maxNotes = 6+Math.round(Math.random()*5);
             var totalNotes = 0;
-            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            while(Orbits.length > 0) { Orbits[0].destroy(); }
             for (var i=1; i<=MAX_ORBITS; i++) {
-                if (Math.random() < 1-.12*i) {
-                    // Create an orbit and populate it with notes
+                if (Math.random() < 1.05-.15*i) {
+                    // Create a new orbit
                     var o = CreateOrbit(i*RADIUS_SNAP);
-                    var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
+                    
+                    // Assign a radial grid which notes will align to
+                    var radialDivisions = Math.random()<.5 ? 2 : 3;
+                    if (Math.random()<.8) {radialDivisions *= i;}
+                    
+                    // Populate orbit with notes
                     var notes = Math.round(Math.random()*3) + 1;
                     var mostCommonSamp = _getRandomSampler();
                     while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
-                        var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
+                        var angleFinal = (angleBase+angleOffset + Math.PI/2) % (2*Math.PI) - Math.PI;
                         var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
                         notes --;
@@ -219,7 +224,16 @@ window.onload = function() {
                     o.polygon.update();
                 }
             }
-            //tempoBtn.slider.setValue(Math.random());
+            
+            // Remove any orbits that didn't get any notes
+            for (var i=0; i<Orbits.length; i++) {
+                if (Orbits[i].notes.length == 0) {
+                    Orbits[i].destroy();
+                    i--;
+                }
+            }
+            
+            tempoBtn.slider.setValue(.2+.5*Math.random());
             UpdateState();
         };
         LAYERS['hud'].add(randomizeBtn);
