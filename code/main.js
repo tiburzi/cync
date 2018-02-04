@@ -62,10 +62,10 @@ window.onload = function() {
     var PAUSED = false;
     var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 12;
-    var CTL_RADIUS = 30;
+    var CTL_RADIUS = 36;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
-    var GRAY = 'rgba(180,180,180,1)';
+    var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f0f0f0';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
@@ -128,7 +128,9 @@ window.onload = function() {
         
         // Create samplers
         for (var i=0; i<SAMPLERS_MAX; i++) {
-            CreateSampler(controlsX+3.5*CTL_RADIUS, controlsY -4*CTL_RADIUS + 10*CTL_RADIUS*(i/SAMPLERS_MAX));
+            var h = 9*CTL_RADIUS - 2*SAMPLER_RADIUS;
+            var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
+            CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
         }
         
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
