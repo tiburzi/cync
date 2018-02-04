@@ -43,19 +43,20 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SAMPLERS_MAX = 5;
     var AVAILABLE_SAMPLES_ARRAYS = [
-        ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"],
-        ["postal_kick","postal_slap1","postal_slap2","postal_snare"],
-        ["bell_1","bell_2","bell_3","bell_4","bell_5","bell_6","bell_7"],
+        ["CYNC_kick", "CYNC_tom", "CYNC_snare", "CYNC_clap", "CYNC_shaker", "CYNC_hihat"],
+        ["808_kick", "808_bass", "808_snare", "808_clap", "808_hihat_closed", "808_hihat_open", "808_tom", "808_cymbal"],
+        ["postal_kick", "postal_slap1", "postal_slap2", "postal_snare"],
+        ["bell_1", "bell_2", "bell_3", "bell_4", "bell_5", "bell_6", "bell_7"],
     ];
-    var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0]; 
+    var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0];
+    var SAMPLERS_MAX = SOUND_FILES.length;
     var MAX_ORBITS = 4;
     var ORBIT_MAX_RADIUS = 240; //default, updated in Init()
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
-    var TEMPO_MAX = 150;
+    var TEMPO_MAX = 120;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
@@ -97,17 +98,22 @@ window.onload = function() {
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
+        // Create palette (colors 1-6 are saturated, 7-12 are unsaturated)
         PALETTE.push('#6F69B2');
+        PALETTE.push('#33A6E0');
         PALETTE.push('#EC4784');
         PALETTE.push('#F6A450');
+        PALETTE.push('#A2D66B');
         PALETTE.push('#3FC6B7');
-        PALETTE.push('#34A8E2');
-        /*PALETTE.push('#B8B8D1');
-        PALETTE.push('#A2D3E5');
-        PALETTE.push('#E58083');
-        PALETTE.push('#303633');
-        PALETTE.push('#303633');*/
         
+        PALETTE.push('#A19EC1');
+        PALETTE.push('#80BEDD');
+        PALETTE.push('#F289B0');
+        PALETTE.push('#EDC393');
+        PALETTE.push('#BCD6A0');
+        PALETTE.push('#84DAD1');
+        
+        // Create visual layers of depth
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
@@ -317,7 +323,6 @@ window.onload = function() {
     }
     
     function SetupDefault() {
-        CreateOrbit(RADIUS_SNAP);
         CreateOrbit(2*RADIUS_SNAP);
     }
     
