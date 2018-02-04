@@ -43,28 +43,29 @@ window.onload = function() {
     var Samplers = [];
     var PALETTE = [];
     var LAYERS = [];
-    var SAMPLERS_MAX = 5;
     var AVAILABLE_SAMPLES_ARRAYS = [
-        ["kick", "bass", "snare", "clap", "hihat_closed", "hihat_open", "tom", "cymbal"],
-        ["postal_kick","postal_slap1","postal_slap2","postal_snare"],
-        ["bell_1","bell_2","bell_3","bell_4","bell_5","bell_6","bell_7"],
+        ["CYNC_kick", "CYNC_tom", "CYNC_snare", "CYNC_clap", "CYNC_shaker", "CYNC_hihat"],
+        ["808_kick", "808_bass", "808_snare", "808_clap", "808_hihat_closed", "808_hihat_open", "808_tom", "808_cymbal"],
+        ["postal_kick", "postal_slap1", "postal_slap2", "postal_snare"],
+        ["bell_1", "bell_2", "bell_3", "bell_4", "bell_5", "bell_6", "bell_7"],
     ];
-    var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0]; 
+    var SOUND_FILES = AVAILABLE_SAMPLES_ARRAYS[Util.getParameterByName('set') || 0];
+    var SAMPLERS_MAX = SOUND_FILES.length;
     var MAX_ORBITS = 4;
     var ORBIT_MAX_RADIUS = 240; //default, updated in Init()
     var RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
     var TEMPO = 60; //in beats per minute
     var TEMPO_MIN = 30;
-    var TEMPO_MAX = 150;
+    var TEMPO_MAX = 120;
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
     var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 12;
-    var CTL_RADIUS = 30;
+    var CTL_RADIUS = 36;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
     var DRAGGING_DESTROYABLE = false;
-    var GRAY = 'rgba(180,180,180,1)';
+    var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f0f0f0';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
@@ -97,16 +98,22 @@ window.onload = function() {
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
-        PALETTE.push('#E53D75');
-        PALETTE.push('#EF9B40');
-        PALETTE.push('#56C4B0');
-        PALETTE.push('#726DAF');
-        PALETTE.push('#1B9CD3');
-        PALETTE.push('#B8B8D1');
-        PALETTE.push('#A2D3E5');
-        PALETTE.push('#E58083');
-        PALETTE.push('#303633');
+        // Create palette (colors 1-6 are saturated, 7-12 are unsaturated)
+        PALETTE.push('#6F69B2');
+        PALETTE.push('#33A6E0');
+        PALETTE.push('#EC4784');
+        PALETTE.push('#F6A450');
+        PALETTE.push('#A2D66B');
+        PALETTE.push('#3FC6B7');
         
+        PALETTE.push('#A19EC1');
+        PALETTE.push('#80BEDD');
+        PALETTE.push('#F289B0');
+        PALETTE.push('#EDC393');
+        PALETTE.push('#BCD6A0');
+        PALETTE.push('#84DAD1');
+        
+        // Create visual layers of depth
         LAYERS['bg'] = two.makeGroup();
         LAYERS['hud'] = two.makeGroup();
         LAYERS['orbits'] = two.makeGroup();
@@ -121,7 +128,9 @@ window.onload = function() {
         
         // Create samplers
         for (var i=0; i<SAMPLERS_MAX; i++) {
-            CreateSampler(controlsX+3.5*CTL_RADIUS, controlsY -4*CTL_RADIUS + 10*CTL_RADIUS*(i/SAMPLERS_MAX));
+            var h = 9*CTL_RADIUS - 2*SAMPLER_RADIUS;
+            var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
+            CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
         }
         
         //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
@@ -188,20 +197,25 @@ window.onload = function() {
             }
             
             // Create a random configuration
-            var maxNotes = 6+Math.round(Math.random()*4);
+            var maxNotes = 6+Math.round(Math.random()*5);
             var totalNotes = 0;
-            while(Orbits.length > 0) { Orbits[0].destroy(); };
+            while(Orbits.length > 0) { Orbits[0].destroy(); }
             for (var i=1; i<=MAX_ORBITS; i++) {
-                if (Math.random() < 1-.12*i) {
-                    // Create an orbit and populate it with notes
+                if (Math.random() < 1.05-.15*i) {
+                    // Create a new orbit
                     var o = CreateOrbit(i*RADIUS_SNAP);
-                    var radialDivisions = Math.random()<.5 ? 12*i : 8*i;
+                    
+                    // Assign a radial grid which notes will align to
+                    var radialDivisions = Math.random()<.5 ? 2 : 3;
+                    if (Math.random()<.8) {radialDivisions *= i;}
+                    
+                    // Populate orbit with notes
                     var notes = Math.round(Math.random()*3) + 1;
                     var mostCommonSamp = _getRandomSampler();
                     while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
                         var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
-                        var angleFinal = (angleBase+angleOffset) % (2*Math.PI) - Math.PI;
+                        var angleFinal = (angleBase+angleOffset + Math.PI/2) % (2*Math.PI) - Math.PI;
                         var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
                         notes --;
@@ -210,7 +224,16 @@ window.onload = function() {
                     o.polygon.update();
                 }
             }
-            //tempoBtn.slider.setValue(Math.random());
+            
+            // Remove any orbits that didn't get any notes
+            for (var i=0; i<Orbits.length; i++) {
+                if (Orbits[i].notes.length == 0) {
+                    Orbits[i].destroy();
+                    i--;
+                }
+            }
+            
+            tempoBtn.slider.setValue(.2+.5*Math.random());
             UpdateState();
         };
         LAYERS['hud'].add(randomizeBtn);
@@ -316,7 +339,6 @@ window.onload = function() {
     }
     
     function SetupDefault() {
-        CreateOrbit(RADIUS_SNAP);
         CreateOrbit(2*RADIUS_SNAP);
     }
     
