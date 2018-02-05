@@ -213,7 +213,7 @@ window.onload = function() {
                     var mostCommonSamp = _getRandomSampler();
                     while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
-                        var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
+                        var angleOffset = Math.random()>.08 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset + Math.PI/2) % (2*Math.PI) - Math.PI;
                         var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
@@ -310,30 +310,63 @@ window.onload = function() {
         var logoDot = logoSVGnode._collection[1];
         var image = two.makeGroup(logoSVGnode);
         image.center();
+        image.translation.set(0, -20);
         image.rotation = Math.PI;
         image.scale = 1.5;
         
         var image_bbox = image.getBoundingClientRect(false);
-        var bbox = two.makeRectangle(0, 0, image_bbox.width+50, image_bbox.height+50);
+        var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
         bbox.fill = '#ffffff00'; //make invisible but retain hover-ability
         bbox.stroke = 'none';
         
-        var logo = two.makeGroup(bbox, image);
+        var t1 = two.makeText("a cyclic drum machine by", 0, 20);   t1.link = 'none';
+        var t2 = two.makeText("Jon Tiburzi", -100, 50);             t2.link = 'www.jontiburzi.com';
+        var t3 = two.makeText("Terrane", 0, 50);                    t3.link = 'www.terranemusic.com';
+        var t4 = two.makeText("Omar Shehata", 100, 50);             t4.link = 'www.omarshehata.com';
+        var text = two.makeGroup(t1, t2, t3, t4);
+        _.each(text._collection, function(t) {
+            t.family = 'Comfortaa';
+            t.size = 12;
+            if (t.link && t.link != 'none') {
+                addInteraction(t);
+                setCursor(t, 'pointer');
+                text.onMouseDown = function() {
+                    window.open('www.google.com','_blank');
+                }
+            }
+        });
+        text.fill = GRAY;
+        text.opacity = 0;
+        
+        var logo = two.makeGroup(bbox, image, text);
         logo.translation.set(controlsX, two.height*7/8);
+        logo.xStart = logo.translation.x;
+        logo.yStart = logo.translation.y;
+        logo.bbox = bbox;
         logo.image = image;
+        logo.text = text;
         logo.dot = logoDot;
         logo.image.fill = GRAY;
         
         logo.hoverOver = false;
         addInteraction(logo);
-        setCursor(logo, 'pointer');
+        setCursor(logo, 'default');
         
         logo.onGlobalMouseMove = function(e) {
             // Check if mouse is over the logo
-            logo.boundingBox = logo.getBoundingClientRect(false);
+            logo.boundingBox = logo.bbox.getBoundingClientRect(false);
             if (isOverRectangle(e.clientX, e.clientY, this.boundingBox.left, this.boundingBox.top, this.boundingBox.right, this.boundingBox.bottom)) {
                 if (!this.hoverOver && !this.clicked) {
                     tweenToScale(this, 1.2, 200);
+                    //tweenToPosition(this, this.xStart, this.yStart-50, 200); //since group parent, use absolute position
+                    //tweenToPosition(this.text, 0, 50, 200); //since group member, use relative position
+                    var textTween = new TWEEN.Tween(this.text)
+                        .to({ opacity: 1 }, 200)
+                        .start();
+                    //this.bbox._vertices[2].y += 50;
+                    //this.bbox._vertices[3].y += 50;
+                    this.bbox.scale = 2;
+                    console.log(this.bbox);
                     this.hoverOver = true;
                     logo.image.fill = 'rgba(90, 90, 90, 1)';
                     logo.dot.fill = PALETTE[5];
@@ -341,6 +374,14 @@ window.onload = function() {
             } else {
                 if (this.hoverOver && !this.clicked) {
                     tweenToScale(this, 1, 200);
+                    //tweenToPosition(this, this.xStart, this.yStart, 200);
+                    //tweenToPosition(this.text, 0, 0, 200);
+                    var textTween = new TWEEN.Tween(this.text)
+                        .to({ opacity: 0 }, 200)
+                        .start();
+                    //this.bbox._vertices[2].y -= 50;
+                    //this.bbox._vertices[3].y -= 50;
+                    this.bbox.scale = 1;
                     this.hoverOver = false;
                     logo.image.fill = GRAY;
                     logo.dot.fill = GRAY;
@@ -1417,6 +1458,14 @@ window.onload = function() {
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
         return tweenScale;
+    }
+    var tweenToPosition = function(obj, xx, yy, time) {
+        // Define and start a tween to move the object
+        var tweenPos = new TWEEN.Tween(obj.translation)
+            .to({ x: xx, y: yy }, time)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        return tweenPos;
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
