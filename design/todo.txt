@@ -12,6 +12,7 @@
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
 #2 - orbits do not resize appropriately after change page size and reloading
+#3 - when paused, if orbit is resized, the trigger does not follow
 
 
 --- Done ---

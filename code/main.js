@@ -80,20 +80,14 @@ window.onload = function() {
         var TWO_WIDTH = 1280;
         var TWO_HEIGHT = 720;
 
-         // Make an instance of two and place it on the page.
+         // Make an instance of two and place it on the page
         var elem = document.getElementById('main-container');
-        var params = { fullscreen: true };
-        //var params = { fullscreen: true };
+        var params = { fullscreen: false, width: TWO_WIDTH, height: TWO_HEIGHT };
         two = new Two(params).appendTo(elem);
-        // Make the SVG always maintain this aspect ratio
         
-        /*var ww = window.innerWidth;
-        var wh = window.innerHeight;
-        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(ww) + " " + String(wh));
-        
-        var rect = two.makeRectangle(two.width/2, two.height/2, two.width-20, two.height-20);
-        rect.fill = "yellow";
-        rect.stroke = "none";*/
+        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(TWO_WIDTH) + " " + String(TWO_HEIGHT));
+        two.renderer.domElement.removeAttribute("width");
+        two.renderer.domElement.removeAttribute("height");
         
         CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
         ORBIT_MAX_RADIUS = .8*two.height/2;
@@ -828,7 +822,7 @@ window.onload = function() {
                 })
                 .start();
         }
-        note.onGlobalMouseMove = function(e, offset, localClickPos) {
+        /*note.onGlobalMouseMove = function(e, offset, localClickPos) {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
                 setCursor(this, "hand");
@@ -856,6 +850,40 @@ window.onload = function() {
                     if (this.hovering) {
                         this.hovering = false;
                     }
+                }
+            }
+        }*/
+        note.onMouseEnter = function(e) {
+            // If on a sampler, make a growing animation
+            if (this.onSampler && !this.dragging) {
+                setCursor(this, "hand");
+                if (!this.hovering) {
+                    this.hovering = true;
+                    tweenToScale(this, PHI, 200);
+                }
+            }
+            
+            // If on an orbit, make the orbit's polygon appear
+            if (this.orbit != null) {
+                if (!this.hovering) {
+                    this.hovering = true;
+                    this.orbit.polygon.appear();
+                }
+            }
+        }
+        note.onMouseLeave = function(e) {
+            // If on a sampler, make a shrinking animation
+            if (this.onSampler && !this.dragging) {
+                if (!this.selected && this.hovering) {
+                    this.hovering = false;
+                    tweenToScale(this, 1, 200);
+                }
+            }
+            
+            // If on an orbit, make the orbit's polygon disappear
+            if (this.orbit != null) {
+                if (this.hovering) {
+                    this.hovering = false;
                 }
             }
         }
@@ -1292,7 +1320,7 @@ window.onload = function() {
         var mask = two.makeRectangle(0, 0, 2*r, 2*r);
         
         var btn = CreateButton(0, 0, r, imageName);
-        btn.onGlobalMouseMove = function(e) {
+        btn.onMouseEnter = btn.onMouseLeave = function(e) {
             // Overwrite default function
         }
         
@@ -1399,7 +1427,7 @@ window.onload = function() {
         }
         btn.callBack = function() {} // empty function by default
         btn.callBackUp = function() {} // empty function by default
-        btn.onGlobalMouseMove = function(e) {
+        /*btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
             if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
                 if (!this.hoverOver && !this.clicked) {
@@ -1411,6 +1439,18 @@ window.onload = function() {
                     tweenToScale(this, 1, 200);
                     this.hoverOver = false;
                 }
+            }
+        }*/
+        btn.onMouseEnter = function(e) {
+            if (!this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1.2, 200);
+                this.hoverOver = true;
+            }
+        }
+        btn.onMouseLeave = function(e) {
+            if (this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1, 200);
+                this.hoverOver = false;
             }
         }
         btn.onMouseDown = function(e) {
@@ -1575,12 +1615,23 @@ window.onload = function() {
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
 
-        var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
+        var offset = shape.parent.translation; //translation relative to parent (ie if in group, where coordinates of a child are relative to the parent)
         var localClickPos = {x: 0, y: 0};
         var dragDist = 0; //differentiate a click from a drag (and give the user a bit of buffer) by measuring the distance the mouse moves during a mousedown-mouseup interval
         
+        var correctE = function(e) {
+            // Correct e to account for TWO's offset and scaling in the window
+            var SVGscale = $(two.renderer.domElement).height() / two.height;
+            var SVGorigin = $('#main-container')[0].getBoundingClientRect();
+            e.clientX -= SVGorigin.left;
+            e.clientX /= SVGscale;
+            e.clientY -= SVGorigin.top;
+            e.clientY /= SVGscale;
+        }
+        
         var drag = function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist += 1;
             
             //Call the shape's dragging method, if it has one
@@ -1598,6 +1649,7 @@ window.onload = function() {
         };
         var dragStart = function(e) {
             e.preventDefault();
+            correctE(e);
             localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y};
             dragDist = 0;
             $(window)
@@ -1610,6 +1662,7 @@ window.onload = function() {
         var touchStart = function(e) {
             e.preventDefault();
             var touch = e.originalEvent.changedTouches[0];
+            correctE(e);
             localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
             dragDist = 0;
             $(window)
@@ -1622,6 +1675,7 @@ window.onload = function() {
         };
         var dragEnd = function(e) {
             e.preventDefault();
+            correctE(e);
             $(window)
                 .unbind('mousemove', drag)
                 .unbind('mouseup', dragEnd);
@@ -1632,6 +1686,7 @@ window.onload = function() {
         };
         var touchEnd = function(e) {
             e.preventDefault();
+            correctE(e);
             $(window)
                 .unbind('touchmove', touchDrag)
                 .unbind('touchend', touchEnd);
@@ -1643,24 +1698,28 @@ window.onload = function() {
             return false; //<--- anyone know why this returns false?
         };
         var enter = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse enter method, if it has one
             if (typeof shape.onMouseEnter === 'function') {shape.onMouseEnter(e, offset, localClickPos);}
         };
         var leave = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse leave method, if it has one
             if (typeof shape.onMouseLeave === 'function') {shape.onMouseLeave(e, offset, localClickPos);}
         };
         var move = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse move method, if it has one
             if (typeof shape.onMouseMove === 'function') {shape.onMouseMove(e, offset, localClickPos);}
         };
         var hover = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse move method, if it has one
@@ -1672,7 +1731,6 @@ window.onload = function() {
         $(shape._renderer.elem)
             .css({
                 'cursor': 'move',
-                //'pointer-events': 'none'
             })
             .bind('mousedown', dragStart)
             .bind('touchstart', touchStart)
@@ -1680,27 +1738,29 @@ window.onload = function() {
             .bind('mouseleave', leave)
             .bind('mousemove', move)
             .bind('mouseover', hover);
-            //.bind('mouseover', function() {console.log('over')})
-            //.bind('dragover', function() {console.log('drag over')});
 
         $(shape._renderer.elem).dblclick(function(e){
             e.preventDefault();
+            correctE(e);
             if (typeof shape.onDoubleClick === 'function') {shape.onDoubleClick(e,shape);}
         });
         
         // Define global mouse events
         document.addEventListener('mousemove', function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist += 1;
             if (typeof shape.onGlobalMouseMove === 'function') {shape.onGlobalMouseMove(e);}
         });
         document.addEventListener('mouseup', function(e) {
             e.preventDefault();
+            correctE(e);
             if (typeof shape.onGlobalMouseUp === 'function') {shape.onGlobalMouseUp(e);}
             if (!dragDist < 5) {if (typeof shape.onGlobalClick === 'function') {shape.onGlobalClick(e);}}
         });
         document.addEventListener('mousedown', function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist = 0;
             if (typeof shape.onGlobalMouseDown === 'function') {shape.onGlobalMouseDown(e);}
         });
