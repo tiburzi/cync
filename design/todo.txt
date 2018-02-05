@@ -1,24 +1,18 @@
---- Task List ---
+--- Ideas ---
+- dynamic resizing window and content (important!!!)
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
-- simplify / refactor button and sliders ?
-- simplify / refactor SetupInitialState() ?
-- dynamic resizing window and content (important!!!)
-- custom audio files?
-	- importing new audio files via drag-n-drop anywhere on screen
-	- assign new audio files to samplers (either new or preexisting)
-	- some sort of feedback when this is done (ie sample plays, sampler animates, etc)
-	- if file overwrites a preexisting sampler, make sure it's corresponding notes also play the new sample
+- simplify / refactor button and sliders
+- simplify / refactor SetupInitialState()
 - alt-click orbit to copy it
 - redesign how orbits snap radii to be relative to one another, instead of absolute increments?
-
 
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
 #2 - orbits do not resize appropriately after change page size and reloading
-#3 - in really small window, the sliderbuttons for tempo and master volume do not work
+
 
 --- Done ---
 - Render a small circle on screen (solid color)
@@ -78,3 +72,8 @@
     - translate cyclic drum groove into MIDI loop
     - make MIDI file download and playable in DAW
     - make save button in UI
+- app logo
+    - name and logo design
+    - make svg text
+    - clickable svg text links
+    - UI design and interaction, polish
