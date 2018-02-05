@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/polygon.svg", "polygon");
     _getSvgData("assets/images/randomize.svg", "randomize");
     _getSvgData("assets/images/save.svg", "save");
+    _getSvgData("assets/images/cync_logo_color.svg", "cync_logo_color");
 });
 
 // All the main js code runs here
@@ -98,20 +99,20 @@ window.onload = function() {
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
-        // Create palette (colors 1-6 are saturated, 7-12 are unsaturated)
-        PALETTE.push('#6F69B2');
-        PALETTE.push('#33A6E0');
-        PALETTE.push('#EC4784');
-        PALETTE.push('#F6A450');
-        PALETTE.push('#A2D66B');
-        PALETTE.push('#3FC6B7');
+        // Create palette
+        PALETTE.push('#6F69B2'); //purple
+        PALETTE.push('#33A6E0'); //blue
+        PALETTE.push('#EC4784'); //red
+        PALETTE.push('#F6A450'); //yellow
+        PALETTE.push('#A2D66B'); //green
+        PALETTE.push('#3FC6B7'); //teal
         
-        PALETTE.push('#A19EC1');
-        PALETTE.push('#80BEDD');
-        PALETTE.push('#F289B0');
-        PALETTE.push('#EDC393');
-        PALETTE.push('#BCD6A0');
-        PALETTE.push('#84DAD1');
+        PALETTE.push('#A19EC1'); //light purple
+        PALETTE.push('#80BEDD'); //light blue
+        PALETTE.push('#F289B0'); //light red
+        PALETTE.push('#EDC393'); //light yellow
+        PALETTE.push('#BCD6A0'); //light green
+        PALETTE.push('#84DAD1'); //light teal
         
         // Create visual layers of depth
         LAYERS['bg'] = two.makeGroup();
@@ -132,8 +133,6 @@ window.onload = function() {
             var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
             CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
         }
-        
-        //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
         var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
@@ -207,7 +206,7 @@ window.onload = function() {
                     
                     // Assign a radial grid which notes will align to
                     var radialDivisions = Math.random()<.5 ? 2 : 3;
-                    if (Math.random()<.8) {radialDivisions *= i;}
+                    if (Math.random()<.8) {radialDivisions *= Math.random()<.4 ? i : 2*i;}
                     
                     // Populate orbit with notes
                     var notes = Math.round(Math.random()*3) + 1;
@@ -304,6 +303,51 @@ window.onload = function() {
             SetupDefault();
         }
         LAYERS['hud'].add(resetBtn);
+        
+        
+        // Create logo
+        var logoSVGnode = two.interpret(svgAssets["cync_logo_color"]);
+        var logoDot = logoSVGnode._collection[1];
+        var image = two.makeGroup(logoSVGnode);
+        image.center();
+        image.rotation = Math.PI;
+        image.scale = 1.5;
+        
+        var image_bbox = image.getBoundingClientRect(false);
+        var bbox = two.makeRectangle(0, 0, image_bbox.width+50, image_bbox.height+50);
+        bbox.fill = '#ffffff00'; //make invisible but retain hover-ability
+        bbox.stroke = 'none';
+        
+        var logo = two.makeGroup(bbox, image);
+        logo.translation.set(controlsX, two.height*7/8);
+        logo.image = image;
+        logo.dot = logoDot;
+        logo.image.fill = GRAY;
+        
+        logo.hoverOver = false;
+        addInteraction(logo);
+        setCursor(logo, 'pointer');
+        
+        logo.onGlobalMouseMove = function(e) {
+            // Check if mouse is over the logo
+            logo.boundingBox = logo.getBoundingClientRect(false);
+            if (isOverRectangle(e.clientX, e.clientY, this.boundingBox.left, this.boundingBox.top, this.boundingBox.right, this.boundingBox.bottom)) {
+                if (!this.hoverOver && !this.clicked) {
+                    tweenToScale(this, 1.2, 200);
+                    this.hoverOver = true;
+                    logo.image.fill = 'rgba(90, 90, 90, 1)';
+                    logo.dot.fill = PALETTE[5];
+                }
+            } else {
+                if (this.hoverOver && !this.clicked) {
+                    tweenToScale(this, 1, 200);
+                    this.hoverOver = false;
+                    logo.image.fill = GRAY;
+                    logo.dot.fill = GRAY;
+                }
+            }
+        }
+        
     }
 
     function SetupInitialState() {
