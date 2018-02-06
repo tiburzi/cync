@@ -491,7 +491,7 @@ window.onload = function() {
                 var newRadius = ORBIT_MAX_RADIUS+(Math.sqrt(dist-ORBIT_MAX_RADIUS));
             }
             
-            //Make the orbit's trigger invisible
+            //Make the orbit's trigger stop
             this.trigger.rotate = false;
             
             setRadius(this, newRadius);
@@ -1176,8 +1176,11 @@ window.onload = function() {
                     this.hoverOver = false;
                     tweenToScale(this, 0, 200);
                     var orbit = CreateOrbit(10);
-                    orbit.onDrag(e, {x:0, y:0}); //force onDrag, which updates the radius, trigger animation, etc
+                    
+                    // Transfer mouse control to the newly created orbit
+                    $(document.getElementById(this.id)).trigger('mouseup');    //end the click event on the (+)
                     $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+                    orbit.onDrag(e, {x:0, y:0});                               //forces orbit.onDrag, which updates the radius, trigger animation, etc
                 }
             }
 
@@ -1199,23 +1202,6 @@ window.onload = function() {
                     c.setState('trash');
                 }
             }
-            
-            // Check if mouse is over the center
-            /*if (isOverCenter(e.clientX, e.clientY)) {
-                _.each(c.children, function(child) {
-                    if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1.2, 200);
-                        child.hoverOver = true;
-                    }
-                });
-            } else {
-                _.each(c.children, function(child) {
-                    if ((child.visible) && (child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1, 200);
-                        child.hoverOver = false;
-                    }
-                });
-            }*/
         };
         c.onGlobalMouseUp = function(e) {
             /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
@@ -1711,13 +1697,6 @@ window.onload = function() {
             //Call the shape's mouse leave method, if it has one
             if (typeof shape.onMouseLeave === 'function') {shape.onMouseLeave(e, offset, localClickPos);}
         };
-        var move = function(e) {
-            correctE(e);
-            e.preventDefault();
-            
-            //Call the shape's mouse move method, if it has one
-            if (typeof shape.onMouseMove === 'function') {shape.onMouseMove(e, offset, localClickPos);}
-        };
         var hover = function(e) {
             correctE(e);
             e.preventDefault();
@@ -1733,10 +1712,10 @@ window.onload = function() {
                 'cursor': 'move',
             })
             .bind('mousedown', dragStart)
+            .bind('mouseup', dragEnd)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
             .bind('mouseleave', leave)
-            .bind('mousemove', move)
             .bind('mouseover', hover);
 
         $(shape._renderer.elem).dblclick(function(e){
