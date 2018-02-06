@@ -312,7 +312,8 @@ window.onload = function() {
         
         var image_bbox = image.getBoundingClientRect(false);
         var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
-        bbox.fill = '#ffffff00'; //make invisible but retain hover-ability
+        bbox.opacity = .001; //makes invisible while retaining hover-ability
+        bbox.fill = LT_GRAY; //in case opacity trick doesn't work
         bbox.stroke = 'none';
         
         var t1 = two.makeText("a cyclic drum machine by", 0, 25);
