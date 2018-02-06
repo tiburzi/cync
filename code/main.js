@@ -236,6 +236,8 @@ window.onload = function() {
             PAUSED = !this.on;
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
+            /*if (PAUSED) {TIME = (new Date() - START_TIME) / 1000;}
+            else {PREV_TIME = (new Date() - START_TIME) / 1000;}*/
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -487,8 +489,9 @@ window.onload = function() {
                 var newRadius = ORBIT_MAX_RADIUS+(Math.sqrt(dist-ORBIT_MAX_RADIUS));
             }
             
-            //Make the orbit's trigger stop
+            //Make the orbit's trigger stop rotating, but update its radius
             this.trigger.rotate = false;
+            this.trigger._updatePosition();
             
             setRadius(this, newRadius);
             orbit.updateNotes();
@@ -515,6 +518,7 @@ window.onload = function() {
                     .onUpdate(function() {
                         setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
                         this._object.updateNotes();
+                        this._object.trigger._updatePosition();
                     })
                     .onComplete(function() {
                         this._object.trigger.rotate = true;
@@ -565,8 +569,6 @@ window.onload = function() {
         }
     
         addInteraction(orbit);
-        
-        //UpdateState();
 
         return orbit;
     }
@@ -1743,13 +1745,20 @@ window.onload = function() {
 
     // Global time, in seconds
     var START_TIME = new Date();
-    var PREV_TIME = 0;
+    var REAL_TIME = START_TIME;
+    var REAL_PREV_TIME = 0;
+    var REAL_dt = 0;
     var TIME = 0;
     var dt = 0;
     function updateTime() {
-        TIME = (new Date() - START_TIME) / 1000;
-        dt = TIME-PREV_TIME;
-        PREV_TIME = TIME;
+        REAL_TIME = (new Date() - START_TIME) / 1000;
+        REAL_dt = REAL_TIME-REAL_PREV_TIME;
+        REAL_PREV_TIME = REAL_TIME;
+        
+        if (!PAUSED) {
+            dt = REAL_dt;
+            TIME += dt;
+        }
     }
    
     // Initialize and create the UI
