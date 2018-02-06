@@ -1,5 +1,4 @@
 --- Ideas ---
-- dynamic resizing window and content (important!!!)
 - add lilting / non-linear traversal of orbit (by making orbit obilque)
 - create toggeable polar grid option, with note snapping
 - create note volume sliders
@@ -11,8 +10,6 @@
 
 --- Bugs ---
 #1 - When loading a state that had more samplers than the current state, some notes don't get samplers properly assigned
-#2 - orbits do not resize appropriately after change page size and reloading
-#3 - when paused, if orbit is resized, the trigger does not follow
 
 
 --- Done ---
@@ -78,3 +75,6 @@
     - make svg text
     - clickable svg text links
     - UI design and interaction, polish
+- dynamic resizing window and content (important!!!)
+- orbits do not resize appropriately after change page size and reloading
+- when paused, if orbit is resized, the trigger does not follow
