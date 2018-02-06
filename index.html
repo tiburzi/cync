@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
-        <title>Cyclic Drum Machine</title>
+        <title>CYNC | cyclic drum machine</title>
         <script src="code/lib/jquery-3.2.1.min.js"></script>
         <script src="code/lib/two.min.js"></script>
         <script src="code/lib/Tween.js"></script>
@@ -12,10 +12,34 @@
         <script src='code/saveState.js'></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.5/howler.min.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.12.13/Tone.min.js"></script>
+        <link href="https://fonts.googleapis.com/css?family=Comfortaa:700" rel="stylesheet">
+        
+        <link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon/favicon-16x16.png">
+        <link rel="manifest" href="assets/images/favicon/site.webmanifest">
+        <link rel="mask-icon" href="assets/images/favicon/safari-pinned-tab.svg" color="#f6a450">
+        <meta name="msapplication-TileColor" content="#fafafa">
+        <meta name="theme-color" content="#fafafa">
+        
         <style type="text/css">
             body {
                 margin: 0px;
                 background-color: #f0f0f0;
+            }
+            #main-container {
+                /* from https://stackoverflow.com/questions/20590239/maintain-aspect-ratio-of-div-but-fill-screen-width-and-height-in-css */
+                margin:0;
+                padding:0;
+                width: 100vw; 
+                height: 56.25vw; /* 100/56.25 = 1.778 */
+                /*background: pink;*/
+                max-height: 100vh;
+                max-width: 177.78vh; /* 16/9 = 1.778 */
+                margin: auto;
+                position: absolute;
+                top:0; bottom:0; /* vertical center */
+                left:0; right:0; /* horizontal center */
             }
         </style>
     </head>

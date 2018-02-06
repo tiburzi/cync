@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
     _getSvgData("assets/images/polygon.svg", "polygon");
     _getSvgData("assets/images/randomize.svg", "randomize");
     _getSvgData("assets/images/save.svg", "save");
+    _getSvgData("assets/images/cync_logo_color.svg", "cync_logo_color");
 });
 
 // All the main js code runs here
@@ -79,39 +80,33 @@ window.onload = function() {
         var TWO_WIDTH = 1280;
         var TWO_HEIGHT = 720;
 
-         // Make an instance of two and place it on the page.
+         // Make an instance of two and place it on the page
         var elem = document.getElementById('main-container');
-        var params = { fullscreen: true };
-        //var params = { fullscreen: true };
+        var params = { fullscreen: false, width: TWO_WIDTH, height: TWO_HEIGHT };
         two = new Two(params).appendTo(elem);
-        // Make the SVG always maintain this aspect ratio
         
-        /*var ww = window.innerWidth;
-        var wh = window.innerHeight;
-        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(ww) + " " + String(wh));
-        
-        var rect = two.makeRectangle(two.width/2, two.height/2, two.width-20, two.height-20);
-        rect.fill = "yellow";
-        rect.stroke = "none";*/
+        two.renderer.domElement.setAttribute("viewBox", "0 0 " + String(TWO_WIDTH) + " " + String(TWO_HEIGHT));
+        two.renderer.domElement.removeAttribute("width");
+        two.renderer.domElement.removeAttribute("height");
         
         CENTER = { x:two.width / 3 * 2, y:two.height / 2 };
         ORBIT_MAX_RADIUS = .8*two.height/2;
         RADIUS_SNAP = ORBIT_MAX_RADIUS/MAX_ORBITS;
         
-        // Create palette (colors 1-6 are saturated, 7-12 are unsaturated)
-        PALETTE.push('#6F69B2');
-        PALETTE.push('#33A6E0');
-        PALETTE.push('#EC4784');
-        PALETTE.push('#F6A450');
-        PALETTE.push('#A2D66B');
-        PALETTE.push('#3FC6B7');
+        // Create palette
+        PALETTE.push('#6F69B2'); //purple
+        PALETTE.push('#33A6E0'); //blue
+        PALETTE.push('#EC4784'); //red
+        PALETTE.push('#F6A450'); //yellow
+        PALETTE.push('#A2D66B'); //green
+        PALETTE.push('#3FC6B7'); //teal
         
-        PALETTE.push('#A19EC1');
-        PALETTE.push('#80BEDD');
-        PALETTE.push('#F289B0');
-        PALETTE.push('#EDC393');
-        PALETTE.push('#BCD6A0');
-        PALETTE.push('#84DAD1');
+        PALETTE.push('#A19EC1'); //light purple
+        PALETTE.push('#80BEDD'); //light blue
+        PALETTE.push('#F289B0'); //light red
+        PALETTE.push('#EDC393'); //light yellow
+        PALETTE.push('#BCD6A0'); //light green
+        PALETTE.push('#84DAD1'); //light teal
         
         // Create visual layers of depth
         LAYERS['bg'] = two.makeGroup();
@@ -132,8 +127,6 @@ window.onload = function() {
             var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
             CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
         }
-        
-        //var importBtn = CreateButton(two.width-50, two.height-150, CTL_RADIUS);
         
         // Create global controls
         var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
@@ -207,14 +200,14 @@ window.onload = function() {
                     
                     // Assign a radial grid which notes will align to
                     var radialDivisions = Math.random()<.5 ? 2 : 3;
-                    if (Math.random()<.8) {radialDivisions *= i;}
+                    if (Math.random()<.8) {radialDivisions *= Math.random()<.4 ? i : 2*i;}
                     
                     // Populate orbit with notes
                     var notes = Math.round(Math.random()*3) + 1;
                     var mostCommonSamp = _getRandomSampler();
                     while(notes > 0 && totalNotes < maxNotes) {
                         var angleBase = Math.round(Math.random()*radialDivisions)/radialDivisions * 2*Math.PI;
-                        var angleOffset = Math.random()>.05 ? 0 : Math.random()*radialDivisions;
+                        var angleOffset = Math.random()>.08 ? 0 : Math.random()*radialDivisions;
                         var angleFinal = (angleBase+angleOffset + Math.PI/2) % (2*Math.PI) - Math.PI;
                         var samp = Math.random()<.5 ? mostCommonSamp : _getRandomSampler();
                         o.addNewNote(angleFinal, samp);
@@ -243,6 +236,8 @@ window.onload = function() {
             PAUSED = !this.on;
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
+            /*if (PAUSED) {TIME = (new Date() - START_TIME) / 1000;}
+            else {PREV_TIME = (new Date() - START_TIME) / 1000;}*/
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -304,6 +299,84 @@ window.onload = function() {
             SetupDefault();
         }
         LAYERS['hud'].add(resetBtn);
+        
+        
+        // Create CYNC logo with corresponding text and author links
+        var logoSVGnode = two.interpret(svgAssets["cync_logo_color"]);
+        var logoDot = logoSVGnode._collection[1];
+        var image = two.makeGroup(logoSVGnode);
+        image.center();
+        image.translation.set(0, -20);
+        image.rotation = Math.PI;
+        image.scale = 1.5;
+        
+        var image_bbox = image.getBoundingClientRect(false);
+        var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
+        bbox.fill = '#ffffff00'; //make invisible but retain hover-ability
+        bbox.stroke = 'none';
+        
+        var t1 = two.makeText("a cyclic drum machine by", 0, 25);
+        var t2 = two.makeText("Jon Tiburzi", -100, 50);             t2.link = 'http://jontiburzi.com/';     t2.color = PALETTE[3];
+        var t3 = two.makeText("Terrane", -6, 50);                   t3.link = 'http://terranemusic.com/';   t3.color = PALETTE[3];
+        var t4 = two.makeText("Omar Shehata", 100, 50);             t4.link = 'http://omarshehata.me/';     t4.color = PALETTE[3];
+        var text = two.makeGroup(t1, t2, t3, t4);
+        _.each(text._collection, function(t) {
+            t.family = 'Comfortaa';
+            t.size = 14;
+            if (typeof t.link !== 'undefined') {
+                addInteraction(t);
+                setCursor(t, 'pointer');
+                t.onMouseDown = function() {
+                    window.open(t.link,'_blank');
+                }
+                t.onMouseEnter = function() {
+                    t.fill = t.color;
+                }
+                t.onMouseLeave = function() {
+                    t.fill = GRAY;
+                }
+            }
+        });
+        text.fill = GRAY;
+        text.opacity = 0;
+        
+        var logo = two.makeGroup(bbox, image, text);
+        logo.translation.set(controlsX, two.height-100);
+        logo.xStart = logo.translation.x;
+        logo.yStart = logo.translation.y;
+        logo.bbox = bbox;
+        logo.image = image;
+        logo.text = text;
+        logo.dot = logoDot;
+        logo.image.fill = GRAY;
+        logo.hoverOver = false;
+        addInteraction(logo);
+        setCursor(logo, 'default');
+        
+        logo.onMouseEnter = function(e) {
+            if (!this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1.2, 200);
+                var textTween = new TWEEN.Tween(this.text)
+                    .to({ opacity: 1 }, 200)
+                    .start();
+                this.bbox.scale = 2;
+                this.hoverOver = true;
+                logo.image.fill = 'rgba(90, 90, 90, 1)';
+                logo.dot.fill = PALETTE[3];
+            }
+        }
+        logo.onMouseLeave = function(e) {
+            if (this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1, 200);
+                var textTween = new TWEEN.Tween(this.text)
+                    .to({ opacity: 0 }, 200)
+                    .start();
+                this.bbox.scale = 1;
+                this.hoverOver = false;
+                logo.image.fill = GRAY;
+                logo.dot.fill = GRAY;
+            }
+        }
     }
 
     function SetupInitialState() {
@@ -416,8 +489,9 @@ window.onload = function() {
                 var newRadius = ORBIT_MAX_RADIUS+(Math.sqrt(dist-ORBIT_MAX_RADIUS));
             }
             
-            //Make the orbit's trigger invisible
+            //Make the orbit's trigger stop rotating, but update its radius
             this.trigger.rotate = false;
+            this.trigger._updatePosition();
             
             setRadius(this, newRadius);
             orbit.updateNotes();
@@ -444,6 +518,7 @@ window.onload = function() {
                     .onUpdate(function() {
                         setRadius(this._object, this._object.radius); //'this' refers to the tween itself, and _object is what the tween is acting on.
                         this._object.updateNotes();
+                        this._object.trigger._updatePosition();
                     })
                     .onComplete(function() {
                         this._object.trigger.rotate = true;
@@ -494,8 +569,6 @@ window.onload = function() {
         }
     
         addInteraction(orbit);
-        
-        //UpdateState();
 
         return orbit;
     }
@@ -747,7 +820,7 @@ window.onload = function() {
                 })
                 .start();
         }
-        note.onGlobalMouseMove = function(e, offset, localClickPos) {
+        /*note.onGlobalMouseMove = function(e, offset, localClickPos) {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
                 setCursor(this, "hand");
@@ -775,6 +848,40 @@ window.onload = function() {
                     if (this.hovering) {
                         this.hovering = false;
                     }
+                }
+            }
+        }*/
+        note.onMouseEnter = function(e) {
+            // If on a sampler, make a growing animation
+            if (this.onSampler && !this.dragging) {
+                setCursor(this, "hand");
+                if (!this.hovering) {
+                    this.hovering = true;
+                    tweenToScale(this, PHI, 200);
+                }
+            }
+            
+            // If on an orbit, make the orbit's polygon appear
+            if (this.orbit != null) {
+                if (!this.hovering) {
+                    this.hovering = true;
+                    this.orbit.polygon.appear();
+                }
+            }
+        }
+        note.onMouseLeave = function(e) {
+            // If on a sampler, make a shrinking animation
+            if (this.onSampler && !this.dragging) {
+                if (!this.selected && this.hovering) {
+                    this.hovering = false;
+                    tweenToScale(this, 1, 200);
+                }
+            }
+            
+            // If on an orbit, make the orbit's polygon disappear
+            if (this.orbit != null) {
+                if (this.hovering) {
+                    this.hovering = false;
                 }
             }
         }
@@ -1067,8 +1174,11 @@ window.onload = function() {
                     this.hoverOver = false;
                     tweenToScale(this, 0, 200);
                     var orbit = CreateOrbit(10);
-                    orbit.onDrag(e, {x:0, y:0}); //force onDrag, which updates the radius, trigger animation, etc
+                    
+                    // Transfer mouse control to the newly created orbit
+                    $(document.getElementById(this.id)).trigger('mouseup');    //end the click event on the (+)
                     $(document.getElementById(orbit.id)).trigger('mousedown'); //force trigger the mousedown event for the orbit, which allows us to hold onto it
+                    orbit.onDrag(e, {x:0, y:0});                               //forces orbit.onDrag, which updates the radius, trigger animation, etc
                 }
             }
 
@@ -1090,23 +1200,6 @@ window.onload = function() {
                     c.setState('trash');
                 }
             }
-            
-            // Check if mouse is over the center
-            /*if (isOverCenter(e.clientX, e.clientY)) {
-                _.each(c.children, function(child) {
-                    if ((child.visible) && (!child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1.2, 200);
-                        child.hoverOver = true;
-                    }
-                });
-            } else {
-                _.each(c.children, function(child) {
-                    if ((child.visible) && (child.hoverOver) && (!child.clicked)) {
-                        tweenToScale(child, 1, 200);
-                        child.hoverOver = false;
-                    }
-                });
-            }*/
         };
         c.onGlobalMouseUp = function(e) {
             /* Use setTimeout() to trigger this function next frame. If an object is being dragged to the trash,
@@ -1172,7 +1265,7 @@ window.onload = function() {
         addInteraction(slider);
         setCursor(slider, 'pointer');
         slider.onMouseDown = slider.onDrag = function(e) {
-            var top = $(slider.line._renderer.elem).offset().top;
+            var top = $(slider.line._renderer.elem).offset().top - $('#main-container')[0].getBoundingClientRect().top;
             var scalar = slider.scale*slider.parent.scale;
             var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
             slider.setValue(val);
@@ -1211,7 +1304,7 @@ window.onload = function() {
         var mask = two.makeRectangle(0, 0, 2*r, 2*r);
         
         var btn = CreateButton(0, 0, r, imageName);
-        btn.onGlobalMouseMove = function(e) {
+        btn.onMouseEnter = btn.onMouseLeave = function(e) {
             // Overwrite default function
         }
         
@@ -1318,7 +1411,7 @@ window.onload = function() {
         }
         btn.callBack = function() {} // empty function by default
         btn.callBackUp = function() {} // empty function by default
-        btn.onGlobalMouseMove = function(e) {
+        /*btn.onGlobalMouseMove = function(e) {
             // Check if mouse is over the button
             if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
                 if (!this.hoverOver && !this.clicked) {
@@ -1330,6 +1423,18 @@ window.onload = function() {
                     tweenToScale(this, 1, 200);
                     this.hoverOver = false;
                 }
+            }
+        }*/
+        btn.onMouseEnter = function(e) {
+            if (!this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1.2, 200);
+                this.hoverOver = true;
+            }
+        }
+        btn.onMouseLeave = function(e) {
+            if (this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1, 200);
+                this.hoverOver = false;
             }
         }
         btn.onMouseDown = function(e) {
@@ -1373,6 +1478,14 @@ window.onload = function() {
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
         return tweenScale;
+    }
+    var tweenToPosition = function(obj, xx, yy, time) {
+        // Define and start a tween to move the object
+        var tweenPos = new TWEEN.Tween(obj.translation)
+            .to({ x: xx, y: yy }, time)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        return tweenPos;
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
@@ -1486,12 +1599,23 @@ window.onload = function() {
     // Interactivity code from https://two.js.org/examples/advanced-anchors.html
     function addInteraction(shape) {
 
-        var offset = shape.parent.translation; //offset of the 'two' canvas in the window (I think). not the shape's position in the window
+        var offset = shape.parent.translation; //translation relative to parent (ie if in group, where coordinates of a child are relative to the parent)
         var localClickPos = {x: 0, y: 0};
         var dragDist = 0; //differentiate a click from a drag (and give the user a bit of buffer) by measuring the distance the mouse moves during a mousedown-mouseup interval
         
+        var correctE = function(e) {
+            // Correct e to account for TWO's offset and scaling in the window
+            var SVGscale = $(two.renderer.domElement).height() / two.height;
+            var SVGorigin = $('#main-container')[0].getBoundingClientRect();
+            e.clientX -= SVGorigin.left;
+            e.clientX /= SVGscale;
+            e.clientY -= SVGorigin.top;
+            e.clientY /= SVGscale;
+        }
+        
         var drag = function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist += 1;
             
             //Call the shape's dragging method, if it has one
@@ -1509,6 +1633,7 @@ window.onload = function() {
         };
         var dragStart = function(e) {
             e.preventDefault();
+            correctE(e);
             localClickPos = {x: e.clientX-shape.translation.x, y: e.clientY-shape.translation.y};
             dragDist = 0;
             $(window)
@@ -1521,6 +1646,7 @@ window.onload = function() {
         var touchStart = function(e) {
             e.preventDefault();
             var touch = e.originalEvent.changedTouches[0];
+            correctE(e);
             localClickPos = {x: touch.pageX-shape.translation.x, y: touch.pageY-shape.translation.y}
             dragDist = 0;
             $(window)
@@ -1533,6 +1659,7 @@ window.onload = function() {
         };
         var dragEnd = function(e) {
             e.preventDefault();
+            correctE(e);
             $(window)
                 .unbind('mousemove', drag)
                 .unbind('mouseup', dragEnd);
@@ -1543,6 +1670,7 @@ window.onload = function() {
         };
         var touchEnd = function(e) {
             e.preventDefault();
+            correctE(e);
             $(window)
                 .unbind('touchmove', touchDrag)
                 .unbind('touchend', touchEnd);
@@ -1554,24 +1682,21 @@ window.onload = function() {
             return false; //<--- anyone know why this returns false?
         };
         var enter = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse enter method, if it has one
             if (typeof shape.onMouseEnter === 'function') {shape.onMouseEnter(e, offset, localClickPos);}
         };
         var leave = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse leave method, if it has one
             if (typeof shape.onMouseLeave === 'function') {shape.onMouseLeave(e, offset, localClickPos);}
         };
-        var move = function(e) {
-            e.preventDefault();
-            
-            //Call the shape's mouse move method, if it has one
-            if (typeof shape.onMouseMove === 'function') {shape.onMouseMove(e, offset, localClickPos);}
-        };
         var hover = function(e) {
+            correctE(e);
             e.preventDefault();
             
             //Call the shape's mouse move method, if it has one
@@ -1583,35 +1708,36 @@ window.onload = function() {
         $(shape._renderer.elem)
             .css({
                 'cursor': 'move',
-                //'pointer-events': 'none'
             })
             .bind('mousedown', dragStart)
+            .bind('mouseup', dragEnd)
             .bind('touchstart', touchStart)
             .bind('mouseenter', enter)
             .bind('mouseleave', leave)
-            .bind('mousemove', move)
             .bind('mouseover', hover);
-            //.bind('mouseover', function() {console.log('over')})
-            //.bind('dragover', function() {console.log('drag over')});
 
         $(shape._renderer.elem).dblclick(function(e){
             e.preventDefault();
+            correctE(e);
             if (typeof shape.onDoubleClick === 'function') {shape.onDoubleClick(e,shape);}
         });
         
         // Define global mouse events
         document.addEventListener('mousemove', function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist += 1;
             if (typeof shape.onGlobalMouseMove === 'function') {shape.onGlobalMouseMove(e);}
         });
         document.addEventListener('mouseup', function(e) {
             e.preventDefault();
+            correctE(e);
             if (typeof shape.onGlobalMouseUp === 'function') {shape.onGlobalMouseUp(e);}
             if (!dragDist < 5) {if (typeof shape.onGlobalClick === 'function') {shape.onGlobalClick(e);}}
         });
         document.addEventListener('mousedown', function(e) {
             e.preventDefault();
+            correctE(e);
             dragDist = 0;
             if (typeof shape.onGlobalMouseDown === 'function') {shape.onGlobalMouseDown(e);}
         });
@@ -1619,13 +1745,20 @@ window.onload = function() {
 
     // Global time, in seconds
     var START_TIME = new Date();
-    var PREV_TIME = 0;
+    var REAL_TIME = START_TIME;
+    var REAL_PREV_TIME = 0;
+    var REAL_dt = 0;
     var TIME = 0;
     var dt = 0;
     function updateTime() {
-        TIME = (new Date() - START_TIME) / 1000;
-        dt = TIME-PREV_TIME;
-        PREV_TIME = TIME;
+        REAL_TIME = (new Date() - START_TIME) / 1000;
+        REAL_dt = REAL_TIME-REAL_PREV_TIME;
+        REAL_PREV_TIME = REAL_TIME;
+        
+        if (!PAUSED) {
+            dt = REAL_dt;
+            TIME += dt;
+        }
     }
    
     // Initialize and create the UI
