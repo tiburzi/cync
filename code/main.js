@@ -351,34 +351,30 @@ window.onload = function() {
         addInteraction(logo);
         setCursor(logo, 'default');
         
-        logo.onGlobalMouseMove = function(e) {
-            // Check if mouse is over the logo
-            logo.boundingBox = logo.bbox.getBoundingClientRect(false);
-            if (isOverRectangle(e.clientX, e.clientY, this.boundingBox.left, this.boundingBox.top, this.boundingBox.right, this.boundingBox.bottom)) {
-                if (!this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1.2, 200);
-                    var textTween = new TWEEN.Tween(this.text)
-                        .to({ opacity: 1 }, 200)
-                        .start();
-                    this.bbox.scale = 2;
-                    this.hoverOver = true;
-                    logo.image.fill = 'rgba(90, 90, 90, 1)';
-                    logo.dot.fill = PALETTE[3];
-                }
-            } else {
-                if (this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1, 200);
-                    var textTween = new TWEEN.Tween(this.text)
-                        .to({ opacity: 0 }, 200)
-                        .start();
-                    this.bbox.scale = 1;
-                    this.hoverOver = false;
-                    logo.image.fill = GRAY;
-                    logo.dot.fill = GRAY;
-                }
+        logo.onMouseEnter = function(e) {
+            if (!this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1.2, 200);
+                var textTween = new TWEEN.Tween(this.text)
+                    .to({ opacity: 1 }, 200)
+                    .start();
+                this.bbox.scale = 2;
+                this.hoverOver = true;
+                logo.image.fill = 'rgba(90, 90, 90, 1)';
+                logo.dot.fill = PALETTE[3];
             }
         }
-        
+        logo.onMouseLeave = function(e) {
+            if (this.hoverOver && !this.clicked) {
+                tweenToScale(this, 1, 200);
+                var textTween = new TWEEN.Tween(this.text)
+                    .to({ opacity: 0 }, 200)
+                    .start();
+                this.bbox.scale = 1;
+                this.hoverOver = false;
+                logo.image.fill = GRAY;
+                logo.dot.fill = GRAY;
+            }
+        }
     }
 
     function SetupInitialState() {
@@ -1267,7 +1263,7 @@ window.onload = function() {
         addInteraction(slider);
         setCursor(slider, 'pointer');
         slider.onMouseDown = slider.onDrag = function(e) {
-            var top = $(slider.line._renderer.elem).offset().top;
+            var top = $(slider.line._renderer.elem).offset().top - $('#main-container')[0].getBoundingClientRect().top;
             var scalar = slider.scale*slider.parent.scale;
             var val = Math.max(0, Math.min(1, 1-(e.clientY-top) / (length*scalar) ));
             slider.setValue(val);
