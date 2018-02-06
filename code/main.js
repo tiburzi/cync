@@ -821,37 +821,6 @@ window.onload = function() {
                 })
                 .start();
         }
-        /*note.onGlobalMouseMove = function(e, offset, localClickPos) {
-            // If on a sampler, make a growing animation
-            if (this.onSampler && !this.dragging) {
-                setCursor(this, "hand");
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2.5*this.radius)) {
-                    if (!this.hovering) {
-                        this.hovering = true;
-                        tweenToScale(this, PHI, 200);
-                    }
-                } else {
-                    if (!this.selected && this.hovering) {
-                        this.hovering = false;
-                        tweenToScale(this, 1, 200);
-                    }
-                }
-            }
-            
-            // If on an orbit, make the orbit's polygon appear
-            if (this.orbit != null) {
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.radius)) {
-                    if (!this.hovering) {
-                        this.hovering = true;
-                        this.orbit.polygon.appear();
-                    }
-                } else {
-                    if (this.hovering) {
-                        this.hovering = false;
-                    }
-                }
-            }
-        }*/
         note.onMouseEnter = function(e) {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
@@ -1293,6 +1262,8 @@ window.onload = function() {
     }
     
     function CreateSliderButton(x, y, r, h, imageName) {
+        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
+        
         var bg = two.makeLine(0, 0, 0, 0);
         bg.linewidth = 2*r;
         bg.cap = "round";
@@ -1302,14 +1273,12 @@ window.onload = function() {
         slider.fill = bg.stroke;
         slider.stroke = LT_GRAY;
         
-        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
-        
         var btn = CreateButton(0, 0, r, imageName);
         btn.onMouseEnter = btn.onMouseLeave = function(e) {
             // Overwrite default function
         }
         
-        var sliderBtn = two.makeGroup(bg, btn, slider, mask);
+        var sliderBtn = two.makeGroup(bg, slider, btn, mask);
         sliderBtn.translation.set(x, y);
         sliderBtn.btn = btn;
         sliderBtn.slider = slider;
@@ -1410,22 +1379,8 @@ window.onload = function() {
             this.image.children[0].translation.x = xoff;
             this.image.children[0].translation.y = yoff;
         }
-        btn.callBack = function() {} // empty function by default
-        btn.callBackUp = function() {} // empty function by default
-        /*btn.onGlobalMouseMove = function(e) {
-            // Check if mouse is over the button
-            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
-                if (!this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1.2, 200);
-                    this.hoverOver = true;
-                }
-            } else {
-                if (this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1, 200);
-                    this.hoverOver = false;
-                }
-            }
-        }*/
+        btn.callBack = function() {} // empty function by default, individually set by children
+        btn.callBackUp = function() {} // empty function by default, individually set by children
         btn.onMouseEnter = function(e) {
             if (!this.hoverOver && !this.clicked) {
                 tweenToScale(this, 1.2, 200);
