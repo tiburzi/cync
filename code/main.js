@@ -65,6 +65,7 @@ window.onload = function() {
     var NOTE_RADIUS = 12;
     var CTL_RADIUS = 36;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
+    var DRAGGING_POLYGON = false;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f0f0f0';
@@ -236,8 +237,6 @@ window.onload = function() {
             PAUSED = !this.on;
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
-            /*if (PAUSED) {TIME = (new Date() - START_TIME) / 1000;}
-            else {PREV_TIME = (new Date() - START_TIME) / 1000;}*/
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -384,7 +383,7 @@ window.onload = function() {
         var stateData = state.load();
         //var stateData = null; //uncomment this line to prevent state loading while working
         
-        //This will either load from URL or just create the default orbits
+        // This will either load from URL or just create the default orbits
         if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
@@ -393,18 +392,22 @@ window.onload = function() {
             // Snap orbit radii upon creation
             for (var i=0; i<Orbits.length; i++) {
                 setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
-                Orbits[i].polygon.update();
                 Orbits[i].trigger.sync();
             }
             
-            //load in note data
+            // Load in note data
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
                 var orbit = Orbits[n.oIndex];
                 orbit.addNewNote(n.theta, sampler);
-             })
+             });
             
-            //load tempo data
+            // Update polygons now that notes are loaded
+            Orbits.forEach(function(o) {
+                o.polygon.update();
+            });
+            
+            // Load tempo data
             if (typeof stateData.tempo == "number" && stateData.tempo != -1) {
                 TEMPO = stateData.tempo;
             }
@@ -667,7 +670,9 @@ window.onload = function() {
         
         polygon.prevMousePos = new Two.Vector(0, 0);
         polygon.hover = false;
+        polygon.active = false;
         polygon.dragging = false;
+        polygon.fadeTween = null;
         polygon.maxOpacity = 0.2; //this is what we tween to
         polygon.op = 0; //custom variable for opacity (see method setOpacity())
         
@@ -697,20 +702,24 @@ window.onload = function() {
             });
         polygon.appear = function() {
             if (SHOW_POLYGONS) {
-                this.tweenFade.to({ op:this.maxOpacity }, 500)
+                if (this.fadeTween != null) {this.fadeTween.stop();} //stop any fade tweens not yet finished
+                this.fadeTween = this.tweenFade.to({ op:this.maxOpacity }, 500)
                     .onComplete(function() {
                         //do nothing: we need an placeholder function to cancel the function set in polygon.disappear()
                     })
                     .start();
                 $(this._renderer.elem).css({'cursor': 'move'});
                 this.fill = this.stroke = '#aaaaaa';
+                this.active = true;
             }
         }
         polygon.disappear = function() {
-            this.tweenFade.to({ op:0 }, 500)
+            if (this.fadeTween != null) {this.fadeTween.stop();} //stop any fade tweens not yet finished
+            $(this._renderer.elem).css({'cursor': 'default'});
+            this.fadeTween = this.tweenFade.to({ op:0 }, 500)
                 .onComplete(function() {
-                    $(this._object._renderer.elem).css({'cursor': 'default'});
-                    this._object.fill = this._object.stroke = 'none';
+                    this._object.fill = this._object.stroke = 'none'; //make the polygon completely un-interactable (prevents accidental activation when manipulating a different polygon)
+                    this._object.active = false;
                 })
                 .start();
         }
@@ -718,9 +727,10 @@ window.onload = function() {
         addInteraction(polygon);
         
         polygon.onMouseDown = function(e, offset, localClickPos) {
-            if (this.op > 0) {
+            if (this.op > .5*this.maxOpacity) {
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
                 this.dragging = true;
+                DRAGGING_POLYGON = true;
             }
         }
         polygon.onDrag = function(e, offset, localClickPos) {
@@ -737,36 +747,31 @@ window.onload = function() {
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
             }
         }
-        polygon.onMouseUp = function(e, offset, localClickPos) {
-            polygon.fill = polygon.stroke = 'gray';
-            this.dragging = false;
-            
-            // Update the orbit's notes' theta values and sort them
-            _.each(this.orbit.notes, function(n) {
-                n.theta = Util.pointDirection(CENTER, n.translation); //easiest way to get theta in range [-pi, pi)
-            });
-            polygon.orbit.sortNotes();
-
-            UpdateState();
-        }
-        polygon.onMouseHover = function() {
-            this.hover = true;
-        }
         polygon.onMouseEnter = function() {
-            if (this.op > .5) {
-                /* The mouse *just* left the polygon, and it is fading away.
-                   So, make it appear again. */
-                this.appear();
+            this.hover = true;
+            if (this.op > .5*this.maxOpacity) {
+                this.appear(); // The mouse *just* left the polygon, and it is fading away. So, make it appear again.
             }
         }
         polygon.onMouseLeave = function(e, offset, localClickPos) {
-            polygon.hover = false;
-            if (!this.dragging) {this.disappear();}
+            this.hover = false;
+            if (!this.dragging && this.active) {this.disappear();}
         }
-        polygon.onGlobalMouseUp = function(e) {
-            if (polygon.dragging && !polygon.hover) {
+        polygon.onGlobalMouseUp = polygon.onMouseUp = function(e) {
+            if (polygon.dragging) {
                 polygon.dragging = false;
-                polygon.disappear();
+                DRAGGING_POLYGON = false;
+                polygon.fill = polygon.stroke = 'gray';
+                
+                // Update the orbit's notes' theta values, and sort
+                _.each(polygon.orbit.notes, function(n) { n.theta = Util.pointDirection(CENTER, n.translation); });
+                polygon.orbit.sortNotes();
+                UpdateState();
+                
+                // If not still hovering, polygon goes bye-bye
+                if (!polygon.hover) {
+                    polygon.disappear();
+                }
             }
         };
         
@@ -833,7 +838,7 @@ window.onload = function() {
             
             // If on an orbit, make the orbit's polygon appear
             if (this.orbit != null) {
-                if (!this.hovering) {
+                if (!this.hovering && !DRAGGING_POLYGON) {
                     this.hovering = true;
                     this.orbit.polygon.appear();
                 }
@@ -852,6 +857,11 @@ window.onload = function() {
             if (this.orbit != null) {
                 if (this.hovering) {
                     this.hovering = false;
+                    setTimeout( function() {
+                        if (!note.orbit.polygon.hover) {
+                            note.orbit.polygon.disappear();
+                        }
+                    }, 1);
                 }
             }
         }
