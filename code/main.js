@@ -65,6 +65,7 @@ window.onload = function() {
     var NOTE_RADIUS = 12;
     var CTL_RADIUS = 36;
     var SAMPLER_RADIUS = NOTE_RADIUS+LINE_W;
+    var DRAGGING_POLYGON = false;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f0f0f0';
@@ -236,8 +237,6 @@ window.onload = function() {
             PAUSED = !this.on;
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
-            /*if (PAUSED) {TIME = (new Date() - START_TIME) / 1000;}
-            else {PREV_TIME = (new Date() - START_TIME) / 1000;}*/
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -312,7 +311,8 @@ window.onload = function() {
         
         var image_bbox = image.getBoundingClientRect(false);
         var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
-        bbox.fill = '#ffffff00'; //make invisible but retain hover-ability
+        bbox.opacity = .001; //makes invisible while retaining hover-ability
+        bbox.fill = LT_GRAY; //in case opacity trick doesn't work
         bbox.stroke = 'none';
         
         var t1 = two.makeText("a cyclic drum machine by", 0, 25);
@@ -383,7 +383,7 @@ window.onload = function() {
         var stateData = state.load();
         //var stateData = null; //uncomment this line to prevent state loading while working
         
-        //This will either load from URL or just create the default orbits
+        // This will either load from URL or just create the default orbits
         if (stateData != null) {
             stateData.orbits.forEach(function(radius) {
                 CreateOrbit(radius);
@@ -392,18 +392,22 @@ window.onload = function() {
             // Snap orbit radii upon creation
             for (var i=0; i<Orbits.length; i++) {
                 setRadius(Orbits[i], Math.max(1, Math.round(Orbits[i].radius / RADIUS_SNAP)) * RADIUS_SNAP);
-                Orbits[i].polygon.update();
                 Orbits[i].trigger.sync();
             }
             
-            //load in note data
+            // Load in note data
             stateData.notes.forEach(function(n) {
                 var sampler = Samplers[n.sIndex];
                 var orbit = Orbits[n.oIndex];
                 orbit.addNewNote(n.theta, sampler);
-             })
+             });
             
-            //load tempo data
+            // Update polygons now that notes are loaded
+            Orbits.forEach(function(o) {
+                o.polygon.update();
+            });
+            
+            // Load tempo data
             if (typeof stateData.tempo == "number" && stateData.tempo != -1) {
                 TEMPO = stateData.tempo;
             }
@@ -560,8 +564,8 @@ window.onload = function() {
             
             var note = CreateNote(X,Y);
             note.sampler = sampler;
-            note.onSampler = false;
-            note.fill = sampler.color;
+            note.removeFromSampler();
+            note.setColor(sampler.color);
             note.theta = angle;
             note.prevOrbit = note.orbit = this;
             this.notes.push(note);
@@ -656,7 +660,7 @@ window.onload = function() {
         */
         var polygon = new Two.Path();
         two.add(polygon);
-        polygon.fill = polygon.stroke = '#aaaaaa';
+        polygon.fill = polygon.stroke = 'none';
         polygon.linewidth = 2*NOTE_RADIUS+10;
         polygon.join = 'round';
         polygon.cap = 'round';
@@ -666,7 +670,9 @@ window.onload = function() {
         
         polygon.prevMousePos = new Two.Vector(0, 0);
         polygon.hover = false;
+        polygon.active = false;
         polygon.dragging = false;
+        polygon.fadeTween = null;
         polygon.maxOpacity = 0.2; //this is what we tween to
         polygon.op = 0; //custom variable for opacity (see method setOpacity())
         
@@ -696,20 +702,24 @@ window.onload = function() {
             });
         polygon.appear = function() {
             if (SHOW_POLYGONS) {
-                this.tweenFade.to({ op:this.maxOpacity }, 500)
+                if (this.fadeTween != null) {this.fadeTween.stop();} //stop any fade tweens not yet finished
+                this.fadeTween = this.tweenFade.to({ op:this.maxOpacity }, 500)
                     .onComplete(function() {
                         //do nothing: we need an placeholder function to cancel the function set in polygon.disappear()
                     })
                     .start();
                 $(this._renderer.elem).css({'cursor': 'move'});
-                this.fill = this.stroke = '#aaaaaa';
+                this.fill = this.stroke = '#b0b0b0';
+                this.active = true;
             }
         }
         polygon.disappear = function() {
-            this.tweenFade.to({ op:0 }, 500)
+            if (this.fadeTween != null) {this.fadeTween.stop();} //stop any fade tweens not yet finished
+            $(this._renderer.elem).css({'cursor': 'default'});
+            this.fadeTween = this.tweenFade.to({ op:0 }, 500)
                 .onComplete(function() {
-                    $(this._object._renderer.elem).css({'cursor': 'default'});
-                    this._object.fill = this._object.stroke = 'none';
+                    this._object.fill = this._object.stroke = 'none'; //make the polygon completely un-interactable (prevents accidental activation when manipulating a different polygon)
+                    this._object.active = false;
                 })
                 .start();
         }
@@ -717,14 +727,15 @@ window.onload = function() {
         addInteraction(polygon);
         
         polygon.onMouseDown = function(e, offset, localClickPos) {
-            if (this.op > 0) {
+            if (this.op > .5*this.maxOpacity) {
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
                 this.dragging = true;
+                DRAGGING_POLYGON = true;
             }
         }
         polygon.onDrag = function(e, offset, localClickPos) {
             if (this.dragging) {
-                polygon.fill = polygon.stroke = 'red';
+                polygon.fill = polygon.stroke = PALETTE[3];
                 var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
                 var dist = this.orbit.radius;
                 _.each(this.orbit.notes, function(n) {
@@ -736,36 +747,31 @@ window.onload = function() {
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
             }
         }
-        polygon.onMouseUp = function(e, offset, localClickPos) {
-            polygon.fill = polygon.stroke = 'gray';
-            this.dragging = false;
-            
-            // Update the orbit's notes' theta values and sort them
-            _.each(this.orbit.notes, function(n) {
-                n.theta = Util.pointDirection(CENTER, n.translation); //easiest way to get theta in range [-pi, pi)
-            });
-            polygon.orbit.sortNotes();
-
-            UpdateState();
-        }
-        polygon.onMouseHover = function() {
-            this.hover = true;
-        }
         polygon.onMouseEnter = function() {
-            if (this.op > .5) {
-                /* The mouse *just* left the polygon, and it is fading away.
-                   So, make it appear again. */
-                this.appear();
+            this.hover = true;
+            if (this.op > .5*this.maxOpacity) {
+                this.appear(); // The mouse *just* left the polygon, and it is fading away. So, make it appear again.
             }
         }
         polygon.onMouseLeave = function(e, offset, localClickPos) {
-            polygon.hover = false;
-            if (!this.dragging) {this.disappear();}
+            this.hover = false;
+            if (!this.dragging && this.active) {this.disappear();}
         }
-        polygon.onGlobalMouseUp = function(e) {
-            if (polygon.dragging && !polygon.hover) {
+        polygon.onGlobalMouseUp = polygon.onMouseUp = function(e) {
+            if (polygon.dragging) {
                 polygon.dragging = false;
-                polygon.disappear();
+                DRAGGING_POLYGON = false;
+                polygon.fill = polygon.stroke = '#b0b0b0';
+                
+                // Update the orbit's notes' theta values, and sort
+                _.each(polygon.orbit.notes, function(n) { n.theta = Util.pointDirection(CENTER, n.translation); });
+                polygon.orbit.sortNotes();
+                UpdateState();
+                
+                // If not still hovering, polygon goes bye-bye
+                if (!polygon.hover) {
+                    polygon.disappear();
+                }
             }
         };
         
@@ -790,11 +796,20 @@ window.onload = function() {
         /*
             Drag notes onto and around orbits to create the groove structure.
         */
-        var note = two.makeCircle(x, y, NOTE_RADIUS);
-        note.fill = 'red';
-        note.stroke = 'none';
-        note.linewidth = 0;
-        note.radius = NOTE_RADIUS;
+        var clickBox = two.makeCircle(0, 0, 2*NOTE_RADIUS);
+        clickBox.stroke = 'none';
+        clickBox.opacity = 0;
+        clickBox.fill = LT_GRAY; //back-up in case opacity doesn't work
+        clickBox.linewidth = 0;
+        clickBox.radius = 2*NOTE_RADIUS;
+        
+        var actualNote = two.makeCircle(0, 0, NOTE_RADIUS);
+        actualNote.stroke = 'none';
+        actualNote.linewidth = 0;
+        actualNote.radius = NOTE_RADIUS;
+        
+        var note = two.makeGroup(clickBox, actualNote);
+        note.translation.set(x, y);
         note.orbit = null;
         note.prevOrbit = null; //used when returning to the note's previous location
         note.sampler = null; //set by the sampler when it creates the note
@@ -805,6 +820,8 @@ window.onload = function() {
         note.hovering = false;
         note.dragging = false;
         note.selected = false;
+        note.samplerClickBox = clickBox;
+        note.actualNote = actualNote;
 
         addInteraction(note);
 
@@ -812,7 +829,7 @@ window.onload = function() {
         LAYERS['notes'].add(note);
         
         note.tweenToRadius = function(r) {
-            var tweenRadius = new TWEEN.Tween(this)
+            var tweenRadius = new TWEEN.Tween(actualNote)
                 .to({ radius:r }, 200)
                 .easing(TWEEN.Easing.Cubic.Out)
                 .onUpdate(function() {
@@ -820,37 +837,6 @@ window.onload = function() {
                 })
                 .start();
         }
-        /*note.onGlobalMouseMove = function(e, offset, localClickPos) {
-            // If on a sampler, make a growing animation
-            if (this.onSampler && !this.dragging) {
-                setCursor(this, "hand");
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, 2.5*this.radius)) {
-                    if (!this.hovering) {
-                        this.hovering = true;
-                        tweenToScale(this, PHI, 200);
-                    }
-                } else {
-                    if (!this.selected && this.hovering) {
-                        this.hovering = false;
-                        tweenToScale(this, 1, 200);
-                    }
-                }
-            }
-            
-            // If on an orbit, make the orbit's polygon appear
-            if (this.orbit != null) {
-                if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.radius)) {
-                    if (!this.hovering) {
-                        this.hovering = true;
-                        this.orbit.polygon.appear();
-                    }
-                } else {
-                    if (this.hovering) {
-                        this.hovering = false;
-                    }
-                }
-            }
-        }*/
         note.onMouseEnter = function(e) {
             // If on a sampler, make a growing animation
             if (this.onSampler && !this.dragging) {
@@ -863,7 +849,7 @@ window.onload = function() {
             
             // If on an orbit, make the orbit's polygon appear
             if (this.orbit != null) {
-                if (!this.hovering) {
+                if (!this.hovering && !DRAGGING_POLYGON) {
                     this.hovering = true;
                     this.orbit.polygon.appear();
                 }
@@ -882,6 +868,11 @@ window.onload = function() {
             if (this.orbit != null) {
                 if (this.hovering) {
                     this.hovering = false;
+                    setTimeout( function() {
+                        if (!note.orbit.polygon.hover) {
+                            note.orbit.polygon.disappear();
+                        }
+                    }, 1);
                 }
             }
         }
@@ -988,7 +979,7 @@ window.onload = function() {
                // If dragged directly from a sampler, tell the sampler its note has been removed
                 if (this.onSampler == true) {
                     this.sampler.hasNote = false;
-                    this.onSampler = false;
+                    this.removeFromSampler();
                 }
                 
                 // Delete this note
@@ -999,7 +990,7 @@ window.onload = function() {
                     // If dragged directly from a sampler, tell the sampler its note has been removed
                     if (this.onSampler == true) {
                         this.sampler.hasNote = false;
-                        this.onSampler = false;
+                        this.removeFromSampler();
                     }
                     
                     // Record the note's new orbit
@@ -1026,6 +1017,13 @@ window.onload = function() {
             this.volume = vol;
             setRadius(this, (.5+.5*vol)*NOTE_RADIUS);
         }
+        note.setColor = function(color) {
+            this.actualNote.fill = color;
+        }
+        note.removeFromSampler = function() {
+            this.onSampler = false;
+            this.remove(this.samplerClickBox);
+        }
         note.updateTheta = function() {
             if (this.orbit != null) {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
@@ -1045,6 +1043,7 @@ window.onload = function() {
             if (index > -1) {Notes.splice(index, 1);}
             LAYERS['notes'].remove(this);
             two.remove(this.parameter);
+            two.remove(this.samplerClickBox);
             two.remove(this);
         }
         
@@ -1119,8 +1118,7 @@ window.onload = function() {
             if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
-                note.onSampler = true;
-                note.fill = this.color;
+                note.setColor(this.color);
                 this.hasNote = true;
             }
         }
@@ -1292,6 +1290,8 @@ window.onload = function() {
     }
     
     function CreateSliderButton(x, y, r, h, imageName) {
+        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
+        
         var bg = two.makeLine(0, 0, 0, 0);
         bg.linewidth = 2*r;
         bg.cap = "round";
@@ -1301,14 +1301,12 @@ window.onload = function() {
         slider.fill = bg.stroke;
         slider.stroke = LT_GRAY;
         
-        var mask = two.makeRectangle(0, 0, 2*r, 2*r);
-        
         var btn = CreateButton(0, 0, r, imageName);
         btn.onMouseEnter = btn.onMouseLeave = function(e) {
             // Overwrite default function
         }
         
-        var sliderBtn = two.makeGroup(bg, btn, slider, mask);
+        var sliderBtn = two.makeGroup(bg, slider, btn, mask);
         sliderBtn.translation.set(x, y);
         sliderBtn.btn = btn;
         sliderBtn.slider = slider;
@@ -1409,22 +1407,8 @@ window.onload = function() {
             this.image.children[0].translation.x = xoff;
             this.image.children[0].translation.y = yoff;
         }
-        btn.callBack = function() {} // empty function by default
-        btn.callBackUp = function() {} // empty function by default
-        /*btn.onGlobalMouseMove = function(e) {
-            // Check if mouse is over the button
-            if (isOverCircle(e.clientX, e.clientY, this.translation.x, this.translation.y, this.circle.radius)) {
-                if (!this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1.2, 200);
-                    this.hoverOver = true;
-                }
-            } else {
-                if (this.hoverOver && !this.clicked) {
-                    tweenToScale(this, 1, 200);
-                    this.hoverOver = false;
-                }
-            }
-        }*/
+        btn.callBack = function() {} // empty function by default, individually set by children
+        btn.callBackUp = function() {} // empty function by default, individually set by children
         btn.onMouseEnter = function(e) {
             if (!this.hoverOver && !this.clicked) {
                 tweenToScale(this, 1.2, 200);
