@@ -8,7 +8,6 @@
 - redesign how orbits snap radii to be relative to one another, instead of absolute increments?
 - sliderbuttons don't work in IE or EDGE (of course) because mouseenter and mouseleave trigger simultaneously
 - add github fork link to app?
-- add logo and app instructions to readme.txt
 
 
 --- Bugs ---
@@ -82,3 +81,4 @@
 - orbits do not resize appropriately after change page size and reloading
 - when paused, if orbit is resized, the trigger does not follow
 - polish polygon interactivity and UX
+- add logo and app instructions to readme.txt
