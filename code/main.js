@@ -709,7 +709,7 @@ window.onload = function() {
                     })
                     .start();
                 $(this._renderer.elem).css({'cursor': 'move'});
-                this.fill = this.stroke = '#aaaaaa';
+                this.fill = this.stroke = '#b0b0b0';
                 this.active = true;
             }
         }
@@ -735,7 +735,7 @@ window.onload = function() {
         }
         polygon.onDrag = function(e, offset, localClickPos) {
             if (this.dragging) {
-                polygon.fill = polygon.stroke = 'red';
+                polygon.fill = polygon.stroke = PALETTE[3];
                 var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
                 var dist = this.orbit.radius;
                 _.each(this.orbit.notes, function(n) {
@@ -761,7 +761,7 @@ window.onload = function() {
             if (polygon.dragging) {
                 polygon.dragging = false;
                 DRAGGING_POLYGON = false;
-                polygon.fill = polygon.stroke = 'gray';
+                polygon.fill = polygon.stroke = '#b0b0b0';
                 
                 // Update the orbit's notes' theta values, and sort
                 _.each(polygon.orbit.notes, function(n) { n.theta = Util.pointDirection(CENTER, n.translation); });
