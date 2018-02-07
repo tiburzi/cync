@@ -1,4 +1,4 @@
-<a href="https://tiburzi.github.io/non-quantized-drums/">
+<a href="https://tiburzi.github.io/non-quantized-drums/" target="_blank">
   <img src="assets/images/cync_logo.png" alt="cync" width="400">
 </a>
 
