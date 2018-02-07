@@ -564,8 +564,8 @@ window.onload = function() {
             
             var note = CreateNote(X,Y);
             note.sampler = sampler;
-            note.onSampler = false;
-            note.fill = sampler.color;
+            note.removeFromSampler();
+            note.setColor(sampler.color);
             note.theta = angle;
             note.prevOrbit = note.orbit = this;
             this.notes.push(note);
@@ -660,7 +660,7 @@ window.onload = function() {
         */
         var polygon = new Two.Path();
         two.add(polygon);
-        polygon.fill = polygon.stroke = '#aaaaaa';
+        polygon.fill = polygon.stroke = 'none';
         polygon.linewidth = 2*NOTE_RADIUS+10;
         polygon.join = 'round';
         polygon.cap = 'round';
@@ -796,11 +796,20 @@ window.onload = function() {
         /*
             Drag notes onto and around orbits to create the groove structure.
         */
-        var note = two.makeCircle(x, y, NOTE_RADIUS);
-        note.fill = 'red';
-        note.stroke = 'none';
-        note.linewidth = 0;
-        note.radius = NOTE_RADIUS;
+        var clickBox = two.makeCircle(0, 0, 2*NOTE_RADIUS);
+        clickBox.stroke = 'none';
+        clickBox.opacity = 0;
+        clickBox.fill = LT_GRAY; //back-up in case opacity doesn't work
+        clickBox.linewidth = 0;
+        clickBox.radius = 2*NOTE_RADIUS;
+        
+        var actualNote = two.makeCircle(0, 0, NOTE_RADIUS);
+        actualNote.stroke = 'none';
+        actualNote.linewidth = 0;
+        actualNote.radius = NOTE_RADIUS;
+        
+        var note = two.makeGroup(clickBox, actualNote);
+        note.translation.set(x, y);
         note.orbit = null;
         note.prevOrbit = null; //used when returning to the note's previous location
         note.sampler = null; //set by the sampler when it creates the note
@@ -811,6 +820,8 @@ window.onload = function() {
         note.hovering = false;
         note.dragging = false;
         note.selected = false;
+        note.samplerClickBox = clickBox;
+        note.actualNote = actualNote;
 
         addInteraction(note);
 
@@ -818,7 +829,7 @@ window.onload = function() {
         LAYERS['notes'].add(note);
         
         note.tweenToRadius = function(r) {
-            var tweenRadius = new TWEEN.Tween(this)
+            var tweenRadius = new TWEEN.Tween(actualNote)
                 .to({ radius:r }, 200)
                 .easing(TWEEN.Easing.Cubic.Out)
                 .onUpdate(function() {
@@ -968,7 +979,7 @@ window.onload = function() {
                // If dragged directly from a sampler, tell the sampler its note has been removed
                 if (this.onSampler == true) {
                     this.sampler.hasNote = false;
-                    this.onSampler = false;
+                    this.removeFromSampler();
                 }
                 
                 // Delete this note
@@ -979,7 +990,7 @@ window.onload = function() {
                     // If dragged directly from a sampler, tell the sampler its note has been removed
                     if (this.onSampler == true) {
                         this.sampler.hasNote = false;
-                        this.onSampler = false;
+                        this.removeFromSampler();
                     }
                     
                     // Record the note's new orbit
@@ -1006,6 +1017,13 @@ window.onload = function() {
             this.volume = vol;
             setRadius(this, (.5+.5*vol)*NOTE_RADIUS);
         }
+        note.setColor = function(color) {
+            this.actualNote.fill = color;
+        }
+        note.removeFromSampler = function() {
+            this.onSampler = false;
+            this.remove(this.samplerClickBox);
+        }
         note.updateTheta = function() {
             if (this.orbit != null) {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
@@ -1025,6 +1043,7 @@ window.onload = function() {
             if (index > -1) {Notes.splice(index, 1);}
             LAYERS['notes'].remove(this);
             two.remove(this.parameter);
+            two.remove(this.samplerClickBox);
             two.remove(this);
         }
         
@@ -1099,8 +1118,7 @@ window.onload = function() {
             if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
-                note.onSampler = true;
-                note.fill = this.color;
+                note.setColor(this.color);
                 this.hasNote = true;
             }
         }
