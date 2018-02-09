@@ -82,3 +82,4 @@
 - when paused, if orbit is resized, the trigger does not follow
 - polish polygon interactivity and UX
 - add logo and app instructions to readme.txt
+- rename repo to '...cync'
