@@ -6,7 +6,7 @@
 
 <br>
 
-A cyclic drum machine for experimenting with non-quantized grooves. Click here to run the app: <a href="https://tiburzi.github.io/non-quantized-drums/" target="blank">Launch App</a>
+A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://tiburzi.github.io/non-quantized-drums/" target="blank">Launch App</a>
 
 <br>
 
