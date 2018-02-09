@@ -68,7 +68,7 @@ window.onload = function() {
     var DRAGGING_POLYGON = false;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(190,190,190,1)';
-    var LT_GRAY = '#f0f0f0';
+    var LT_GRAY = '#f3f3f3';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
 
     function UpdateState() {
