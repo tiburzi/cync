@@ -24,7 +24,7 @@ Representing these grooves as overlapping cycles reveals their underlying patter
 * `assets/` is all the sound & image files.
 
 And finally:
-* `development/` is all the miscellaneous design notes and documents.
+* `dev/` is all the miscellaneous design notes and documents.
 
 <br>
 
