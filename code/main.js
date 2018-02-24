@@ -737,11 +737,11 @@ window.onload = function() {
             if (this.dragging) {
                 polygon.fill = polygon.stroke = PALETTE[3];
                 var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
-                var dist = this.orbit.radius;
                 _.each(this.orbit.notes, function(n) {
                     n.theta += dtheta;
-                    n.translation.x = CENTER.x + Math.cos(n.theta) * dist;
-                    n.translation.y = CENTER.y + Math.sin(n.theta) * dist;
+                    if (n.theta > Math.PI)  {n.theta -= 2*Math.PI;}
+                    if (n.theta < -Math.PI) {n.theta += 2*Math.PI;}
+                    n.updatePos();
                 });
                 this.update();
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
@@ -1029,6 +1029,13 @@ window.onload = function() {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
                 this.orbit.sortNotes();
             }
+        }
+        note.updatePos = function() {
+            // Update note's parameter object
+            var dist = this.orbit.radius;
+            var X = CENTER.x + Math.cos(this.theta) * dist;
+            var Y = CENTER.y + Math.sin(this.theta) * dist;
+            note.translation.set(X, Y);
         }
         note.update = function() {
             // Update note's parameter object
