@@ -190,7 +190,10 @@ window.onload = function() {
                 return Samplers[Math.round(Math.random()*(SAMPLERS_MAX-1))];
             }
             
-            // Create a random configuration
+            // Set a random tempo
+            tempoBtn.slider.setValue(.2+.5*Math.random());
+            
+            // Create a random configuration of notes
             var maxNotes = 6+Math.round(Math.random()*5);
             var totalNotes = 0;
             while(Orbits.length > 0) { Orbits[0].destroy(); }
@@ -215,19 +218,22 @@ window.onload = function() {
                         notes --;
                         totalNotes ++;
                     }
-                    o.polygon.update();
                 }
             }
             
-            // Remove any orbits that didn't get any notes
+            // Check all the orbits
             for (var i=0; i<Orbits.length; i++) {
                 if (Orbits[i].notes.length == 0) {
+                    // Remove this orbit because it has no notes
                     Orbits[i].destroy();
                     i--;
+                } else {
+                    // Keeping the orbit, so make sure it's ready to go
+                    o.polygon.update();
+                    o.trigger.sync();
                 }
             }
             
-            tempoBtn.slider.setValue(.2+.5*Math.random());
             UpdateState();
         };
         LAYERS['hud'].add(randomizeBtn);
