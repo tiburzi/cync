@@ -611,11 +611,7 @@ window.onload = function() {
             
             // Rotate the trigger
             if (this.rotate == true) {
-                // Set a new angle theta
-                var dTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * dt);
-                var newTheta = oldTheta + dTheta;
-                this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
-                this._setRotation();
+                this.sync();
                 
                 // Play notes that the trigger just passed
                 for (var i=0; i<this.orbit.notes.length; i++) {
@@ -639,8 +635,8 @@ window.onload = function() {
             this._updatePosition();
         }
         trigger.sync = function() {
-            // Resync the trigger according to the global time. Needs to happen if orbit is resized, frozen, or other such nonsense.
-            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI/2;
+            // Resync the trigger according to the global time
+            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * TIME - Math.PI/2;
             this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
             this._setRotation();
             this._updatePosition();
@@ -1754,7 +1750,7 @@ window.onload = function() {
         
         if (!PAUSED) {
             dt = REAL_dt;
-            TIME += dt;
+            TIME += dt * (TEMPO/60);
         }
     }
    
