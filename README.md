@@ -38,6 +38,6 @@ This will run the server on localhost:8000 so just visit address that in your br
 ## Credits
 [Jon Tiburzi](http://jontiburzi.com/) - programming and design
 
-[Terrane](http://terranemusic.com/) - concept and design
+[Terrane](https://www.facebook.com/terranemusic/) - concept and design
 
 [Omar Shehata](http://omarshehata.me/) - guidance and additional programming
