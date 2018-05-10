@@ -1,4 +1,4 @@
-<a href="https://tiburzi.github.io/cync/" target="_blank">
+<a href="https://cync.app/" target="_blank">
   <img src="assets/images/cync_logo.png" alt="cync" width="400">
 </a>
 
@@ -6,7 +6,7 @@
 
 <br>
 
-A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://tiburzi.github.io/cync/" target="blank">Launch App</a>
+A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://cync.app/" target="blank">Launch App</a>
 
 <br>
 
