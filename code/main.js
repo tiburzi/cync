@@ -70,6 +70,7 @@ window.onload = function() {
     var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f3f3f3';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
+    var GITHUB_URL = 'https://github.com/tiburzi/cync';
 
     function UpdateState() {
         // Just a helper function to make it easy to update parameters of state without changing lots of lines of code 
@@ -314,8 +315,20 @@ window.onload = function() {
         image.translation.set(0, -20);
         image.rotation = Math.PI;
         image.scale = 1.5;
-        
         var image_bbox = image.getBoundingClientRect(false);
+        
+        var image_rect = two.makeRectangle(0, -0.5*image_bbox.height, image_bbox.width+20, image_bbox.height+0);
+        image_rect.opacity = .001; //makes invisible while retaining hover-ability
+        image_rect.fill = LT_GRAY; //in case opacity trick doesn't work
+        image_rect.stroke = 'none';
+        
+        var image_group = two.makeGroup(image_rect, image);
+        addInteraction(image_group);
+        setCursor(image_group, 'pointer');
+        image_group.onMouseDown = function() {
+            window.open(GITHUB_URL,'_blank');
+        }
+        
         var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
         bbox.opacity = .001; //makes invisible while retaining hover-ability
         bbox.fill = LT_GRAY; //in case opacity trick doesn't work
@@ -346,7 +359,7 @@ window.onload = function() {
         text.fill = GRAY;
         text.opacity = 0;
         
-        var logo = two.makeGroup(bbox, image, text);
+        var logo = two.makeGroup(bbox, image_group, text);
         logo.translation.set(controlsX, two.height-100);
         logo.xStart = logo.translation.x;
         logo.yStart = logo.translation.y;
