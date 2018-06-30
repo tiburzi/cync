@@ -1496,6 +1496,26 @@ window.onload = function() {
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
     }
+    var mapSampleToKey = function(sample_index) {
+        // Mapping from General MIDI Standard Drum Map: https://commons.wikimedia.org/wiki/File:GMStandardDrumMap.gif
+        // Note: this mapping is for standard MIDI, but essentially arbitrary because the user will probably reorder the notes themselves
+        switch(sample_index) {
+            case 0:
+                return 35; break; //kick -> Acoustic Bass Drum
+            case 1:
+                return 36; break; //low tom -> Low Tom
+            case 2:
+                return 40; break; //snare -> Electric Snare
+            case 3:
+                return 39; break; //clap -> Hand Clap
+            case 4:
+                return 42; break; //shaker -> Closed HiHat
+            case 5:
+                return 44; break; //hihat -> Petal HiHat
+            default:
+                return 40 + sample_index; break; //just return something unique
+        }
+    }
     var saveMIDI = function() {
         
         //Confirm there are notes to save, aborting if there are none
@@ -1511,7 +1531,7 @@ window.onload = function() {
         file.addTrack(track);
         track.setTempo(TEMPO);
         
-        // Determine MIDI length that guarentees all orbits loop and end aligned
+        // Determine MIDI length (in measures) that guarentees all orbits loop and end aligned
         var len = 1;
         for (var i=0; i<Orbits.length; i++) {
             for (var j=i+1; j<Orbits.length; j++) {
@@ -1521,8 +1541,10 @@ window.onload = function() {
             }
         }
         
-        // Compile an array of all the notes on all the orbits
-        var allNotes = [];
+        // Construct a timeline of events (each orbits' notes turning on and off)
+        // [strangely, it seems jsmidgen's addNote method doesn't allow us to start a note while another is playing]
+        var DURATION = 16; //default
+        var timeline = [];
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
             
@@ -1534,34 +1556,41 @@ window.onload = function() {
                     var n = o.notes[k];
                     var angle = n.theta<-Math.PI/2 ? n.theta+2*Math.PI : n.theta; //returns a theta between (-Pi/2, 3Pi/2]
                     var fraction = (angle+Math.PI/2)/(2*Math.PI); //returns the fraction of the note's angle on the orbit (0 at top, increases clockwise up to 1)
-                    var time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat, default=128)
-                    var noteMarker = {
+                    var precise_time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat=128, hardcoded in jsmidgen)
+                    var time = Math.round(precise_time); //jsmidgen seems to always floor() 'time', which leads to midi misalignment. So, manually use round() instead.
+                    var p = mapSampleToKey(n.sampler.index);
+                    var on = {
+                        on: true,
                         time: time,
-                        type: n.sampler.index,
+                        pitch: p
                     };
-                    allNotes.push(noteMarker);
+                    var off = {
+                        on: false,
+                        time: time + DURATION,
+                        pitch: p
+                    };
+                    timeline.push(on);
+                    timeline.push(off);
                 }
             }
         }
         
-        // Sort all notes chronologically
-        allNotes.sort(function(a,b) {
+        // Sort the timeline chronologically
+        timeline.sort(function(a,b) {
             return a.time-b.time;
         });
         
-        // Add all notes to MIDI track
+        // Add notes to MIDI track as different pitches
         var tPrev = 0;
-        var noteDur = 16; //default
-        for (var i=0; i<allNotes.length; i++) {
-            var t = allNotes[i].time;
-            var dur = noteDur;
-            
-            // Shorten note if following note is closer than noteDur
-            if (i < allNotes.length-1) {dur = Math.min(noteDur, allNotes[i+1].time-t);}
-            
-            // Add the note and record the time it finishes
-            track.addNote(0, 35+allNotes[i].type, dur, (t-tPrev));
-            tPrev = t + dur;
+        var tGlobalOffset = timeline[0].time;
+        for (var i=0; i<timeline.length; i++) {
+            var delay = timeline[i].time - tPrev - tGlobalOffset;
+            delay = Math.max(delay, 0); //just in case, prevent delay < 0, which causes jsmidgen to crash
+            if (timeline[i].on)
+                track.addNoteOn(0, timeline[i].pitch, delay);
+            else
+                track.addNoteOff(0, timeline[i].pitch, delay);
+            tPrev = timeline[i].time - tGlobalOffset;
         }
         
         /* // For testing purposes:
