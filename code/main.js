@@ -419,15 +419,16 @@ window.onload = function() {
         }
         links_group.onClick = function(e) {
             var popup = $('.popup');
+            var fadetime = 200; //ms
             var screen_darkener = $('.screen_darkener');
-            popup.show();
+            popup.fadeIn(fadetime);
             if (!PAUSED) {
                 playBtn.on = !playBtn.on;
                 playBtn.callBack();
                 //TODO -- create a global pause function that anyone can call, rather than do this ^
             }
             screen_darkener.on('click', function() {
-                popup.hide();
+                popup.fadeOut(fadetime);
             });
         }
     }
