@@ -377,6 +377,59 @@ window.onload = function() {
                 logo.dot.fill = GRAY;
             }
         }
+        
+        // Create info button
+        var links_r = 20;
+        var links_bbox = two.makeCircle(0, 0, 2*links_r);
+        links_bbox.stroke = 'none';
+        links_bbox.hoverOver = false;
+        links_bbox.opacity = .001; //makes invisible while retaining hover-ability
+        links_bbox.fill = LT_GRAY; //in case opacity trick doesn't work
+        
+        var info_circle = two.makeCircle(0, 0, links_r);
+        info_circle.fill = GRAY;
+        info_circle.stroke = 'none';
+        var info_icon = two.makeText("?", 0, 4);
+        info_icon.family = 'Comfortaa';
+        info_icon.size = 30;
+        info_icon.fill = LT_GRAY;
+        var info_icon = two.makeGroup(info_circle, info_icon);
+        
+        var links_group = two.makeGroup(links_bbox, info_icon);
+        links_group.translation.set(two.width-4*links_r, 3*links_r);
+        links_group.normal_opacity = links_group.opacity = .4;
+        links_group.bbox = links_bbox;
+        
+        addInteraction(links_group);
+        setCursor(links_group, 'pointer');
+        
+        links_group.onMouseEnter = function(e) {
+            if (!this.hoverOver) {
+                tweenToScale(this, 1.2, 200);
+                tweenToOpacity(this, 1, 200);
+                this.hoverOver = true;
+            }
+        }
+        links_group.onMouseLeave = function(e) {
+            if (this.hoverOver) {
+                tweenToScale(this, 1, 200);
+                tweenToOpacity(this, this.normal_opacity, 200);
+                this.hoverOver = false;
+            }
+        }
+        links_group.onClick = function(e) {
+            var popup = $('.popup');
+            var screen_darkener = $('.screen_darkener');
+            popup.show();
+            if (!PAUSED) {
+                playBtn.on = !playBtn.on;
+                playBtn.callBack();
+                //TODO -- create a global pause function that anyone can call, rather than do this ^
+            }
+            screen_darkener.on('click', function() {
+                popup.hide();
+            });
+        }
     }
 
     function SetupInitialState() {
@@ -1462,6 +1515,14 @@ window.onload = function() {
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
         return tweenScale;
+    }
+    var tweenToOpacity = function(obj, op, time) {
+        // Define and start a tween to change the object's opacity
+        var tweenOpacity = new TWEEN.Tween(obj)
+            .to({ opacity:op }, time)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        return tweenOpacity;
     }
     var tweenToPosition = function(obj, xx, yy, time) {
         // Define and start a tween to move the object

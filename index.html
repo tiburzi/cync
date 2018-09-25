@@ -47,9 +47,39 @@
                 padding:0;
                 width: 100vw; 
                 height: 56.25vw; /* 100/56.25 = 1.778 */
-                /*background: pink;*/
                 max-height: 100vh;
                 max-width: 177.78vh; /* 16/9 = 1.778 */
+                margin: auto;
+                position: absolute;
+                top:0; bottom:0; /* vertical center */
+                left:0; right:0; /* horizontal center */
+                /*background: pink;*/
+            }
+            .popup {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 99;
+            }
+            .screen_darkener {
+                position: absolute;
+                background: #000;
+                opacity: 0.5;
+                width: 100%;
+                height: 100%;
+            }
+            .video {
+                /* youtube embeds videos at 560x315 (ratio = 1:1.778) */
+                z-index: 100;
+                margin: 0;
+                padding: 0;
+                width: 80vw;
+                height: 45vw; /* 80/45 = 1.778 */
+                max-height: 80vh;
+                max-width: 142.25vh; /* 16/9 = 1.778 */
                 margin: auto;
                 position: absolute;
                 top:0; bottom:0; /* vertical center */
@@ -58,6 +88,13 @@
         </style>
     </head>
     <body>
+        <div class="popup">
+            <div class="screen_darkener"></div>
+            <iframe class="video"
+                    src="https://www.youtube-nocookie.com/embed/kvvIpFy1rD0?rel=0" 
+                    frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+            </iframe>
+        </div>
         <div id="main-container"></div>
         <script src='code/main.js'></script>
         <script type="text/javascript">
