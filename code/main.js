@@ -437,13 +437,20 @@ window.onload = function() {
         }
         infoBtn.onClick = function(e) {
             var popup = $('.popup');
+            var video = $('.video');
             var screen_darkener = $('.screen_darkener');
-            var fadetime = 200;  //ms
+            var fadetime = 200; //ms
+            
             pauseCYNC(true);
             IN_FOCUS = false;
             popup.fadeIn(fadetime);
+            video.removeClass('scale-out');
+            video.addClass('scale-in');
+            
             screen_darkener.on('click', function() {
                 popup.fadeOut(fadetime);
+                video.removeClass('scale-in');
+                video.addClass('scale-out');
                 window.focus();
                 IN_FOCUS = true;
             });

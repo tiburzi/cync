@@ -84,6 +84,20 @@
                 position: absolute;
                 top:0; bottom:0; /* vertical center */
                 left:0; right:0; /* horizontal center */
+                transition: all 200ms;
+                transform: scale(.95);
+            }
+            .video.scale-out {
+                -webkit-transform: scale(.95);
+                -moz-transform: scale(.95);
+                -o-transform: scale(.95);
+                transform: scale(.95);
+            }
+            .video.scale-in {
+                -webkit-transform: scale(1);
+                -moz-transform: scale(1);
+                -o-transform: scale(1);
+                transform: scale(1);
             }
         </style>
     </head>
