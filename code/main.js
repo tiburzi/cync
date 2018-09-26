@@ -61,6 +61,7 @@ window.onload = function() {
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
+    var HUD = {};
     var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 12;
     var CTL_RADIUS = 36;
@@ -121,15 +122,22 @@ window.onload = function() {
     function CreateHUD() {
         var controlsX = two.width/4;
         var controlsY = two.height/2;
+        var addToHUD = function(obj, name) {
+            HUD[name] = obj;
+            LAYERS['hud'].add(obj);
+        }
         
-        // Create samplers
+        // --- Create global controls --- //
+        
+        // Samplers
         for (var i=0; i<SAMPLERS_MAX; i++) {
             var h = 9*CTL_RADIUS - 2*SAMPLER_RADIUS;
             var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
-            CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
+            var sampler = CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
+            addToHUD(sampler, 'sampler_'+i.toString());
         }
         
-        // Create global controls
+        // Tempo control
         var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
         tempoBtn.btn.setImageOffset(-2, 0);
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
@@ -139,8 +147,9 @@ window.onload = function() {
         tempoBtn.slider.dial.onMouseUp = function() {
             UpdateState();
         }
-        LAYERS['hud'].add(tempoBtn);
+        addToHUD(tempoBtn, 'tempoBtn');
         
+        // Volume control
         var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
@@ -181,8 +190,9 @@ window.onload = function() {
                 this.btn.setImageOffset(1, 0);
             }
         }
-        LAYERS['hud'].add(volumeBtn);
+        addToHUD(volumeBtn, 'volumeBtn');
         
+        // Randomizer button
         var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
         randomizeBtn.callBack = function() {
             
@@ -230,13 +240,16 @@ window.onload = function() {
             tempoBtn.slider.setValue(.2+.5*Math.random());
             UpdateState();
         };
-        LAYERS['hud'].add(randomizeBtn);
+        addToHUD(randomizeBtn, 'randomizeBtn');
         
+        // Play / Pause button
         var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "pause");
-        playBtn.callBack = function() {
-            PAUSED = !this.on;
+        playBtn.updateState = function() {
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
+        }
+        playBtn.callBack = function() {
+            pauseCYNC();
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
@@ -256,13 +269,14 @@ window.onload = function() {
                 playBtn.space_pressed = false;
             }
         });
-        LAYERS['hud'].add(playBtn);
+        addToHUD(playBtn, 'playBtn');
         
+        // Save MIDI button
         var saveBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "save");
         saveBtn.callBack = function() {
             saveMIDI();
         };
-        LAYERS['hud'].add(saveBtn);
+        addToHUD(saveBtn, 'saveBtn');
         
         /*var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
         polygonBtn.setImageOffset(0, -2);
@@ -270,8 +284,9 @@ window.onload = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
-        LAYERS['hud'].add(polygonBtn);*/
+        addToHUD(polygonBtn, 'polygonBtn');*/
         
+        // Reset button
         var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
         resetBtn.setImageOffset(0, -3);
         resetBtn.tween = new TWEEN.Tween(resetBtn.image)
@@ -297,10 +312,9 @@ window.onload = function() {
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             SetupDefault();
         }
-        LAYERS['hud'].add(resetBtn);
+        addToHUD(resetBtn, 'resetBtn');
         
-        
-        // Create CYNC logo with corresponding text and author links
+        // CYNC logo with corresponding text and author links
         var logoSVGnode = two.interpret(svgAssets["cync_logo_color"]);
         var logoDot = logoSVGnode._collection[1];
         var image = two.makeGroup(logoSVGnode);
@@ -378,7 +392,9 @@ window.onload = function() {
             }
         }
         
-        // Create info button
+        addToHUD(logo, 'logo');
+        
+        // Info video button
         var links_r = 20;
         var links_bbox = two.makeCircle(0, 0, 2*links_r);
         links_bbox.stroke = 'none';
@@ -395,42 +411,38 @@ window.onload = function() {
         info_icon.fill = LT_GRAY;
         var info_icon = two.makeGroup(info_circle, info_icon);
         
-        var links_group = two.makeGroup(links_bbox, info_icon);
-        links_group.translation.set(two.width-4*links_r, 3*links_r);
-        links_group.normal_opacity = links_group.opacity = .4;
-        links_group.bbox = links_bbox;
+        var infoBtn = two.makeGroup(links_bbox, info_icon);
+        infoBtn.translation.set(two.width-4*links_r, 3*links_r);
+        infoBtn.normal_opacity = infoBtn.opacity = .4;
+        infoBtn.bbox = links_bbox;
+        addInteraction(infoBtn);
+        setCursor(infoBtn, 'pointer');
         
-        addInteraction(links_group);
-        setCursor(links_group, 'pointer');
-        
-        links_group.onMouseEnter = function(e) {
+        infoBtn.onMouseEnter = function(e) {
             if (!this.hoverOver) {
                 tweenToScale(this, 1.2, 200);
                 tweenToOpacity(this, 1, 200);
                 this.hoverOver = true;
             }
         }
-        links_group.onMouseLeave = function(e) {
+        infoBtn.onMouseLeave = function(e) {
             if (this.hoverOver) {
                 tweenToScale(this, 1, 200);
                 tweenToOpacity(this, this.normal_opacity, 200);
                 this.hoverOver = false;
             }
         }
-        links_group.onClick = function(e) {
+        infoBtn.onClick = function(e) {
             var popup = $('.popup');
-            var fadetime = 200; //ms
+            var fadetime = 200;  //ms
             var screen_darkener = $('.screen_darkener');
             popup.fadeIn(fadetime);
-            if (!PAUSED) {
-                playBtn.on = !playBtn.on;
-                playBtn.callBack();
-                //TODO -- create a global pause function that anyone can call, rather than do this ^
-            }
+            pauseCYNC(true);
             screen_darkener.on('click', function() {
                 popup.fadeOut(fadetime);
             });
         }
+        addToHUD(infoBtn, 'infoBtn');
     }
 
     function SetupInitialState() {
@@ -1162,13 +1174,8 @@ window.onload = function() {
         } else {
             sampler.audio = null;
         }
-        
-
-        Samplers.push(sampler);
-        LAYERS['hud'].add(sampler);
-
         sampler.update = function() {
-            // Check if the sampler needs another note
+            // Check if the sampler should spawn another note
             if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
@@ -1176,6 +1183,8 @@ window.onload = function() {
                 this.hasNote = true;
             }
         }
+        
+        Samplers.push(sampler);
         return sampler;
     }
     
@@ -1532,6 +1541,11 @@ window.onload = function() {
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
         return tweenPos;
+    }
+    var pauseCYNC = function(bool) {
+        if (bool == undefined) PAUSED = !PAUSED; //toggle
+        else PAUSED = bool;
+        HUD.playBtn.updateState();
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
