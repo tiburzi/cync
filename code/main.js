@@ -61,6 +61,7 @@ window.onload = function() {
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
+    var IN_FOCUS = true;
     var HUD = {};
     var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 12;
@@ -256,10 +257,12 @@ window.onload = function() {
         document.addEventListener("keydown", function(e) {
             var key = e.keyCode || e.which; //cross-browser support
             if (key === 32 && !playBtn.space_pressed) { //spacebar
-                playBtn.on = !playBtn.on;
-                playBtn.callBack();
-                tweenToScale(playBtn, 0.8, 100);
-                playBtn.space_pressed = true;
+                if (IN_FOCUS) {
+                    playBtn.on = !playBtn.on;
+                    playBtn.callBack();
+                    tweenToScale(playBtn, 0.8, 100);
+                    playBtn.space_pressed = true;
+                }
             }
         });
         document.addEventListener("keyup", function(e) {
@@ -434,12 +437,14 @@ window.onload = function() {
         }
         infoBtn.onClick = function(e) {
             var popup = $('.popup');
-            var fadetime = 200;  //ms
             var screen_darkener = $('.screen_darkener');
-            popup.fadeIn(fadetime);
+            var fadetime = 200;  //ms
             pauseCYNC(true);
+            IN_FOCUS = false;
+            popup.fadeIn(fadetime);
             screen_darkener.on('click', function() {
                 popup.fadeOut(fadetime);
+                IN_FOCUS = true;
             });
         }
         addToHUD(infoBtn, 'infoBtn');
