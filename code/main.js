@@ -444,6 +444,7 @@ window.onload = function() {
             popup.fadeIn(fadetime);
             screen_darkener.on('click', function() {
                 popup.fadeOut(fadetime);
+                window.focus();
                 IN_FOCUS = true;
             });
         }
