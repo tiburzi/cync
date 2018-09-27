@@ -61,6 +61,8 @@ window.onload = function() {
     var MASTER_VOLUME = 1;
     var SHOW_POLYGONS = true;
     var PAUSED = false;
+    var IN_FOCUS = true;
+    var HUD = {};
     var CENTER = {}; //default, updated in Init()
     var NOTE_RADIUS = 12;
     var CTL_RADIUS = 36;
@@ -69,6 +71,7 @@ window.onload = function() {
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(190,190,190,1)';
     var LT_GRAY = '#f3f3f3';
+    var VIDEO_URL = 'https://www.youtube-nocookie.com/embed/kvvIpFy1rD0?rel=0&autoplay=1';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
     var GITHUB_URL = 'https://github.com/tiburzi/cync';
 
@@ -122,15 +125,22 @@ window.onload = function() {
     function CreateHUD() {
         var controlsX = two.width/4;
         var controlsY = two.height/2;
+        var addToHUD = function(obj, name) {
+            HUD[name] = obj;
+            LAYERS['hud'].add(obj);
+        }
         
-        // Create samplers
+        // --- Create global controls --- //
+        
+        // Samplers
         for (var i=0; i<SAMPLERS_MAX; i++) {
             var h = 9*CTL_RADIUS - 2*SAMPLER_RADIUS;
             var yy = controlsY - 4.5*CTL_RADIUS + SAMPLER_RADIUS + h*(i/(SAMPLERS_MAX-1));
-            CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
+            var sampler = CreateSampler(controlsX+3.5*CTL_RADIUS, yy);
+            addToHUD(sampler, 'sampler_'+i.toString());
         }
         
-        // Create global controls
+        // Tempo control
         var tempoBtn = CreateSliderButton(controlsX-3.5*CTL_RADIUS, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "metronome");
         tempoBtn.btn.setImageOffset(-2, 0);
         tempoBtn.slider.setValue( (TEMPO-TEMPO_MIN)/(TEMPO_MAX-TEMPO_MIN) );
@@ -140,8 +150,9 @@ window.onload = function() {
         tempoBtn.slider.dial.onMouseUp = function() {
             UpdateState();
         }
-        LAYERS['hud'].add(tempoBtn);
+        addToHUD(tempoBtn, 'tempoBtn');
         
+        // Volume control
         var volumeBtn = CreateSliderButton(controlsX, controlsY-3.5*CTL_RADIUS, CTL_RADIUS, 150, "volume_full");
         volumeBtn.slider.setValue(MASTER_VOLUME);
         volumeBtn.prevVol = 1;
@@ -182,8 +193,9 @@ window.onload = function() {
                 this.btn.setImageOffset(1, 0);
             }
         }
-        LAYERS['hud'].add(volumeBtn);
+        addToHUD(volumeBtn, 'volumeBtn');
         
+        // Randomizer button
         var randomizeBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY, CTL_RADIUS, "randomize");
         randomizeBtn.callBack = function() {
             
@@ -237,23 +249,28 @@ window.onload = function() {
             
             UpdateState();
         };
-        LAYERS['hud'].add(randomizeBtn);
+        addToHUD(randomizeBtn, 'randomizeBtn');
         
+        // Play / Pause button
         var playBtn = CreateButton(controlsX, controlsY, CTL_RADIUS, "pause");
-        playBtn.callBack = function() {
-            PAUSED = !this.on;
+        playBtn.updateState = function() {
             this.setImage(PAUSED ? "play" : "pause");
             this.setImageOffset(PAUSED ? 2 : 0, 0);
+        }
+        playBtn.callBack = function() {
+            pauseCYNC();
         };
         playBtn.space_pressed = false;
         //make the play button also toggle with the spacebar
         document.addEventListener("keydown", function(e) {
             var key = e.keyCode || e.which; //cross-browser support
             if (key === 32 && !playBtn.space_pressed) { //spacebar
-                playBtn.on = !playBtn.on;
-                playBtn.callBack();
-                tweenToScale(playBtn, 0.8, 100);
-                playBtn.space_pressed = true;
+                if (IN_FOCUS) {
+                    playBtn.on = !playBtn.on;
+                    playBtn.callBack();
+                    tweenToScale(playBtn, 0.8, 100);
+                    playBtn.space_pressed = true;
+                }
             }
         });
         document.addEventListener("keyup", function(e) {
@@ -263,13 +280,14 @@ window.onload = function() {
                 playBtn.space_pressed = false;
             }
         });
-        LAYERS['hud'].add(playBtn);
+        addToHUD(playBtn, 'playBtn');
         
+        // Save MIDI button
         var saveBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "save");
         saveBtn.callBack = function() {
             saveMIDI();
         };
-        LAYERS['hud'].add(saveBtn);
+        addToHUD(saveBtn, 'saveBtn');
         
         /*var polygonBtn = CreateButton(controlsX-3.5*CTL_RADIUS, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "polygon");
         polygonBtn.setImageOffset(0, -2);
@@ -277,8 +295,9 @@ window.onload = function() {
             SHOW_POLYGONS = this.on;
             this.image.opacity = this.on ? 1 : 0.5;
         };
-        LAYERS['hud'].add(polygonBtn);*/
+        addToHUD(polygonBtn, 'polygonBtn');*/
         
+        // Reset button
         var resetBtn = CreateButton(controlsX, controlsY+3.5*CTL_RADIUS, CTL_RADIUS, "reset");
         resetBtn.setImageOffset(0, -3);
         resetBtn.tween = new TWEEN.Tween(resetBtn.image)
@@ -304,10 +323,9 @@ window.onload = function() {
             while(Orbits.length > 0) { Orbits[0].destroy(); };
             SetupDefault();
         }
-        LAYERS['hud'].add(resetBtn);
+        addToHUD(resetBtn, 'resetBtn');
         
-        
-        // Create CYNC logo with corresponding text and author links
+        // CYNC logo with corresponding text and author links
         var logoSVGnode = two.interpret(svgAssets["cync_logo_color"]);
         var logoDot = logoSVGnode._collection[1];
         var image = two.makeGroup(logoSVGnode);
@@ -396,6 +414,71 @@ window.onload = function() {
                 logo.dot.fill = GRAY;
             }
         }
+        
+        addToHUD(logo, 'logo');
+        
+        // Info video button
+        var links_r = 20;
+        var links_bbox = two.makeCircle(0, 0, 2*links_r);
+        links_bbox.stroke = 'none';
+        links_bbox.hoverOver = false;
+        links_bbox.opacity = .001; //makes invisible while retaining hover-ability
+        links_bbox.fill = LT_GRAY; //in case opacity trick doesn't work
+        
+        var info_circle = two.makeCircle(0, 0, links_r);
+        info_circle.fill = GRAY;
+        info_circle.stroke = 'none';
+        var info_icon = two.makeText("?", 0, 4);
+        info_icon.family = 'Comfortaa';
+        info_icon.size = 30;
+        info_icon.fill = LT_GRAY;
+        var info_icon = two.makeGroup(info_circle, info_icon);
+        
+        var infoBtn = two.makeGroup(links_bbox, info_icon);
+        infoBtn.translation.set(two.width-4*links_r, 3*links_r);
+        infoBtn.normal_opacity = infoBtn.opacity = .4;
+        infoBtn.bbox = links_bbox;
+        addInteraction(infoBtn);
+        setCursor(infoBtn, 'pointer');
+        
+        infoBtn.onMouseEnter = function(e) {
+            if (!this.hoverOver) {
+                tweenToScale(this, 1.2, 200);
+                tweenToOpacity(this, 1, 200);
+                this.hoverOver = true;
+            }
+        }
+        infoBtn.onMouseLeave = function(e) {
+            if (this.hoverOver) {
+                tweenToScale(this, 1, 200);
+                tweenToOpacity(this, this.normal_opacity, 200);
+                this.hoverOver = false;
+            }
+        }
+        infoBtn.onClick = function(e) {
+            var popup = $('.popup');
+            var video = $('.video');
+            var screen_darkener = $('.screen_darkener');
+            var fadetime = 200; //ms
+            
+            pauseCYNC(true);
+            video.attr('src', VIDEO_URL);
+            
+            IN_FOCUS = false;
+            popup.fadeIn(fadetime);
+            video.removeClass('scale-out');
+            video.addClass('scale-in');
+            
+            screen_darkener.on('click', function() {
+                popup.fadeOut(fadetime);
+                video.removeClass('scale-in');
+                video.addClass('scale-out');
+                video.attr('src', "");
+                window.focus();
+                IN_FOCUS = true;
+            });
+        }
+        addToHUD(infoBtn, 'infoBtn');
     }
 
     function SetupInitialState() {
@@ -1130,13 +1213,8 @@ window.onload = function() {
         } else {
             sampler.audio = null;
         }
-        
-
-        Samplers.push(sampler);
-        LAYERS['hud'].add(sampler);
-
         sampler.update = function() {
-            // Check if the sampler needs another note
+            // Check if the sampler should spawn another note
             if (!this.hasNote && this.audio != null) {
                 var note = CreateNote(this.translation.x, this.translation.y);
                 note.sampler = this;
@@ -1144,6 +1222,8 @@ window.onload = function() {
                 this.hasNote = true;
             }
         }
+        
+        Samplers.push(sampler);
         return sampler;
     }
     
@@ -1485,6 +1565,14 @@ window.onload = function() {
             .start();
         return tweenScale;
     }
+    var tweenToOpacity = function(obj, op, time) {
+        // Define and start a tween to change the object's opacity
+        var tweenOpacity = new TWEEN.Tween(obj)
+            .to({ opacity:op }, time)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        return tweenOpacity;
+    }
     var tweenToPosition = function(obj, xx, yy, time) {
         // Define and start a tween to move the object
         var tweenPos = new TWEEN.Tween(obj.translation)
@@ -1492,6 +1580,11 @@ window.onload = function() {
             .easing(TWEEN.Easing.Cubic.Out)
             .start();
         return tweenPos;
+    }
+    var pauseCYNC = function(bool) {
+        if (bool == undefined) PAUSED = !PAUSED; //toggle
+        else PAUSED = bool;
+        HUD.playBtn.updateState();
     }
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
