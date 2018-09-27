@@ -84,3 +84,4 @@
 - polish polygon interactivity and UX
 - add logo and app instructions to readme.txt
 - rename repo to '...cync'
+- fixed triggers getting out of sync after randomization

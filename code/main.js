@@ -70,9 +70,10 @@ window.onload = function() {
     var DRAGGING_POLYGON = false;
     var DRAGGING_DESTROYABLE = false;
     var GRAY = 'rgba(190,190,190,1)';
-    var LT_GRAY = '#f0f0f0';
+    var LT_GRAY = '#f3f3f3';
     var VIDEO_URL = 'https://www.youtube-nocookie.com/embed/kvvIpFy1rD0?rel=0&autoplay=1';
     var state = new SaveState(); //keeps track of everything the user has done so we can save this state to URL 
+    var GITHUB_URL = 'https://github.com/tiburzi/cync';
 
     function UpdateState() {
         // Just a helper function to make it easy to update parameters of state without changing lots of lines of code 
@@ -202,7 +203,10 @@ window.onload = function() {
                 return Samplers[Math.round(Math.random()*(SAMPLERS_MAX-1))];
             }
             
-            // Create a random configuration
+            // Set a random tempo
+            tempoBtn.slider.setValue(.2+.5*Math.random());
+            
+            // Create a random configuration of notes
             var maxNotes = 6+Math.round(Math.random()*5);
             var totalNotes = 0;
             while(Orbits.length > 0) { Orbits[0].destroy(); }
@@ -227,19 +231,22 @@ window.onload = function() {
                         notes --;
                         totalNotes ++;
                     }
-                    o.polygon.update();
                 }
             }
             
-            // Remove any orbits that didn't get any notes
+            // Check all the orbits
             for (var i=0; i<Orbits.length; i++) {
                 if (Orbits[i].notes.length == 0) {
+                    // Remove this orbit because it has no notes
                     Orbits[i].destroy();
                     i--;
+                } else {
+                    // Keeping the orbit, so make sure it's ready to go
+                    o.polygon.update();
+                    o.trigger.sync();
                 }
             }
             
-            tempoBtn.slider.setValue(.2+.5*Math.random());
             UpdateState();
         };
         addToHUD(randomizeBtn, 'randomizeBtn');
@@ -326,17 +333,29 @@ window.onload = function() {
         image.translation.set(0, -20);
         image.rotation = Math.PI;
         image.scale = 1.5;
-        
         var image_bbox = image.getBoundingClientRect(false);
+        
+        var image_rect = two.makeRectangle(0, -0.5*image_bbox.height, image_bbox.width+20, image_bbox.height+0);
+        image_rect.opacity = .001; //makes invisible while retaining hover-ability
+        image_rect.fill = LT_GRAY; //in case opacity trick doesn't work
+        image_rect.stroke = 'none';
+        
+        var image_group = two.makeGroup(image_rect, image);
+        addInteraction(image_group);
+        setCursor(image_group, 'pointer');
+        image_group.onMouseDown = function() {
+            window.open(GITHUB_URL,'_blank');
+        }
+        
         var bbox = two.makeRectangle(0, 0, image_bbox.width+100, image_bbox.height+50);
         bbox.opacity = .001; //makes invisible while retaining hover-ability
         bbox.fill = LT_GRAY; //in case opacity trick doesn't work
         bbox.stroke = 'none';
         
         var t1 = two.makeText("a cyclic drum machine by", 0, 25);
-        var t2 = two.makeText("Jon Tiburzi", -100, 50);             t2.link = 'http://jontiburzi.com/';     t2.color = PALETTE[3];
-        var t3 = two.makeText("Terrane", -6, 50);                   t3.link = 'http://terranemusic.com/';   t3.color = PALETTE[3];
-        var t4 = two.makeText("Omar Shehata", 100, 50);             t4.link = 'http://omarshehata.me/';     t4.color = PALETTE[3];
+        var t2 = two.makeText("Jon Tiburzi", -100, 50);             t2.link = 'http://jontiburzi.com/';                     t2.color = PALETTE[3];
+        var t3 = two.makeText("Terrane", -6, 50);                   t3.link = 'https://www.facebook.com/terranemusic/';     t3.color = PALETTE[3];
+        var t4 = two.makeText("Omar Shehata", 100, 50);             t4.link = 'http://omarshehata.me/';                     t4.color = PALETTE[3];
         var text = two.makeGroup(t1, t2, t3, t4);
         _.each(text._collection, function(t) {
             t.family = 'Comfortaa';
@@ -358,7 +377,7 @@ window.onload = function() {
         text.fill = GRAY;
         text.opacity = 0;
         
-        var logo = two.makeGroup(bbox, image, text);
+        var logo = two.makeGroup(bbox, image_group, text);
         logo.translation.set(controlsX, two.height-100);
         logo.xStart = logo.translation.x;
         logo.yStart = logo.translation.y;
@@ -688,11 +707,7 @@ window.onload = function() {
             
             // Rotate the trigger
             if (this.rotate == true) {
-                // Set a new angle theta
-                var dTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * dt);
-                var newTheta = oldTheta + dTheta;
-                this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
-                this._setRotation();
+                this.sync();
                 
                 // Play notes that the trigger just passed
                 for (var i=0; i<this.orbit.notes.length; i++) {
@@ -716,8 +731,8 @@ window.onload = function() {
             this._updatePosition();
         }
         trigger.sync = function() {
-            // Resync the trigger according to the global time. Needs to happen if orbit is resized, frozen, or other such nonsense.
-            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * ((TEMPO/60) * TIME) - Math.PI/2;
+            // Resync the trigger according to the global time
+            var newTheta = (2*Math.PI) * (RADIUS_SNAP / this.orbit.radius) * TIME - Math.PI/2;
             this.theta = ((newTheta + Math.PI) % (2*Math.PI)) - Math.PI;
             this._setRotation();
             this._updatePosition();
@@ -820,11 +835,11 @@ window.onload = function() {
             if (this.dragging) {
                 polygon.fill = polygon.stroke = PALETTE[3];
                 var dtheta = Util.pointDirection(CENTER, {x:e.clientX, y:e.clientY}) - Util.pointDirection(CENTER, this.prevMousePos);
-                var dist = this.orbit.radius;
                 _.each(this.orbit.notes, function(n) {
                     n.theta += dtheta;
-                    n.translation.x = CENTER.x + Math.cos(n.theta) * dist;
-                    n.translation.y = CENTER.y + Math.sin(n.theta) * dist;
+                    if (n.theta > Math.PI)  {n.theta -= 2*Math.PI;}
+                    if (n.theta < -Math.PI) {n.theta += 2*Math.PI;}
+                    n.updatePos();
                 });
                 this.update();
                 this.prevMousePos = {x:e.clientX, y:e.clientY};
@@ -1112,6 +1127,13 @@ window.onload = function() {
                 this.theta = Util.pointDirection(this.orbit.translation, this.translation);
                 this.orbit.sortNotes();
             }
+        }
+        note.updatePos = function() {
+            // Update note's parameter object
+            var dist = this.orbit.radius;
+            var X = CENTER.x + Math.cos(this.theta) * dist;
+            var Y = CENTER.y + Math.sin(this.theta) * dist;
+            note.translation.set(X, Y);
         }
         note.update = function() {
             // Update note's parameter object
@@ -1567,6 +1589,26 @@ window.onload = function() {
     var setCursor = function(obj, type) {
         $(obj._renderer.elem).css({cursor: String(type)});
     }
+    var mapSampleToKey = function(sample_index) {
+        // Mapping from General MIDI Standard Drum Map: https://commons.wikimedia.org/wiki/File:GMStandardDrumMap.gif
+        // Note: this mapping is for standard MIDI, but essentially arbitrary because the user will probably reorder the notes themselves
+        switch(sample_index) {
+            case 0:
+                return 35; break; //kick -> Acoustic Bass Drum
+            case 1:
+                return 36; break; //low tom -> Low Tom
+            case 2:
+                return 40; break; //snare -> Electric Snare
+            case 3:
+                return 39; break; //clap -> Hand Clap
+            case 4:
+                return 42; break; //shaker -> Closed HiHat
+            case 5:
+                return 44; break; //hihat -> Petal HiHat
+            default:
+                return 40 + sample_index; break; //just return something unique
+        }
+    }
     var saveMIDI = function() {
         
         //Confirm there are notes to save, aborting if there are none
@@ -1582,7 +1624,7 @@ window.onload = function() {
         file.addTrack(track);
         track.setTempo(TEMPO);
         
-        // Determine MIDI length that guarentees all orbits loop and end aligned
+        // Determine MIDI length (in measures) that guarentees all orbits loop and end aligned
         var len = 1;
         for (var i=0; i<Orbits.length; i++) {
             for (var j=i+1; j<Orbits.length; j++) {
@@ -1592,8 +1634,10 @@ window.onload = function() {
             }
         }
         
-        // Compile an array of all the notes on all the orbits
-        var allNotes = [];
+        // Construct a timeline of events (each orbits' notes turning on and off)
+        // [strangely, it seems jsmidgen's addNote method doesn't allow us to start a note while another is playing]
+        var DURATION = 16; //default
+        var timeline = [];
         for (var i=0; i<Orbits.length; i++) {
             var o = Orbits[i];
             
@@ -1605,34 +1649,41 @@ window.onload = function() {
                     var n = o.notes[k];
                     var angle = n.theta<-Math.PI/2 ? n.theta+2*Math.PI : n.theta; //returns a theta between (-Pi/2, 3Pi/2]
                     var fraction = (angle+Math.PI/2)/(2*Math.PI); //returns the fraction of the note's angle on the orbit (0 at top, increases clockwise up to 1)
-                    var time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat, default=128)
-                    var noteMarker = {
+                    var precise_time = (j+fraction) * (o.radius/RADIUS_SNAP) * file.ticks; //(ticks per beat=128, hardcoded in jsmidgen)
+                    var time = Math.round(precise_time); //jsmidgen seems to always floor() 'time', which leads to midi misalignment. So, manually use round() instead.
+                    var p = mapSampleToKey(n.sampler.index);
+                    var on = {
+                        on: true,
                         time: time,
-                        type: n.sampler.index,
+                        pitch: p
                     };
-                    allNotes.push(noteMarker);
+                    var off = {
+                        on: false,
+                        time: time + DURATION,
+                        pitch: p
+                    };
+                    timeline.push(on);
+                    timeline.push(off);
                 }
             }
         }
         
-        // Sort all notes chronologically
-        allNotes.sort(function(a,b) {
+        // Sort the timeline chronologically
+        timeline.sort(function(a,b) {
             return a.time-b.time;
         });
         
-        // Add all notes to MIDI track
+        // Add notes to MIDI track as different pitches
         var tPrev = 0;
-        var noteDur = 16; //default
-        for (var i=0; i<allNotes.length; i++) {
-            var t = allNotes[i].time;
-            var dur = noteDur;
-            
-            // Shorten note if following note is closer than noteDur
-            if (i < allNotes.length-1) {dur = Math.min(noteDur, allNotes[i+1].time-t);}
-            
-            // Add the note and record the time it finishes
-            track.addNote(0, 35+allNotes[i].type, dur, (t-tPrev));
-            tPrev = t + dur;
+        var tGlobalOffset = timeline[0].time;
+        for (var i=0; i<timeline.length; i++) {
+            var delay = timeline[i].time - tPrev - tGlobalOffset;
+            delay = Math.max(delay, 0); //just in case, prevent delay < 0, which causes jsmidgen to crash
+            if (timeline[i].on)
+                track.addNoteOn(0, timeline[i].pitch, delay);
+            else
+                track.addNoteOff(0, timeline[i].pitch, delay);
+            tPrev = timeline[i].time - tGlobalOffset;
         }
         
         /* // For testing purposes:
@@ -1834,7 +1885,7 @@ window.onload = function() {
         
         if (!PAUSED) {
             dt = REAL_dt;
-            TIME += dt;
+            TIME += dt * (TEMPO/60);
         }
     }
    

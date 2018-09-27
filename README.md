@@ -1,4 +1,4 @@
-<a href="https://tiburzi.github.io/cync/" target="_blank">
+<a href="https://cync.app/" target="_blank">
   <img src="assets/images/cync_logo.png" alt="cync" width="400">
 </a>
 
@@ -6,7 +6,7 @@
 
 <br>
 
-A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://tiburzi.github.io/cync/" target="blank">Launch App</a>
+A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://cync.app/" target="blank">Launch App</a>
 
 <br>
 
@@ -24,7 +24,7 @@ Representing these grooves as overlapping cycles reveals their underlying patter
 * `assets/` is all the sound & image files.
 
 And finally:
-* `development/` is all the miscellaneous design notes and documents.
+* `dev/` is all the miscellaneous design notes and documents.
 
 <br>
 
@@ -38,6 +38,6 @@ This will run the server on localhost:8000 so just visit address that in your br
 ## Credits
 [Jon Tiburzi](http://jontiburzi.com/) - programming and design
 
-[Terrane](http://terranemusic.com/) - concept and design
+[Terrane](https://www.facebook.com/terranemusic/) - concept and design
 
 [Omar Shehata](http://omarshehata.me/) - guidance and additional programming
