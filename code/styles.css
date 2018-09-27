@@ -1,7 +1,7 @@
 /* All the CSS styling for CYNC */
 body {
     margin: 0px;
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
 }
 #main-container {
     /* from https://stackoverflow.com/questions/20590239/maintain-aspect-ratio-of-div-but-fill-screen-width-and-height-in-css */
