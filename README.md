@@ -8,6 +8,8 @@
 
 A cyclic drum machine for experimenting with non-quantized grooves. Click here to run: <a href="https://cync.app/" target="blank">Launch App</a>
 
+For best results, run Cync using Google Chrome or Mozilla Firefox.
+
 <br>
 
 ## About
