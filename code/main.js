@@ -353,9 +353,9 @@ window.onload = function() {
         bbox.stroke = 'none';
         
         var t1 = two.makeText("a cyclic drum machine by", 0, 25);
-        var t2 = two.makeText("Jon Tiburzi", -100, 50);             t2.link = 'http://jontiburzi.com/';                     t2.color = PALETTE[3];
-        var t3 = two.makeText("Terrane", -6, 50);                   t3.link = 'https://www.facebook.com/terranemusic/';     t3.color = PALETTE[3];
-        var t4 = two.makeText("Omar Shehata", 100, 50);             t4.link = 'http://omarshehata.me/';                     t4.color = PALETTE[3];
+        var t2 = two.makeText("Jon Tiburzi", -120, 50);             t2.link = 'http://jontiburzi.com/';                     t2.color = PALETTE[3];
+        var t3 = two.makeText("Brave James", 0, 50);                t3.link = 'https://imbravejames.com/';                  t3.color = PALETTE[3];
+        var t4 = two.makeText("Omar Shehata", 120, 50);             t4.link = 'http://omarshehata.me/';                     t4.color = PALETTE[3];
         var text = two.makeGroup(t1, t2, t3, t4);
         _.each(text._collection, function(t) {
             t.family = 'Comfortaa';
