@@ -310,6 +310,7 @@ window.onload = function() {
             this.tween.stop()
                 .to({ rotation:2*Math.PI }, 800)
                 .start();
+            resetBtn.reset();
         }
         resetBtn.callBackUp = function() {
             if (this.image.rotation < 2*Math.PI) {
